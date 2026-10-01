@@ -1,0 +1,645 @@
+{
+  "generated": "tools/known_formats.py",
+  "formats": [
+    {
+      "n": [
+        2,
+        12,
+        15
+      ],
+      "naive": 360,
+      "bestKnown": {
+        "rank": 278,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 280,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        2,
+        13,
+        15
+      ],
+      "naive": 390,
+      "bestKnown": {
+        "rank": 300,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 304,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        2,
+        13,
+        16
+      ],
+      "naive": 416,
+      "bestKnown": {
+        "rank": 320,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 324,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        7,
+        7,
+        9
+      ],
+      "naive": 441,
+      "bestKnown": {
+        "rank": 315,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 314,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        2,
+        14,
+        16
+      ],
+      "naive": 448,
+      "bestKnown": {
+        "rank": 344,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-27",
+        "ring": null
+      },
+      "team": {
+        "rank": 348,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        2,
+        15,
+        16
+      ],
+      "naive": 480,
+      "bestKnown": {
+        "rank": 368,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 374,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        4,
+        11,
+        15
+      ],
+      "naive": 660,
+      "bestKnown": {
+        "rank": 449,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 457,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        6,
+        11,
+        11
+      ],
+      "naive": 726,
+      "bestKnown": {
+        "rank": 490,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 492,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        6,
+        11,
+        13
+      ],
+      "naive": 858,
+      "bestKnown": {
+        "rank": 574,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 572,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        7,
+        9,
+        14
+      ],
+      "naive": 882,
+      "bestKnown": {
+        "rank": 597,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 598,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        6,
+        11,
+        14
+      ],
+      "naive": 924,
+      "bestKnown": {
+        "rank": 613,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 617,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        7,
+        9,
+        15
+      ],
+      "naive": 945,
+      "bestKnown": {
+        "rank": 634,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 638,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        8,
+        10,
+        13
+      ],
+      "naive": 1040,
+      "bestKnown": {
+        "rank": 686,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 684,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        8,
+        10,
+        14
+      ],
+      "naive": 1120,
+      "bestKnown": {
+        "rank": 726,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 724,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        7,
+        11,
+        15
+      ],
+      "naive": 1155,
+      "bestKnown": {
+        "rank": 777,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 769,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        9,
+        11,
+        13
+      ],
+      "naive": 1287,
+      "bestKnown": {
+        "rank": 835,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 833,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        8,
+        11,
+        16
+      ],
+      "naive": 1408,
+      "bestKnown": {
+        "rank": 904,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 906,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        10,
+        13,
+        14
+      ],
+      "naive": 1820,
+      "bestKnown": {
+        "rank": 1154,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 1150,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        9,
+        14,
+        16
+      ],
+      "naive": 2016,
+      "bestKnown": {
+        "rank": 1254,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 1260,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        9,
+        15,
+        15
+      ],
+      "naive": 2025,
+      "bestKnown": {
+        "rank": 1236,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 1269,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        8,
+        16,
+        16
+      ],
+      "naive": 2048,
+      "bestKnown": {
+        "rank": 1230,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 1256,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        11,
+        13,
+        15
+      ],
+      "naive": 2145,
+      "bestKnown": {
+        "rank": 1371,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 1362,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        11,
+        14,
+        14
+      ],
+      "naive": 2156,
+      "bestKnown": {
+        "rank": 1376,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 1367,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        12,
+        12,
+        15
+      ],
+      "naive": 2160,
+      "bestKnown": {
+        "rank": 1280,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 1326,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        10,
+        14,
+        16
+      ],
+      "naive": 2240,
+      "bestKnown": {
+        "rank": 1398,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 1416,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        12,
+        13,
+        15
+      ],
+      "naive": 2340,
+      "bestKnown": {
+        "rank": 1442,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 1464,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        11,
+        15,
+        15
+      ],
+      "naive": 2475,
+      "bestKnown": {
+        "rank": 1540,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 1547,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        13,
+        13,
+        15
+      ],
+      "naive": 2535,
+      "bestKnown": {
+        "rank": 1605,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 1591,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        11,
+        15,
+        16
+      ],
+      "naive": 2640,
+      "bestKnown": {
+        "rank": 1605,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 1641,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        13,
+        13,
+        16
+      ],
+      "naive": 2704,
+      "bestKnown": {
+        "rank": 1704,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 1709,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        11,
+        16,
+        16
+      ],
+      "naive": 2816,
+      "bestKnown": {
+        "rank": 1724,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 1749,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    {
+      "n": [
+        13,
+        14,
+        16
+      ],
+      "naive": 2912,
+      "bestKnown": {
+        "rank": 1800,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "team": {
+        "rank": 1805,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    }
+  ]
+}

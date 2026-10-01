@@ -1,0 +1,32 @@
+{
+  "problems": {
+    "7x7x9r314": {
+      "problem": "7NAPrQ2zssoL4vcgrVJ9kHG4dqrrs5iBvmMzds2MwbZj",
+      "pool": "35Hwh87QHrFE8DCGqbeLWZbmUwFptp1QGcHcAEwG2esR",
+      "baseMint": "2J1TTJhnLEWLdLHfLYgBjzJ6f5pnLttvsNtSUBucKvpx",
+      "statement": [
+        7,
+        7,
+        9,
+        314
+      ],
+      "name": "DEMO 7x7x9 rank<=314",
+      "symbol": "D779"
+    },
+    "7x7x9r314-D779B": {
+      "problem": "Ftb374Yr6VUhLUaNJrjyhmVpMz4n4qCDT2D7GQPKWEUc",
+      "pool": "7zSv5YQqsdvxAtKpkBiA6WcbivNp4bjKoArLzqc1RpBL",
+      "baseMint": "BYc724Dx9n5duSZpZPYHLMXen5D5FVbSZB6dvNHi7np9",
+      "statement": [
+        7,
+        7,
+        9,
+        314
+      ],
+      "name": "DEMO #2 7x7x9 rank<=314",
+      "symbol": "D779B"
+    }
+  },
+  "config": "Z4PT2dz65c2AW7jVYCoArmRvDSuLqZhQ7AnqFA2y1wT",
+  "launchpad": "5ZMaqTZ1TgytdTG1EFCuGZg9hSKALfFMuJSg2WT2CJa4"
+}

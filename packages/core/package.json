@@ -1,0 +1,13 @@
+{
+  "name": "@meteortoll/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Browser-safe pieces shared by the app and the CLI: addresses, IDL, scheme encoding, commitments",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": {
+    "@noble/hashes": "^1.8.0",
+    "@solana/web3.js": "1.99.0",
+    "buffer": "^6.0.3"
+  }
+}

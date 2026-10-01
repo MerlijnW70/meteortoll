@@ -1,0 +1,12 @@
+[package]
+name = "verifier-wasm"
+version = "0.1.0"
+edition = "2024"
+description = "The verifier core as a WebAssembly module with a small C ABI, for the browser"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+meteortoll = { path = "../.." }

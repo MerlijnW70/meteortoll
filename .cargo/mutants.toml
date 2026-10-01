@@ -1,0 +1,7 @@
+# cargo-mutants settings for the toll program (scripts/mutants.sh).
+exclude_re = [
+    # Equivalent: with `spare >= 0` the claim also moves 0 lamports when nothing is spare, which
+    # changes no balance. The `==` and `<` mutants of the same line are caught by
+    # forfeited_bonds_are_paid_to_the_solver_on_claim.
+    "claim.rs:69:14: replace > with >= in handle_claim",
+]

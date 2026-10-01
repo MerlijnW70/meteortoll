@@ -1,0 +1,8 @@
+{
+  "name": "meteortoll",
+  "private": true,
+  "workspaces": ["packages/core", "client", "app"],
+  "overrides": {
+    "@solana/web3.js": "1.99.0"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "devnet": {
+    "7NAPrQ2zssoL4vcgrVJ9kHG4dqrrs5iBvmMzds2MwbZj": {
+      "mint": "2J1TTJhnLEWLdLHfLYgBjzJ6f5pnLttvsNtSUBucKvpx",
+      "name": "DEMO 7x7x9 rank<=314",
+      "symbol": "D779",
+      "kind": "demo",
+      "demoNote": "Funded and solved by the team: fmm already holds a rank-314 scheme. It shows the mechanism; it is not a public bounty.",
+      "coefficients": "integers, |c| <= 128",
+      "naive": 441,
+      "bestKnown": {
+        "rank": 315,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "ourRecord": {
+        "rank": 314,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    "Ftb374Yr6VUhLUaNJrjyhmVpMz4n4qCDT2D7GQPKWEUc": {
+      "mint": "BYc724Dx9n5duSZpZPYHLMXen5D5FVbSZB6dvNHi7np9",
+      "name": "DEMO #2 7x7x9 rank<=314",
+      "symbol": "D779B",
+      "kind": "demo",
+      "demoNote": "Second disclosed demo, for testing the in-browser solve flow. Funded and solved by the team with fmm's rank-314 scheme; not a public bounty.",
+      "coefficients": "integers, |c| <= 128",
+      "naive": 441,
+      "bestKnown": {
+        "rank": 315,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "ourRecord": {
+        "rank": 314,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    }
+  },
+  "mainnet": {}
+}
