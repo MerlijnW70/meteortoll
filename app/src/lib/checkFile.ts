@@ -2,6 +2,7 @@
 // would refuse anyway before spending any time parsing them.
 
 import { encodeScheme, type FmmScheme, schemeHeader } from '@meteortoll/core'
+import { count } from './format'
 import { type Progress, sharedVerifier } from './verifier'
 
 /// fmm JSON is far larger than its encoding; this bounds parsing work in the browser.
@@ -53,7 +54,7 @@ export async function checkFile(file: File): Promise<Checked> {
     const json = file.name.toLowerCase().endsWith('.json')
     const scheme = json ? encodeScheme(JSON.parse(await file.text()) as FmmScheme) : new Uint8Array(await file.arrayBuffer())
     if (scheme.length < 7) throw new Error('the file is too short to hold a scheme header')
-    if (scheme.length > MAX_SCHEME_BYTES) throw new Error(`the encoded scheme is ${scheme.length.toLocaleString()} bytes; the program accepts at most ${MAX_SCHEME_BYTES.toLocaleString()}`)
+    if (scheme.length > MAX_SCHEME_BYTES) throw new Error(`the encoded scheme is ${count(scheme.length)} bytes; the program accepts at most ${count(MAX_SCHEME_BYTES)}`)
     const header = schemeHeader(Buffer.from(scheme))
     const verifier = await sharedVerifier()
     const started = performance.now()

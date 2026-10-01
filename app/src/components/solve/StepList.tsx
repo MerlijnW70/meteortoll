@@ -11,18 +11,20 @@ const badge = {
 export function StepList({
     current,
     failed,
+    claimed,
     links,
     graceMinutes,
 }: {
     current: Step
     failed: boolean
+    claimed: boolean
     links: Partial<Record<Step, string>>
     graceMinutes: number
 }) {
     return (
         <ol className="space-y-2" aria-label="Submission steps">
             {STEPS.map(([step, title, body], index) => {
-                const state = stepState(step, current, failed, !!links.claim)
+                const state = stepState(step, current, failed, claimed)
                 return (
                     <li key={step} className="flex gap-3" aria-current={state === 'current' ? 'step' : undefined}>
                         <span aria-hidden className={`num mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] ${badge[state]}`}>

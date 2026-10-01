@@ -15,9 +15,10 @@ export const STEPS: [Step, string, string][] = [
 
 export const ORDER = STEPS.map(([step]) => step)
 
-/// Which step an attempt is on, from its on-chain status.
+/// Which step an attempt is on, from its on-chain status. A winner without an attempt has claimed
+/// and closed it: claiming closes the attempt account, so its status is gone but the solve is not.
 export function currentStep(status: AttemptStatus | null, won: boolean, final: boolean): Step {
-    if (!status) return 'commit'
+    if (!status) return won ? 'claim' : 'commit'
     if (status === 'committed') return 'upload'
     if (status === 'revealed') return 'verify'
     if (status === 'holds' && won && !final) return 'grace'
@@ -25,6 +26,9 @@ export function currentStep(status: AttemptStatus | null, won: boolean, final: b
 }
 
 export type StepState = 'done' | 'current' | 'failed' | 'todo'
+
+/// Claimed when this session sent the claim, or when the winner's attempt is already closed.
+export const isClaimed = (status: AttemptStatus | null, won: boolean, claimSent: boolean) => claimSent || (won && !status)
 
 export function stepState(step: Step, current: Step, failed: boolean, claimed: boolean): StepState {
     const index = ORDER.indexOf(step)

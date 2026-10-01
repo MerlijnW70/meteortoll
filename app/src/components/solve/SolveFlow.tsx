@@ -4,7 +4,8 @@ import { statusName } from '@meteortoll/core'
 import type { ProblemView } from '@/lib/chain'
 import { Panel, shape, sol } from '../ui'
 import { StepList } from './StepList'
-import { BOND_SOL, currentStep } from './steps'
+import { BOND_SOL, currentStep, isClaimed } from './steps'
+import { count } from '@/lib/format'
 import { useSolveActions } from './useSolveActions'
 
 export function SolveFlow({ problem, scheme }: { problem: ProblemView; scheme: Uint8Array }) {
@@ -37,10 +38,10 @@ export function SolveFlow({ problem, scheme }: { problem: ProblemView; scheme: U
                     Submit to <span className="font-mono">⟨{shape(problem).label} : ≤{problem.account.targetRank}⟩</span>
                 </h3>
                 <p className="text-xs text-muted">
-                    {work.toLocaleString()} units of on-chain work · about {Math.ceil(work / 10_000)} verification transaction{work > 10_000 ? 's' : ''}
+                    {count(work)} units of on-chain work · about {Math.ceil(work / 10_000)} verification transaction{work > 10_000 ? 's' : ''}
                 </p>
             </div>
-            <StepList current={current} failed={failed} links={links} graceMinutes={Math.ceil((graceLeft * 0.4) / 60)} />
+            <StepList current={current} failed={failed} claimed={isClaimed(status, won, !!links.claim)} links={links} graceMinutes={Math.ceil((graceLeft * 0.4) / 60)} />
             {!attempt && problem.phase !== 'open' && publicKey && (
                 <p className="rounded-lg bg-panel-2 p-3 text-sm text-muted">
                     {won ? 'You solved this problem. Claim new fees from the problem page as they arrive.' : 'This problem already has a verified scheme; new commitments are closed.'}

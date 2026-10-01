@@ -19,3 +19,20 @@ funded and solved it ourselves to show the mechanism, not to claim a public boun
 | **Verify: the rank-314 scheme holds, in one transaction** | [4DpPqRrW…](https://explorer.solana.com/tx/4DpPqRrWvXz3ykTehAHSgumdkhu2cXENFvEVMKZjwkfinRuiWKbyN6wazBJu33G75yEPKayRFUGCmiDEygFcQHst?cluster=devnet) |
 | Claim the bounty after the grace window | [3QhyevRy…](https://explorer.solana.com/tx/3QhyevryfHCvNb5WcvgXRc79vbEPHMsk1ihteamkYex5CSsAXw61EcrLvWcvBfGqsdbTT7eNt2YeDQ9naxPhH7vv?cluster=devnet) |
 | Close the attempt: bond and buffer rent returned | [5Nffj1pL…](https://explorer.solana.com/tx/5Nffj1pLD18rs7pF8BGZqVY88kXdBwEGB6CsYW2Uq5RhSuzL9ye8BgFVCy7ZtGWZVjAbFgdJQP2r1k37epf4WMeS?cluster=devnet) |
+
+## Through the web app (2026-10-02)
+
+The same lifecycle again, this time entirely through the site's pages with a browser test wallet:
+launch from the Launch page, buy on the problem page, then commit, upload, reveal, verify and claim
+from the Solve page. All 32 transactions landed; every single-transaction step carried a compute
+limit sized from its simulation.
+
+| What | Address |
+|---|---|
+| Problem ⟨7×7×9 : ≤314⟩, token E2E779 (every transaction is listed on its page) | [`F3PEAEXP…`](https://explorer.solana.com/address/F3PEAEXPHqH8qvzenhM53QM5GZKrMsSjKN1bkTBZQLWS?cluster=devnet) |
+| DBC pool | [`BY4RLfDA…`](https://explorer.solana.com/address/BY4RLfDAQes6YP3zq3LzT3hnCMV6r7Se45wsW4dgdUh5?cluster=devnet) |
+| Solver (test wallet) | [`4QvhwY5n…`](https://explorer.solana.com/address/4QvhwY5nrjqJLMXYmKgAToHVqgFigiu1ZfJ9bqbWEajj?cluster=devnet) |
+
+The run found four app bugs, fixed in the same change: a closed attempt reset the solve steps,
+numbers followed the browser's locale, the wallet balance beside the amount read like a prefilled
+amount, and the solve page called a problem solved while its own claim was still pending.

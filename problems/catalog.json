@@ -42,6 +42,28 @@
         "coefficients": "{-1, 0, 1}",
         "tool": "fmm"
       }
+    },
+    "F3PEAEXPHqH8qvzenhM53QM5GZKrMsSjKN1bkTBZQLWS": {
+      "mint": "EQy9HCL6mKja9u34xpN7JWrdV2JuUEV5KWMdgxMigtgJ",
+      "name": "E2E 7x7x9 rank<=314",
+      "symbol": "E2E779",
+      "kind": "demo",
+      "demoNote": "End-to-end test of the web app on devnet: launched, traded, solved and claimed through the site with a test wallet. Not a public bounty.",
+      "hidden": true,
+      "coefficients": "integers, |c| <= 128",
+      "naive": 441,
+      "bestKnown": {
+        "rank": 315,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "ourRecord": {
+        "rank": 314,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
     }
   },
   "mainnet": {}

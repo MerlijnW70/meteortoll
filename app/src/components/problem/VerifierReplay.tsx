@@ -10,6 +10,7 @@ import { brokenScheme } from '@/lib/checkFile'
 import { explorer } from '@/lib/config'
 import { recoverScheme } from '@/lib/history'
 import { type Progress, sharedVerifier } from '@/lib/verifier'
+import { count } from '@/lib/format'
 import { Panel, short, Skeleton } from '../ui'
 
 const FRAMES = 90
@@ -86,7 +87,7 @@ export function VerifierReplay({ problem }: { problem: ProblemView }) {
                         <div className="grid grid-cols-[8rem_1fr] gap-2">
                             <dt className="text-muted">Scheme</dt>
                             <dd className="num">
-                                {recovered.data.scheme.length.toLocaleString()} bytes, rebuilt from the solver&apos;s upload transactions to{' '}
+                                {count(recovered.data.scheme.length)} bytes, rebuilt from the solver&apos;s upload transactions to{' '}
                                 <a className="font-mono hover:underline" href={explorer('address', recovered.data.submission)} target="_blank" rel="noreferrer">
                                     {short(recovered.data.submission)}
                                 </a>

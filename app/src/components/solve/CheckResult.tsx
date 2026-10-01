@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { ProblemView } from '@/lib/chain'
 import type { Checked } from '@/lib/checkFile'
+import { count } from '@/lib/format'
 import { Panel, shape } from '../ui'
 
 const verdictStyle = { holds: 'bg-good/15 text-good', fails: 'bg-bad/15 text-bad', malformed: 'bg-bad/15 text-bad', running: 'bg-panel-2 text-muted' }
@@ -26,7 +27,7 @@ export function CheckResult({
                         ⟨{header.n1}×{header.n2}×{header.n3} : {header.rank}⟩
                     </div>
                     <div className="break-all text-xs text-muted">
-                        {checked.file} · {checked.bytes.toLocaleString()} bytes encoded
+                        {checked.file} · {count(checked.bytes)} bytes encoded
                     </div>
                 </div>
                 <span className={`shrink-0 rounded-full px-3 py-1 text-sm font-medium ${verdictStyle[result.verdict]}`}>{verdictLabel[result.verdict]}</span>

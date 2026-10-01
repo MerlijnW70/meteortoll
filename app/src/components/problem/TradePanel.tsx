@@ -127,7 +127,7 @@ export function TradePanel({ problem }: { problem: ProblemView }) {
                     <span>{side === 'buy' ? 'You pay (SOL)' : `You sell (${problem.info.symbol || 'tokens'})`}</span>
                     {balances.data && (
                         <span className="num">
-                            {side === 'buy' ? `${sol(balances.data.lamports)} SOL` : `${tokens(balances.data.tokens)} held`}
+                            {side === 'buy' ? `Balance ${sol(balances.data.lamports)} SOL` : `${tokens(balances.data.tokens)} held`}
                         </span>
                     )}
                 </span>

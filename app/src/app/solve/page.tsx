@@ -82,19 +82,20 @@ function Solve() {
                   return p.account.n1 === h.n1 && p.account.n2 === h.n2 && p.account.n3 === h.n3 && h.rank <= p.account.targetRank && p.phase !== 'solved'
               })
             : []
-    // A scheme that answers no open problem may still match a solved one, such as the demo's sample.
-    const solvedMatch =
-        checked && answers.length === 0
-            ? problems?.find((p) => {
-                  const h = checked.header
-                  return p.account.n1 === h.n1 && p.account.n2 === h.n2 && p.account.n3 === h.n3 && h.rank <= p.account.targetRank && p.phase === 'solved' && !p.info.hidden
-              })
-            : undefined
     // Look the chosen problem up in the full list, so it stays on screen once it becomes solved.
     // A file that answers the problem being continued goes straight to its submit flow.
     const chosen = target ?? (resume && answers.some((p) => p.address === resume) ? resume : null)
     const selected = chosen ? problems?.find((p) => p.address === chosen) : undefined
     const resuming = resume ? problems?.find((p) => p.address === resume) : undefined
+    // A scheme that answers no open problem may still match a solved one, such as the demo's sample.
+    // Not while a submit flow is open: its own steps say how the solve went.
+    const solvedMatch =
+        checked && answers.length === 0 && !chosen
+            ? problems?.find((p) => {
+                  const h = checked.header
+                  return p.account.n1 === h.n1 && p.account.n2 === h.n2 && p.account.n3 === h.n3 && h.rank <= p.account.targetRank && p.phase === 'solved' && !p.info.hidden
+              })
+            : undefined
 
     return (
         <div className="mx-auto max-w-3xl space-y-6">
@@ -111,7 +112,7 @@ function Solve() {
                     {balance.data !== undefined && <> · {sol(balance.data)} SOL</>}. Bounties are paid to this address.
                 </p>
             )}
-            {resuming && !selected && (
+            {resuming && !selected && resuming.phase !== 'solved' && (
                 <Panel className="border-accent/40 p-4 text-sm">
                     Continuing your attempt on <span className="font-mono">⟨{shape(resuming).label} : ≤{resuming.account.targetRank}⟩</span>. Drop the same scheme
                     file you committed; a different file will not match the commitment.
