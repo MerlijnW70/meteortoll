@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { ProblemView } from '@/lib/chain'
+import { percentDown } from '@/lib/format'
 import { QuickBuy } from './QuickBuy'
 import { Meter, Panel, shape, sol, StatusBadge } from './ui'
 
@@ -39,7 +40,7 @@ export function ProblemCard({ problem }: { problem: ProblemView }) {
             <Meter
                 label="Curve to graduation"
                 value={problem.graduated ? 1 : problem.curveProgress}
-                detail={problem.graduated ? 'graduated' : `${(problem.curveProgress * 100).toFixed(1)}%`}
+                detail={problem.graduated ? 'graduated' : percentDown(problem.curveProgress, 1)}
             />
             <div className="relative z-10 mt-3 flex justify-end">
                 <QuickBuy problem={problem} />

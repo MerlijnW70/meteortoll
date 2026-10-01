@@ -36,3 +36,19 @@ limit sized from its simulation.
 The run found four app bugs, fixed in the same change: a closed attempt reset the solve steps,
 numbers followed the browser's locale, the wallet balance beside the amount read like a prefilled
 amount, and the solve page called a problem solved while its own claim was still pending.
+
+## Graduation and every fee source (2026-10-02)
+
+The same problem, carried through graduation, to show that fees reach the bounty from all three
+sources through the site's sweep button (which anyone can press):
+
+| Step | Transaction |
+|---|---|
+| Last buy completes the curve: a partial fill takes only the 8,380 lamports the curve has left | via the site's trade panel |
+| DBC migration to DAMM v2 (permissionless; normally Meteora's keeper) | [3HVcDQZo…](https://explorer.solana.com/tx/3HVcDQZoxDU7DreNhyxw1Q55N3NBNCu3zxL17MpC4yR26LJcVq3i4gcQhmC6GFW6qzquPPb6ebh73821kd5TZvcD?cluster=devnet) |
+| Sweep: curve trading fees 0.0021 SOL, surplus share, and the problem's locked DAMM v2 position | listed in the problem's History |
+| A trade on the graduated DAMM v2 pool | [28B3v29D…](https://explorer.solana.com/tx/28B3v29D647ma6GrvwKRJKeduKzybVam211cVTY2ES8jDzDWsHKCNRgZ392dXkbHMUQeYG1xJjPkiQWYStBZM4uo?cluster=devnet) |
+| Sweep: that trade's position fee, 0.0002 SOL, into the vault | listed in the problem's History |
+
+The problem's position is found from its own token accounts: DAMM v2 keeps each position NFT at an
+address derived from the NFT mint, and the problem owns exactly one.

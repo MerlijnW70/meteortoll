@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { utils } from '@coral-xyz/anchor'
-import { type HistoryEvent, type InnerInstructions, paidOut, transferredOut } from './history'
+import { type HistoryEvent, type InnerInstructions, paidOut, transferredIn, transferredOut } from './history'
 
 // The devnet transaction that claimed ⟨7×7×9 : ≤314⟩ (3GJZco1D…): a sweep that fills the bounty
 // vault (instruction 0), then the claim that empties it (instruction 3). Account keys and inner
@@ -47,6 +47,11 @@ test('the devnet claim paid out 0.0004 SOL from the bounty vault', () => {
 
 test('the sweep in the same transaction fills the vault and pays nothing out of it', () => {
     assert.equal(transferredOut(keys, inner, 0, VAULT), 0n)
+})
+
+test('the sweep in the same transaction moved 0.0004 SOL into the bounty vault', () => {
+    assert.equal(transferredIn(keys, inner, 0, VAULT), 400_000n)
+    assert.equal(transferredIn(keys, inner, 3, VAULT), 0n)
 })
 
 test('transfers out of other accounts, or by other programs, do not count', () => {

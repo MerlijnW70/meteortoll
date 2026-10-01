@@ -9,9 +9,9 @@ import { AttemptRow } from '@/components/me/AttemptRow'
 import { ClaimPanel } from '@/components/problem/ClaimPanel'
 import { Panel, shape, Skeleton, sol } from '@/components/ui'
 import { useProblems } from '@/hooks/useProblems'
+import { tokens } from '@/lib/format'
 import { fetchPortfolio } from '@/lib/portfolio'
 
-const tokens = (atoms: bigint) => (Number(atoms) / 1e6).toLocaleString('en-US', { maximumFractionDigits: 2 })
 const solNumber = (value: number) => value.toLocaleString('en-US', { maximumFractionDigits: 4 })
 
 function Stat({ label, value }: { label: string; value: string }) {

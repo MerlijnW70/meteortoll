@@ -13,18 +13,14 @@ import type { ProblemView } from '@/lib/chain'
 import { CLUSTER } from '@/lib/config'
 import { useBalances, useMarket } from '@/hooks/useMarket'
 import { executeSwap, quoteSwap, SLIPPAGE_BPS } from '@/lib/trade'
+import { BASE_DECIMALS, tokens } from '@/lib/format'
 import { sol } from '../ui'
 
 const BUY_PRESETS = [0.05, 0.1, 0.5, 1]
 const SELL_PRESETS = [25, 50, 100]
-const BASE_DECIMALS = 6
 /// Kept back on buys for transaction fees and a new token account's rent.
 const FEE_RESERVE_LAMPORTS = 3_000_000n
 
-function tokens(amount: bigint): string {
-    const whole = Number(amount) / 10 ** BASE_DECIMALS
-    return whole.toLocaleString('en-US', { maximumFractionDigits: whole < 1 ? 6 : 0 })
-}
 
 export function TradePanel({ problem }: { problem: ProblemView }) {
     const { connection } = useConnection()
@@ -160,6 +156,12 @@ export function TradePanel({ problem }: { problem: ProblemView }) {
                     <dd>{SLIPPAGE_BPS / 100}%</dd>
                 </div>
             </dl>
+            {quote.data && side === 'buy' && !quote.data.unspent.isZero() && (
+                <p className="rounded-lg bg-accent-2/10 p-2.5 text-xs text-accent-2">
+                    This buy completes the curve: it takes {sol(BigInt(quote.data.spent.toString()), 6)} SOL and the other{' '}
+                    {sol(BigInt(quote.data.unspent.toString()), 6)} SOL stays in your wallet. The problem then graduates to Meteora DAMM v2.
+                </p>
+            )}
             {quote.error && <p className="text-xs text-bad">{describeError(quote.error).title}</p>}
             <button
                 onClick={execute}

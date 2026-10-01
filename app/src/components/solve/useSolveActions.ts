@@ -15,7 +15,7 @@ import { notifyError } from '@/lib/notify'
 import { sendWithWallet, simulateOrThrow } from '@/lib/tx'
 import type { ProblemView } from '@/lib/chain'
 import {
-    claimAndCloseTx,
+    claimTxs,
     closeTx,
     commitAndOpen,
     fetchAttempt,
@@ -143,7 +143,10 @@ export function useSolveActions(problem: ProblemView, scheme: Uint8Array) {
             else if (status === 'revealed') await finishVerify(publicKey, program, state, signAllTransactions)
             else if (status === 'holds' && won && final) {
                 setNote('Approve the claim.')
-                link('claim', await sendOne(await claimAndCloseTx(connection, program, problemKey, problem.account, publicKey, state.submission)))
+                const txs = await claimTxs(connection, program, problemKey, problem.account, publicKey, state.submission)
+                let signature = ''
+                for (const tx of txs) signature = await sendOne(tx)
+                link('claim', signature)
                 toast.success('Bounty claimed')
             }
         } catch (error) {

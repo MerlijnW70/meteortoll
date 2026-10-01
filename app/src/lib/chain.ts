@@ -77,11 +77,15 @@ function describe(address: string, account: ProblemAccount, token: TokenName | u
 const dbcCoder = new BorshAccountsCoder(DynamicBondingCurveIdl as Idl)
 
 /// DBC's pool state as this Anchor version's coder decodes it (IDL field names, snake_case).
-interface PoolState {
+export interface PoolState {
     config: PublicKey
+    base_vault: PublicKey
+    quote_vault: PublicKey
     quote_reserve: { toString(): string }
+    creator_base_fee: { toString(): string }
     creator_quote_fee: { toString(): string }
     is_migrated: number
+    is_creator_withdraw_surplus: number
     sqrt_price: { toString(): string }
 }
 
@@ -93,7 +97,7 @@ async function fetchMany(connection: Connection, keys: PublicKey[]): Promise<(Ac
     return results.flat()
 }
 
-function decodePool(info: AccountInfo<Buffer> | null): PoolState | null {
+export function decodePoolState(info: AccountInfo<Buffer> | null): PoolState | null {
     if (!info || !info.owner.equals(DBC)) return null
     try {
         return (dbcCoder.decode('VirtualPool', info.data) as { pool_state: PoolState }).pool_state
@@ -102,10 +106,11 @@ function decodePool(info: AccountInfo<Buffer> | null): PoolState | null {
     }
 }
 
-function decodeThreshold(info: AccountInfo<Buffer> | null): bigint | null {
+export function decodePoolConfig(info: AccountInfo<Buffer> | null): { migrationQuoteThreshold: bigint } | null {
     if (!info || !info.owner.equals(DBC)) return null
     try {
-        return BigInt((dbcCoder.decode('PoolConfig', info.data) as { migration_quote_threshold: { toString(): string } }).migration_quote_threshold.toString())
+        const config = dbcCoder.decode('PoolConfig', info.data) as { migration_quote_threshold: { toString(): string } }
+        return { migrationQuoteThreshold: BigInt(config.migration_quote_threshold.toString()) }
     } catch {
         return null
     }
@@ -126,10 +131,10 @@ async function views(connection: Connection, rows: { publicKey: PublicKey; accou
         ...rows.map((r) => r.account.quoteVault),
         ...rows.map((r) => metadataAddress(r.account.baseMint)),
     ])
-    const pools = infos.slice(0, n).map(decodePool)
+    const pools = infos.slice(0, n).map(decodePoolState)
     const configKeys = [...new Map(pools.filter((p) => p !== null).map((p) => [p.config.toBase58(), p.config])).values()]
     const configInfos = configKeys.length ? await fetchMany(connection, configKeys) : []
-    const thresholds = new Map(configKeys.map((key, i) => [key.toBase58(), decodeThreshold(configInfos[i])]))
+    const thresholds = new Map(configKeys.map((key, i) => [key.toBase58(), decodePoolConfig(configInfos[i])?.migrationQuoteThreshold ?? null]))
 
     return rows.map(({ publicKey, account }, i) => {
         const pool = pools[i]

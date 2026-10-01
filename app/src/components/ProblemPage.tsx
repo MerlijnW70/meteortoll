@@ -11,6 +11,7 @@ import { PriceChart } from './problem/PriceChart'
 import { ProblemHeader } from './problem/ProblemHeader'
 import { Rules } from './problem/Rules'
 import { Staircase } from './problem/Staircase'
+import { SweepBar } from './problem/SweepBar'
 import { TradeFeed } from './problem/TradeFeed'
 import { VerifierReplay } from './problem/VerifierReplay'
 import { Panel, Skeleton } from './ui'
@@ -36,6 +37,7 @@ export function ProblemPage({ address }: { address: string }) {
     return (
         <div className="space-y-6">
             <ProblemHeader problem={problem} />
+            <SweepBar problem={problem} />
             <div className="grid gap-4 md:grid-cols-2">
                 <Staircase problem={problem} />
                 <MarketPanel problem={problem} />

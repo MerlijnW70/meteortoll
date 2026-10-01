@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { PublicKey } from '@solana/web3.js'
 import type { ProblemView } from '@/lib/chain'
 import { notifyError, notifySuccess } from '@/lib/notify'
-import { claimAndCloseTx, claimTx, fetchAttempt, tollWriter } from '@/lib/solve'
+import { claimTxs, fetchAttempt, tollWriter } from '@/lib/solve'
 import { sendWithWallet } from '@/lib/tx'
 import { sol } from '../ui'
 
@@ -31,10 +31,10 @@ export function ClaimPanel({ problem }: { problem: ProblemView }) {
         setBusy(true)
         try {
             const program = tollWriter(connection, wallet)
-            const tx = attempt.data
-                ? await claimAndCloseTx(connection, program, problemKey, problem.account, publicKey!, attempt.data.submission)
-                : await claimTx(connection, program, problemKey, problem.account, publicKey!)
-            const signature = await sendWithWallet(connection, tx, publicKey!, sendTransaction)
+            const txs = await claimTxs(connection, program, problemKey, problem.account, publicKey!, attempt.data?.submission ?? null)
+            let signature = ''
+            // In order: the sweeps fill the vaults the claim then empties.
+            for (const tx of txs) signature = await sendWithWallet(connection, tx, publicKey!, sendTransaction)
             notifySuccess('Claimed', signature)
             await Promise.all(['problem', 'problems', 'attempt', 'portfolio', 'history'].map((key) => queries.invalidateQueries({ queryKey: [key] })))
         } catch (error) {

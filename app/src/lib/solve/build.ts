@@ -12,9 +12,9 @@ import {
     SYSVAR_SLOT_HASHES_PUBKEY,
     Transaction,
 } from '@solana/web3.js'
-import { DynamicBondingCurveClient } from '@meteora-ag/dynamic-bonding-curve-sdk'
-import { attemptAddress, commitment, DBC, dbcEventAuthority, dbcPoolAuthority, type ProblemAccount, SUBMISSION_HEADER, TOLL } from '@meteortoll/core'
+import { attemptAddress, commitment, type ProblemAccount, SUBMISSION_HEADER, TOLL } from '@meteortoll/core'
 import { withRetry } from '../rpc'
+import { pack, productive, sweepInstructions, sweepPlan } from '../sweeps'
 import { methods } from './program'
 
 export const CHUNK = 900
@@ -92,43 +92,45 @@ export async function revealAndVerifyTxs(
     return txs
 }
 
-export async function claimTx(connection: Connection, program: Program, problemAddress: PublicKey, problem: ProblemAccount, solver: PublicKey) {
-    const solverBase = getAssociatedTokenAddressSync(problem.baseMint, solver)
-    const solverQuote = getAssociatedTokenAddressSync(problem.quoteMint, solver)
-    const sweep = await sweepInstruction(connection, program, problemAddress, problem)
-    const tx = new Transaction()
-    if (sweep) tx.add(sweep)
-    tx.add(
-        createAssociatedTokenAccountIdempotentInstruction(solver, solverBase, solver, problem.baseMint),
-        createAssociatedTokenAccountIdempotentInstruction(solver, solverQuote, solver, problem.quoteMint),
-        await claimInstruction(program, problemAddress, problem, solver, solverBase, solverQuote)
-    )
-    if (problem.quoteMint.equals(NATIVE_MINT)) tx.add(createCloseAccountInstruction(solverQuote, solver, solver))
-    return tx
+/// The sweeps that move every owed fee into the vaults, one instruction group each, so a claim
+/// takes everything: curve trading fees, the surplus share and the graduated position's fees.
+async function sweepGroups(connection: Connection, program: Program, problemAddress: PublicKey, problem: ProblemAccount, payer: PublicKey) {
+    const plan = await sweepPlan(connection, problemAddress, problem)
+    const ixs = await sweepInstructions(program, problemAddress, problem, plan)
+    return (await productive(connection, ixs, payer, { quote: problem.quoteVault, base: problem.baseVault })).map((ix) => [ix])
 }
 
-/// Moves unswept DBC creator fees into the vaults first, so a claim takes everything owed.
-async function sweepInstruction(connection: Connection, program: Program, problemAddress: PublicKey, problem: ProblemAccount) {
-    const pool = await withRetry(() => new DynamicBondingCurveClient(connection, 'confirmed').state.getPool(problem.pool))
-    if (!pool || pool.poolState.isMigrated !== 0) return null
-    return methods(program)
-        .sweepTradingFees()
-        .accountsPartial({
-            problem: problemAddress,
-            pool: problem.pool,
-            poolAuthority: dbcPoolAuthority,
-            baseVault: problem.baseVault,
-            quoteVault: problem.quoteVault,
-            poolBaseVault: pool.poolState.baseVault,
-            poolQuoteVault: pool.poolState.quoteVault,
-            baseMint: problem.baseMint,
-            quoteMint: problem.quoteMint,
-            baseTokenProgram: TOKEN_PROGRAM_ID,
-            quoteTokenProgram: TOKEN_PROGRAM_ID,
-            eventAuthority: dbcEventAuthority,
-            dbcProgram: DBC,
-        })
-        .instruction()
+/// The solver's claim: token accounts to receive into, the claim itself, the attempt's close the
+/// first time, and unwrapping SOL. One group, so it lands whole.
+export async function claimGroup(program: Program, problemAddress: PublicKey, problem: ProblemAccount, solver: PublicKey, submission: PublicKey | null) {
+    const solverBase = getAssociatedTokenAddressSync(problem.baseMint, solver)
+    const solverQuote = getAssociatedTokenAddressSync(problem.quoteMint, solver)
+    const group = [
+        createAssociatedTokenAccountIdempotentInstruction(solver, solverBase, solver, problem.baseMint),
+        createAssociatedTokenAccountIdempotentInstruction(solver, solverQuote, solver, problem.quoteMint),
+        await claimInstruction(program, problemAddress, problem, solver, solverBase, solverQuote),
+    ]
+    if (submission) {
+        group.push(
+            await methods(program)
+                .closeAttempt()
+                .accountsPartial({ solver, problem: problemAddress, attempt: attemptAddress(problemAddress, solver), submission })
+                .instruction()
+        )
+    }
+    if (problem.quoteMint.equals(NATIVE_MINT)) group.push(createCloseAccountInstruction(solverQuote, solver, solver))
+    return group
+}
+
+/// Sweeps then the claim, packed into as few transactions as fit; send them in order.
+export async function claimTxs(connection: Connection, program: Program, problemAddress: PublicKey, problem: ProblemAccount, solver: PublicKey, submission: PublicKey | null) {
+    const groups = [...(await sweepGroups(connection, program, problemAddress, problem, solver)), await claimGroup(program, problemAddress, problem, solver, submission)]
+    return pack(groups, solver)
+}
+
+/// Sweeps alone: anyone may move a problem's fees into its bounty.
+export async function sweepTxs(connection: Connection, program: Program, problemAddress: PublicKey, problem: ProblemAccount, payer: PublicKey) {
+    return pack(await sweepGroups(connection, program, problemAddress, problem, payer), payer)
 }
 
 function claimInstruction(program: Program, problemAddress: PublicKey, problem: ProblemAccount, solver: PublicKey, solverBase: PublicKey, solverQuote: PublicKey) {
@@ -147,25 +149,6 @@ function claimInstruction(program: Program, problemAddress: PublicKey, problem: 
             quoteTokenProgram: TOKEN_PROGRAM_ID,
         })
         .instruction()
-}
-
-export async function claimAndCloseTx(connection: Connection, program: Program, problemAddress: PublicKey, problem: ProblemAccount, solver: PublicKey, submission: PublicKey) {
-    const solverBase = getAssociatedTokenAddressSync(problem.baseMint, solver)
-    const solverQuote = getAssociatedTokenAddressSync(problem.quoteMint, solver)
-    const sweep = await sweepInstruction(connection, program, problemAddress, problem)
-    const tx = new Transaction()
-    if (sweep) tx.add(sweep)
-    tx.add(
-        createAssociatedTokenAccountIdempotentInstruction(solver, solverBase, solver, problem.baseMint),
-        createAssociatedTokenAccountIdempotentInstruction(solver, solverQuote, solver, problem.quoteMint),
-        await claimInstruction(program, problemAddress, problem, solver, solverBase, solverQuote),
-        await methods(program)
-            .closeAttempt()
-            .accountsPartial({ solver, problem: problemAddress, attempt: attemptAddress(problemAddress, solver), submission })
-            .instruction()
-    )
-    if (problem.quoteMint.equals(NATIVE_MINT)) tx.add(createCloseAccountInstruction(solverQuote, solver, solver))
-    return tx
 }
 
 export async function closeTx(program: Program, problem: PublicKey, solver: PublicKey, submission: PublicKey) {

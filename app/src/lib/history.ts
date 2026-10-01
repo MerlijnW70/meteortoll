@@ -28,7 +28,8 @@ export interface HistoryEvent {
     time: number | null
     actor: string
     detail?: string
-    /// For a claim: the lamports that left the bounty vault for the solver.
+    /// For a claim: the lamports that left the bounty vault for the solver. For a sweep: the
+    /// lamports that came into it.
     lamports?: bigint
 }
 
@@ -41,22 +42,34 @@ const TOKEN_PROGRAMS = new Set(['TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA', '
 const TRANSFER = 3
 const TRANSFER_CHECKED = 12
 
-/// What a top-level instruction moved out of a token account, read from the token transfers it made
-/// (its inner instructions). Balances before and after the whole transaction would not do: a claim
-/// usually shares its transaction with a sweep that fills the same vault first.
-export function transferredOut(keys: string[], inner: InnerInstructions[] | null | undefined, instruction: number, source: string): bigint {
-    let total = 0n
+/// The token transfers a top-level instruction made, from its inner instructions: Transfer
+/// (source, destination, authority) and TransferChecked (source, mint, destination, authority).
+export function tokenTransfers(keys: string[], inner: InnerInstructions[] | null | undefined, instruction: number) {
+    const transfers: { source: string; destination: string; amount: bigint }[] = []
     for (const group of inner ?? []) {
         if (group.index !== instruction) continue
         for (const ix of group.instructions) {
-            if (!TOKEN_PROGRAMS.has(keys[ix.programIdIndex]) || keys[ix.accounts[0]] !== source) continue
+            if (!TOKEN_PROGRAMS.has(keys[ix.programIdIndex])) continue
             const data = utils.bytes.bs58.decode(ix.data)
-            if ((data[0] === TRANSFER || data[0] === TRANSFER_CHECKED) && data.length >= 9) {
-                total += new DataView(data.buffer, data.byteOffset, data.byteLength).getBigUint64(1, true)
-            }
+            if (data.length < 9) continue
+            const amount = new DataView(data.buffer, data.byteOffset, data.byteLength).getBigUint64(1, true)
+            if (data[0] === TRANSFER) transfers.push({ source: keys[ix.accounts[0]], destination: keys[ix.accounts[1]], amount })
+            if (data[0] === TRANSFER_CHECKED) transfers.push({ source: keys[ix.accounts[0]], destination: keys[ix.accounts[2]], amount })
         }
     }
-    return total
+    return transfers
+}
+
+/// What a top-level instruction moved out of a token account. Balances before and after the
+/// whole transaction would not do: a claim usually shares its transaction with a sweep that fills
+/// the same vault first.
+export function transferredOut(keys: string[], inner: InnerInstructions[] | null | undefined, instruction: number, source: string): bigint {
+    return tokenTransfers(keys, inner, instruction).reduce((sum, t) => sum + (t.source === source ? t.amount : 0n), 0n)
+}
+
+/// What a top-level instruction moved into a token account (a sweep filling the bounty vault).
+export function transferredIn(keys: string[], inner: InnerInstructions[] | null | undefined, instruction: number, destination: string): bigint {
+    return tokenTransfers(keys, inner, instruction).reduce((sum, t) => sum + (t.destination === destination ? t.amount : 0n), 0n)
 }
 
 /// Lamports paid out to solvers across a history's claims.
@@ -115,6 +128,12 @@ function programEvents(tx: VersionedTransactionResponse) {
     return found
 }
 
+const SWEEP_SOURCES: Record<string, string> = {
+    sweepTradingFees: 'curve trading fees',
+    sweepSurplus: 'curve surplus',
+    sweepPositionFees: 'DAMM v2 position fees',
+}
+
 export async function fetchHistory(connection: Connection, problem: PublicKey): Promise<HistoryEvent[]> {
     const txs = await fetchTransactions(connection, problem)
     const events: HistoryEvent[] = []
@@ -140,6 +159,9 @@ export async function fetchHistory(connection: Connection, problem: PublicKey): 
             if (kind === 'claim') {
                 const lamports = transferredOut(keyList, tx.meta?.innerInstructions, call.index, call.accounts.quote_vault)
                 events.push({ ...base, kind, actor: call.accounts.solver ?? payer, lamports })
+            } else if (kind === 'sweep') {
+                const lamports = transferredIn(keyList, tx.meta?.innerInstructions, call.index, call.accounts.quote_vault)
+                events.push({ ...base, kind, actor: payer, lamports, detail: SWEEP_SOURCES[call.name] })
             } else if (kind) events.push({ ...base, kind, actor: call.accounts.solver ?? call.accounts.cranker ?? payer })
         }
         for (const event of programEvents(tx)) {
