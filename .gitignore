@@ -1,0 +1,20 @@
+target/
+node_modules/
+.anchor/
+test-ledger/
+ref/
+programs/toll/toll-keypair.json
+programs/toll/tests/fixtures/*.so
+tools/dbc-config/node_modules/
+.keys/
+client/node_modules/
+client/state/salts/
+node_modules/
+.next/
+app/.next/
+
+.vercel
+
+# browser test output
+app/test-results/
+app/playwright-report/

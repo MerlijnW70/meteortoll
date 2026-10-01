@@ -1,0 +1,28 @@
+[package]
+name = "meteortoll"
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "Exact verifier core for matrix multiplication schemes, shared by the toll program and CLI"
+
+[dependencies]
+
+[profile.release]
+overflow-checks = true
+lto = "fat"
+codegen-units = 1
+
+[workspace]
+members = [".", "programs/toll", "crates/verifier-wasm"]
+resolver = "2"
+
+[profile.release.build-override]
+opt-level = 3
+incremental = false
+codegen-units = 1
+
+[profile.release.package.toll]
+opt-level = "z"
+
+[profile.release.package.verifier-wasm]
+opt-level = "z"
