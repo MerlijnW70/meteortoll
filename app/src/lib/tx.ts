@@ -3,6 +3,7 @@
 import type { SendTransactionOptions } from '@solana/wallet-adapter-base'
 import { type BlockhashWithExpiryBlockHeight, type Connection, type PublicKey, type Transaction, VersionedTransaction } from '@solana/web3.js'
 import { failureFromStatus, ProgramFailure } from './errors'
+import { applyBudget, estimatePrice, hasComputeBudget } from './fees'
 import { withRetry } from './rpc'
 
 export type WalletSend = (tx: Transaction, connection: Connection, options?: SendTransactionOptions) => Promise<string>
@@ -10,8 +11,8 @@ export type WalletSend = (tx: Transaction, connection: Connection, options?: Sen
 const programIds = (tx: Transaction) => tx.instructions.map((ix) => ix.programId)
 
 /// Runs the transaction against current state without signatures. A transaction that would fail
-/// never reaches the wallet; its decoded reason is thrown instead.
-export async function simulateOrThrow(connection: Connection, tx: Transaction): Promise<void> {
+/// never reaches the wallet; its decoded reason is thrown instead. Returns the units it used.
+export async function simulateOrThrow(connection: Connection, tx: Transaction): Promise<number | undefined> {
     const simulated = await withRetry(() =>
         connection.simulateTransaction(new VersionedTransaction(tx.compileMessage()), {
             sigVerify: false,
@@ -20,6 +21,7 @@ export async function simulateOrThrow(connection: Connection, tx: Transaction): 
         })
     )
     if (simulated.value.err) throw failureFromStatus(simulated.value.err, programIds(tx), simulated.value.logs ?? [])
+    return simulated.value.unitsConsumed
 }
 
 async function logsFor(connection: Connection, signature: string): Promise<string[]> {
@@ -45,7 +47,8 @@ export async function sendWithWallet(
     const latest = await withRetry(() => connection.getLatestBlockhash('confirmed'))
     tx.recentBlockhash = latest.blockhash
     tx.feePayer = owner
-    await simulateOrThrow(connection, tx)
+    const units = await simulateOrThrow(connection, tx)
+    if (!hasComputeBudget(tx)) applyBudget(tx, { units, price: await estimatePrice(connection, [tx]) })
     const signature = await send(tx, connection, options)
     return confirmOrThrow(connection, tx, signature, latest)
 }

@@ -7,7 +7,7 @@ import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui'
 import { DevWalletAdapter } from '@/lib/devWallet'
 import { Toaster } from 'sonner'
-import { rpcEndpoint, WS_ENDPOINT } from '@/lib/config'
+import { CLUSTER, rpcEndpoint, WS_ENDPOINT } from '@/lib/config'
 import { describeError } from '@/lib/errors'
 import { NetworkStatus } from '@/components/NetworkStatus'
 import '@solana/wallet-adapter-react-ui/styles.css'
@@ -30,10 +30,11 @@ export function Providers({ children }: { children: ReactNode }) {
                 },
             })
     )
-    // A local test key for driving the app in tests; only with the build flag, and only on localhost.
+    // A local test key for driving the app in tests; only with the build flag, only on localhost,
+    // and never on mainnet, where it would hold real funds in browser storage.
     const wallets = useMemo(() => {
         const local = typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname)
-        return process.env.NEXT_PUBLIC_DEV_BURNER === '1' && local ? [new DevWalletAdapter()] : []
+        return process.env.NEXT_PUBLIC_DEV_BURNER === '1' && local && CLUSTER !== 'mainnet' ? [new DevWalletAdapter()] : []
     }, [])
     const [endpoint] = useState(rpcEndpoint)
     return (
