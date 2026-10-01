@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Header } from '@/components/Header'
+import { REPO_URL } from '@/lib/config'
 import { SITE_URL } from '@/lib/server'
 import { Providers } from './providers'
 import './globals.css'
@@ -24,7 +25,10 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
                     <Header />
                     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
                     <footer className="border-t border-border py-6 text-center text-xs text-faint">
-                        Built on Meteora Dynamic Bonding Curve · verifier runs on-chain and in your browser
+                        Built on Meteora Dynamic Bonding Curve · verifier runs on-chain and in your browser ·{' '}
+                        <a href={REPO_URL} className="hover:text-text" target="_blank" rel="noreferrer">
+                            source on GitHub
+                        </a>
                     </footer>
                 </Providers>
             </body>

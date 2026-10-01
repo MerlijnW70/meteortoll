@@ -50,9 +50,17 @@ export function ProblemHeader({ problem }: { problem: ProblemView }) {
             )}
             <Panel className="grid gap-6 p-5 sm:grid-cols-3">
                 <Stat
-                    label="Bounty"
+                    label={problem.phase === 'solved' ? 'Unclaimed fees' : 'Bounty'}
                     value={`${sol(problem.bountyLamports + problem.unsweptLamports)} SOL`}
-                    sub={problem.unsweptLamports > 0n ? `${sol(problem.unsweptLamports)} SOL not yet swept` : 'all fees swept'}
+                    sub={
+                        problem.phase === 'solved'
+                            ? 'new fees, claimed by the solver as they arrive'
+                            : problem.unsweptLamports > 0n
+                              ? `${sol(problem.unsweptLamports)} SOL not yet swept`
+                              : problem.bountyLamports === 0n
+                                ? 'grows with every trade'
+                                : 'all fees swept'
+                    }
                 />
                 <Stat label="Record to beat" value={best ? `${best} → ${target}` : `≤ ${target}`} sub={`schoolbook ${naive} · ${Math.round((1 - target / naive) * 100)}% fewer`} />
                 <Stat label="Status" value={status} sub={`${problem.account.attempts} commitment${problem.account.attempts === 1 ? '' : 's'}`} />

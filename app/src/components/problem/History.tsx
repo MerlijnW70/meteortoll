@@ -22,7 +22,7 @@ const labels: Record<EventKind, [string, string]> = {
 
 function when(seconds: number | null): string {
     if (!seconds) return ''
-    return new Date(seconds * 1000).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+    return new Date(seconds * 1000).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
 export function History({ problem }: { problem: ProblemView }) {

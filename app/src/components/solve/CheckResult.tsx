@@ -6,7 +6,17 @@ import { Panel, shape } from '../ui'
 const verdictStyle = { holds: 'bg-good/15 text-good', fails: 'bg-bad/15 text-bad', malformed: 'bg-bad/15 text-bad', running: 'bg-panel-2 text-muted' }
 const verdictLabel = { holds: 'Holds', fails: 'Does not hold', malformed: 'Malformed', running: 'Checking' }
 
-export function CheckResult({ checked, answers, onSubmit }: { checked: Checked; answers: ProblemView[]; onSubmit: (address: string) => void }) {
+export function CheckResult({
+    checked,
+    answers,
+    solved,
+    onSubmit,
+}: {
+    checked: Checked
+    answers: ProblemView[]
+    solved?: ProblemView
+    onSubmit: (address: string) => void
+}) {
     const { header, result } = checked
     return (
         <Panel className="space-y-4 p-5" aria-live="polite">
@@ -62,6 +72,14 @@ export function CheckResult({ checked, answers, onSubmit }: { checked: Checked; 
                                 ))}
                             </ul>
                         </>
+                    ) : solved ? (
+                        <p className="text-muted">
+                            It holds. It answers{' '}
+                            <Link className="font-mono text-accent hover:underline" href={`/p/${solved.address}`}>
+                                ⟨{shape(solved).label} : ≤{solved.account.targetRank}⟩
+                            </Link>
+                            , which is already solved: see how the program verified it on-chain.
+                        </p>
                     ) : (
                         <p className="text-muted">It holds, but no open problem on this launchpad asks for this shape at this rank.</p>
                     )}

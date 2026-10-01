@@ -10,8 +10,10 @@ import { Dropzone } from '@/components/solve/Dropzone'
 import { SolveFlow } from '@/components/solve/SolveFlow'
 import { Panel, shape, sol } from '@/components/ui'
 import { useProblems } from '@/hooks/useProblems'
-import { type Checked, checkFile } from '@/lib/checkFile'
+import { brokenScheme, type Checked, checkFile } from '@/lib/checkFile'
 import { sharedVerifier } from '@/lib/verifier'
+
+const SAMPLE = '/samples/7x7x9-rank314.bin'
 
 function address(text: string | null): string | null {
     try {
@@ -52,6 +54,13 @@ function Solve() {
         }
     }
 
+    // A scheme to try without one of your own: the rank-314 scheme of the 7×7×9 demo.
+    const trySample = async (broken: boolean) => {
+        const bytes = new Uint8Array(await (await fetch(SAMPLE)).arrayBuffer())
+        const name = broken ? '7x7x9-rank314-one-sign-flipped.bin' : '7x7x9-rank314.bin'
+        await onFile(new File([Uint8Array.from(broken ? brokenScheme(bytes) : bytes)], name))
+    }
+
     const answers =
         checked && problems
             ? problems.filter((p) => {
@@ -59,6 +68,14 @@ function Solve() {
                   return p.account.n1 === h.n1 && p.account.n2 === h.n2 && p.account.n3 === h.n3 && h.rank <= p.account.targetRank && p.phase !== 'solved'
               })
             : []
+    // A scheme that answers no open problem may still match a solved one, such as the demo's sample.
+    const solvedMatch =
+        checked && answers.length === 0
+            ? problems?.find((p) => {
+                  const h = checked.header
+                  return p.account.n1 === h.n1 && p.account.n2 === h.n2 && p.account.n3 === h.n3 && h.rank <= p.account.targetRank && p.phase === 'solved' && !p.info.hidden
+              })
+            : undefined
     // Look the chosen problem up in the full list, so it stays on screen once it becomes solved.
     // A file that answers the problem being continued goes straight to its submit flow.
     const chosen = target ?? (resume && answers.some((p) => p.address === resume) ? resume : null)
@@ -87,12 +104,23 @@ function Solve() {
                 </Panel>
             )}
             <Dropzone onFile={onFile} />
+            <p className="text-sm text-muted">
+                No scheme at hand? Try the demo&apos;s{' '}
+                <button onClick={() => trySample(false)} className="text-accent hover:underline">
+                    rank-314 scheme for 7×7×9
+                </button>
+                , or{' '}
+                <button onClick={() => trySample(true)} className="text-accent hover:underline">
+                    the same scheme with one sign flipped
+                </button>
+                .
+            </p>
             {refusal && (
                 <Panel className="border-bad/40 p-4 text-sm text-bad" role="alert">
                     This file is not a scheme the verifier accepts: {refusal}
                 </Panel>
             )}
-            {checked && <CheckResult checked={checked} answers={answers} onSubmit={setTarget} />}
+            {checked && <CheckResult checked={checked} answers={answers} solved={solvedMatch} onSubmit={setTarget} />}
             {checked && selected && <SolveFlow key={selected.address} problem={selected} scheme={checked.scheme} />}
         </div>
     )

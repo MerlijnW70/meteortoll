@@ -4,13 +4,15 @@ import { useMemo, useState } from 'react'
 import { KNOWN_FORMATS, type KnownFormat } from '@/lib/known'
 
 const label = (n: number[]) => n.join('×')
+const teamMeets = (f: KnownFormat) => !!f.team && f.team.rank < f.bestKnown.rank
 
 /// A searchable radio group of formats with a published record.
 export function FormatPicker({ value, onChange }: { value: KnownFormat | null; onChange: (format: KnownFormat) => void }) {
     const [query, setQuery] = useState('')
     const shown = useMemo(() => {
         const digits = query.match(/\d+/g)?.map(Number) ?? []
-        return KNOWN_FORMATS.filter((f) => digits.every((d) => f.n.includes(d)))
+        // Formats the team's tool could already answer at best − 1 go last: launching one makes a disclosed demo.
+        return KNOWN_FORMATS.filter((f) => digits.every((d) => f.n.includes(d))).sort((x, y) => Number(teamMeets(x)) - Number(teamMeets(y)))
     }, [query])
     return (
         <fieldset className="space-y-3">
@@ -28,7 +30,7 @@ export function FormatPicker({ value, onChange }: { value: KnownFormat | null; o
                 {shown.map((format) => {
                     const selected = value === format
                     const name = label(format.n)
-                    const teamRecord = format.team && format.team.rank < format.bestKnown.rank
+                    const teamRecord = teamMeets(format)
                     return (
                         <label
                             key={name}
@@ -39,7 +41,7 @@ export function FormatPicker({ value, onChange }: { value: KnownFormat | null; o
                             <span className="num mt-1 block text-xs text-muted">
                                 best {format.bestKnown.rank} · schoolbook {format.naive}
                             </span>
-                            {teamRecord && <span className="mt-1 block text-xs text-accent-2">team holds {format.team!.rank}</span>}
+                            {teamRecord && <span className="mt-1 block text-xs text-warn">team holds {format.team!.rank} · disclosed demo</span>}
                         </label>
                     )
                 })}

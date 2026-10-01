@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { TOLL } from '@meteortoll/core'
 import { Strassen } from '@/components/explain/Strassen'
 import { Panel } from '@/components/ui'
-import { explorer } from '@/lib/config'
+import { explorer, REPO_URL } from '@/lib/config'
 
 const steps: [string, string][] = [
     ['Launch', 'A problem is launched as a token on Meteora’s Dynamic Bonding Curve. The pool’s creator is the problem’s own address, derived from the pool and the statement, so the statement cannot be swapped later.'],
@@ -44,6 +44,12 @@ export default function Trust() {
                     <span className="text-muted">Program · </span>
                     <a className="font-mono hover:underline" href={explorer('address', TOLL.toBase58())} target="_blank" rel="noreferrer">
                         {TOLL.toBase58()}
+                    </a>
+                </p>
+                <p>
+                    <span className="text-muted">Source · </span>
+                    <a className="hover:underline" href={REPO_URL} target="_blank" rel="noreferrer">
+                        {REPO_URL.replace('https://', '')}
                     </a>
                 </p>
                 <p className="text-muted">

@@ -6,6 +6,7 @@ import { useConnection } from '@solana/wallet-adapter-react'
 import { PublicKey } from '@solana/web3.js'
 import { sha256 } from '@noble/hashes/sha256'
 import type { ProblemView } from '@/lib/chain'
+import { brokenScheme } from '@/lib/checkFile'
 import { explorer } from '@/lib/config'
 import { recoverScheme } from '@/lib/history'
 import { type Progress, sharedVerifier } from '@/lib/verifier'
@@ -18,12 +19,6 @@ function hex(bytes: Uint8Array) {
 }
 
 /// Flips the sign of the last stored coefficient: the smallest possible wrong scheme.
-function broken(scheme: Uint8Array): Uint8Array {
-    const copy = Uint8Array.from(scheme)
-    const last = copy.length - 1
-    copy[last] = (256 - copy[last]) & 0xff
-    return copy
-}
 
 function download(bytes: Uint8Array, name: string) {
     const url = URL.createObjectURL(new Blob([Uint8Array.from(bytes)], { type: 'application/octet-stream' }))
@@ -57,7 +52,7 @@ export function VerifierReplay({ problem }: { problem: ProblemView }) {
         if (!recovered.data) return
         if (frame.current) clearTimeout(frame.current)
         const verifier = await sharedVerifier()
-        const scheme = breakIt ? broken(recovered.data.scheme) : recovered.data.scheme
+        const scheme = breakIt ? brokenScheme(recovered.data.scheme) : recovered.data.scheme
         const seed = crypto.getRandomValues(new Uint8Array(32))
         if (!verifier.start(scheme, seed)) return setState(verifier.progress('malformed'))
         const products = scheme[0] ? new DataView(scheme.buffer, scheme.byteOffset).getUint32(3, true) : 0

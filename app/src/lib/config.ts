@@ -23,6 +23,8 @@ export interface CatalogEntry {
     symbol: string
     kind: 'demo' | 'open'
     demoNote?: string
+    /// Kept off the problem lists (still reachable by its address), e.g. a duplicate demo.
+    hidden?: boolean
     coefficients: string
     naive: number
     bestKnown: { rank: number; source: string; url: string; asOf: string; ring: string | null }
@@ -30,6 +32,8 @@ export interface CatalogEntry {
 }
 
 export const CATALOG = (catalog as Record<Cluster, Record<string, CatalogEntry>>)[CLUSTER]
+
+export const REPO_URL = 'https://github.com/MerlijnW70/meteortoll'
 
 export function explorer(kind: 'tx' | 'address', value: string): string {
     const suffix = CLUSTER === 'mainnet' ? '' : '?cluster=devnet'

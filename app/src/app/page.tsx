@@ -31,7 +31,9 @@ function Hero({ problem }: { problem: ProblemView | undefined }) {
     return (
         <Panel className="relative overflow-hidden p-6 sm:p-8">
             <div className="relative max-w-2xl">
-                <p className="mb-3 text-sm text-accent-2">Open problems you can trade</p>
+                <p className="mb-3 text-sm text-accent-2">
+                    {problem.info.kind === 'demo' ? 'Disclosed demo · funded by the team, not a public bounty' : 'Open problems you can trade'}
+                </p>
                 <h1 className="mb-3 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
                     Multiply a {n1}×{n2} by a {n2}×{n3} matrix with <span className="text-accent">{target}</span> multiplications.
                 </h1>
@@ -49,7 +51,7 @@ function Hero({ problem }: { problem: ProblemView | undefined }) {
                         Solve a problem
                     </Link>
                     <span className="num text-sm text-muted">
-                        Bounty <span className="text-text">{prize} SOL</span>
+                        {prize === '0' ? 'The bounty starts with the first trade' : <>Bounty <span className="text-text">{prize} SOL</span></>}
                     </span>
                 </div>
             </div>
@@ -84,7 +86,8 @@ function HowItWorks() {
 export default function Home() {
     const { data, isLoading, error, refetch } = useProblems()
     // The hero shows the open problem with the largest bounty, preferring problems the team cannot already solve.
-    const ranked = [...(data ?? [])].sort((x, y) => Number(bounty(y) - bounty(x)))
+    const listed = data?.filter((p) => !p.info.hidden)
+    const ranked = [...(listed ?? [])].sort((x, y) => Number(bounty(y) - bounty(x)))
     const flagship =
         ranked.find((p) => p.phase === 'open' && p.info.kind !== 'demo' && !p.info.teamMeetsTarget) ??
         ranked.find((p) => p.phase === 'open' && p.info.kind !== 'demo') ??
@@ -97,7 +100,7 @@ export default function Home() {
             {error && <ErrorPanel error={error} what="Could not load the problems" onRetry={() => refetch()} />}
             <div className="grid gap-6 lg:grid-cols-3">
                 {columns.map(([phase, title, hint]) => {
-                    const items = (data?.filter((p) => p.phase === phase) ?? []).sort((x, y) => Number(bounty(y) - bounty(x)))
+                    const items = (listed?.filter((p) => p.phase === phase) ?? []).sort((x, y) => Number(bounty(y) - bounty(x)))
                     return (
                         <div key={phase}>
                             <div className="mb-3">

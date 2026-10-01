@@ -18,6 +18,14 @@ export interface Checked {
     millis: number
 }
 
+/// The same scheme with the sign of its last coefficient flipped: enough to make it fail.
+export function brokenScheme(scheme: Uint8Array): Uint8Array {
+    const copy = Uint8Array.from(scheme)
+    const last = copy.length - 1
+    copy[last] = (256 - copy[last]) & 0xff
+    return copy
+}
+
 export async function checkFile(file: File): Promise<Checked> {
     if (file.size > MAX_FILE_BYTES) throw new Error(`the file is ${(file.size / 2 ** 20).toFixed(1)} MB; files larger than ${MAX_FILE_BYTES / 2 ** 20} MB are not accepted`)
     const json = file.name.toLowerCase().endsWith('.json')

@@ -19,14 +19,15 @@
         "rank": 314,
         "coefficients": "{-1, 0, 1}",
         "tool": "fmm"
-      }
+      },
+      "hidden": true
     },
     "Ftb374Yr6VUhLUaNJrjyhmVpMz4n4qCDT2D7GQPKWEUc": {
       "mint": "BYc724Dx9n5duSZpZPYHLMXen5D5FVbSZB6dvNHi7np9",
       "name": "DEMO #2 7x7x9 rank<=314",
       "symbol": "D779B",
       "kind": "demo",
-      "demoNote": "Second disclosed demo, for testing the in-browser solve flow. Funded and solved by the team with fmm's rank-314 scheme; not a public bounty.",
+      "demoNote": "Disclosed demo: funded and solved by the team with fmm's rank-314 scheme, which beats the published 315. It shows the whole mechanism end to end; it is not a public bounty.",
       "coefficients": "integers, |c| <= 128",
       "naive": 441,
       "bestKnown": {
@@ -38,6 +39,27 @@
       },
       "ourRecord": {
         "rank": 314,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    "EjZWJhVFzund8EpYNQnRDdwpbBH8qXZEBtm48bybc9CG": {
+      "mint": "F4SphV61zyXRaopLxnSCzoXQgaFcYnzH2S65vz5s5k2h",
+      "name": "DEMO 9x11x13 rank<=834",
+      "symbol": "TEST1113",
+      "kind": "demo",
+      "demoNote": "Disclosed demo: launched by the team from this site's Launch page. fmm already holds a rank-833 scheme for this format, so it is not a public bounty.",
+      "coefficients": "integers, |c| <= 128",
+      "naive": 1287,
+      "bestKnown": {
+        "rank": 835,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "ourRecord": {
+        "rank": 833,
         "coefficients": "{-1, 0, 1}",
         "tool": "fmm"
       }

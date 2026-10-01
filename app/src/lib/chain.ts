@@ -38,6 +38,7 @@ export interface ProblemInfo {
     /// The team's tool already holds a scheme at or below the target, so the team could solve it.
     teamMeetsTarget: boolean
     listed: boolean
+    hidden: boolean
 }
 
 export interface ProblemView {
@@ -70,6 +71,7 @@ function describe(address: string, account: ProblemAccount, token: TokenName | u
         team,
         teamMeetsTarget: !!team && team.rank <= account.targetRank,
         listed: !!curated,
+        hidden: !!curated?.hidden,
     }
 }
 
