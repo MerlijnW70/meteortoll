@@ -1,0 +1,27 @@
+{
+  "name": "meteortoll-client",
+  "license": "MIT OR Apache-2.0",
+  "private": true,
+  "type": "module",
+  "description": "Client for the toll program: launch problems on Meteora DBC, trade, sweep fees, solve and claim",
+  "scripts": {
+    "toll": "tsx src/cli.ts",
+    "encode-config": "tsx src/encode-config.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test src/*.test.ts"
+  },
+  "dependencies": {
+    "@meteortoll/core": "*",
+    "@coral-xyz/anchor": "^0.31.1",
+    "@meteora-ag/dynamic-bonding-curve-sdk": "^1.5.13",
+    "@solana/spl-token": "^0.4.15",
+    "@solana/web3.js": "1.99.0",
+    "bn.js": "^5.2.5"
+  },
+  "devDependencies": {
+    "@types/bn.js": "^5.2.0",
+    "@types/node": "^22",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
+  }
+}
