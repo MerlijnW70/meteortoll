@@ -1,0 +1,47 @@
+{
+  "profile": "test",
+  "data": "c9cff3724b6f2fbd0065cd1d0000000018000f00000000000000e0050000000000000100000100000600000064b641f1980300000063af0cc7373ecf0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002010080c6a47e8d03000080c6a47e8d03006401000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000002000000ce4df0ffd468cf010000000000000000ec20892a79276d502c090e58980300009b57694ea91a5c84b1c4feff000000005a74578d8c07db006d74020000000000",
+  "accounts": [
+    {
+      "role": "config",
+      "signer": true,
+      "writable": true
+    },
+    {
+      "role": "feeClaimer",
+      "signer": false,
+      "writable": false
+    },
+    {
+      "role": "leftoverReceiver",
+      "signer": false,
+      "writable": false
+    },
+    {
+      "role": "quoteMint",
+      "signer": false,
+      "writable": false
+    },
+    {
+      "role": "payer",
+      "signer": true,
+      "writable": true
+    },
+    {
+      "role": "11111111111111111111111111111111",
+      "signer": false,
+      "writable": false
+    },
+    {
+      "role": "8Ks12pbrD6PXxfty1hVQiE9sc289zgU1zHkvXhrSdriF",
+      "signer": false,
+      "writable": false
+    },
+    {
+      "role": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+      "signer": false,
+      "writable": false
+    }
+  ],
+  "migrationQuoteThreshold": "15450849718"
+}
