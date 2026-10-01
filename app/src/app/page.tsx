@@ -26,13 +26,13 @@ function Hero({ problem }: { problem: ProblemView | undefined }) {
     const { n1, n2, n3 } = problem.account
     const { target, naive } = shape(problem)
     const best = problem.info.bestKnown
-    const prize = sol(bounty(problem))
+    const prize = bounty(problem)
     const solved = problem.phase !== 'open'
     return (
         <Panel className="relative overflow-hidden p-6 sm:p-8">
             <div className="relative max-w-2xl">
                 <p className="mb-3 text-sm text-accent-2">
-                    {problem.info.kind === 'demo' ? 'Disclosed demo · funded by the team, not a public bounty' : 'Open problems you can trade'}
+                    {problem.info.kind === 'demo' ? 'Disclosed demo · not a public bounty' : 'Open problems you can trade'}
                 </p>
                 <h1 className="mb-3 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
                     Multiply a {n1}×{n2} by a {n2}×{n3} matrix with <span className="text-accent">{target}</span> multiplications.
@@ -51,7 +51,7 @@ function Hero({ problem }: { problem: ProblemView | undefined }) {
                         Solve a problem
                     </Link>
                     <span className="num text-sm text-muted">
-                        {prize === '0' ? 'The bounty starts with the first trade' : <>Bounty <span className="text-text">{prize} SOL</span></>}
+                        {prize === 0n ? 'The bounty starts with the first trade' : <>Bounty <span className="text-text">{sol(prize)} SOL</span></>}
                     </span>
                 </div>
             </div>
@@ -85,14 +85,11 @@ function HowItWorks() {
 
 export default function Home() {
     const { data, isLoading, error, refetch } = useProblems()
-    // The hero shows the open problem with the largest bounty, preferring problems the team cannot already solve.
+    // The hero shows the open problem with the largest bounty, preferring public bounties over demos.
     const listed = data?.filter((p) => !p.info.hidden)
     const ranked = [...(listed ?? [])].sort((x, y) => Number(bounty(y) - bounty(x)))
     const flagship =
-        ranked.find((p) => p.phase === 'open' && p.info.kind !== 'demo' && !p.info.teamMeetsTarget) ??
-        ranked.find((p) => p.phase === 'open' && p.info.kind !== 'demo') ??
-        ranked.find((p) => p.phase === 'open') ??
-        ranked[0]
+        ranked.find((p) => p.phase === 'open' && p.info.kind !== 'demo') ?? ranked.find((p) => p.phase === 'open') ?? ranked[0]
     return (
         <div className="space-y-10">
             <Hero problem={isLoading ? undefined : flagship} />

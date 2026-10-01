@@ -1,12 +1,10 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
-import { useConnection } from '@solana/wallet-adapter-react'
-import { PublicKey } from '@solana/web3.js'
+import { useHistory } from '@/hooks/useHistory'
 import type { ProblemView } from '@/lib/chain'
 import { explorer } from '@/lib/config'
-import { type EventKind, fetchHistory } from '@/lib/history'
-import { Panel, short, Skeleton } from '../ui'
+import type { EventKind } from '@/lib/history'
+import { Panel, short, Skeleton, sol } from '../ui'
 
 const labels: Record<EventKind, [string, string]> = {
     register: ['Launched', 'text-muted'],
@@ -26,12 +24,7 @@ function when(seconds: number | null): string {
 }
 
 export function History({ problem }: { problem: ProblemView }) {
-    const { connection } = useConnection()
-    const { data, isLoading, error } = useQuery({
-        queryKey: ['history', problem.address],
-        queryFn: () => fetchHistory(connection, new PublicKey(problem.address)),
-        refetchInterval: 20_000,
-    })
+    const { data, isLoading, error } = useHistory(problem.address)
     return (
         <Panel className="p-5">
             <div className="mb-3 flex items-baseline justify-between">
@@ -51,6 +44,7 @@ export function History({ problem }: { problem: ProblemView }) {
                                     <span className={tone}>
                                         {label}
                                         {event.detail && <span className="text-muted"> · {event.detail}</span>}
+                                        {event.lamports !== undefined && <span className="text-muted"> · {sol(event.lamports)} SOL</span>}
                                     </span>
                                     <span className="num text-xs text-faint">{when(event.time)}</span>
                                 </div>

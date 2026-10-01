@@ -2,6 +2,7 @@ import { AnchorProvider, BorshAccountsCoder, type Idl, Program } from '@coral-xy
 import { type AccountInfo, type Connection, PublicKey, type Transaction, type VersionedTransaction } from '@solana/web3.js'
 import { DynamicBondingCurveIdl } from '@meteora-ag/dynamic-bonding-curve-sdk'
 import { DBC, type ProblemAccount, problemPhase, type ProblemPhase, tollIdl } from '@meteortoll/core'
+import { classify } from './classify'
 import { CATALOG, LAUNCHPAD } from './config'
 import { type KnownFormat, knownFormat } from './known'
 import { metadataAddress, parseMetadata, type TokenName } from './metaplex'
@@ -64,12 +65,10 @@ function describe(address: string, account: ProblemAccount, token: TokenName | u
     return {
         name: curated?.name ?? token?.name ?? `${shape} rank ≤ ${account.targetRank}`,
         symbol: curated?.symbol ?? token?.symbol ?? '',
-        kind: curated?.kind ?? 'open',
-        demoNote: curated?.demoNote,
+        ...classify(curated, team, account.targetRank),
         coefficients: curated?.coefficients ?? 'integers, |c| <= 128',
         bestKnown: curated?.bestKnown ?? known?.bestKnown,
         team,
-        teamMeetsTarget: !!team && team.rank <= account.targetRank,
         listed: !!curated,
         hidden: !!curated?.hidden,
     }

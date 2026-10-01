@@ -36,7 +36,7 @@ export function ClaimPanel({ problem }: { problem: ProblemView }) {
                 : await claimTx(connection, program, problemKey, problem.account, publicKey!)
             const signature = await sendWithWallet(connection, tx, publicKey!, sendTransaction)
             notifySuccess('Claimed', signature)
-            await Promise.all(['problem', 'problems', 'attempt', 'portfolio'].map((key) => queries.invalidateQueries({ queryKey: [key] })))
+            await Promise.all(['problem', 'problems', 'attempt', 'portfolio', 'history'].map((key) => queries.invalidateQueries({ queryKey: [key] })))
         } catch (error) {
             notifyError(error)
         } finally {

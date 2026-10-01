@@ -14,6 +14,8 @@ import { brokenScheme, type Checked, checkFile } from '@/lib/checkFile'
 import { sharedVerifier } from '@/lib/verifier'
 
 const SAMPLE = '/samples/7x7x9-rank314.bin'
+const SAMPLE_NAME = '7x7x9-rank314.bin'
+const SAMPLE_BROKEN_NAME = '7x7x9-rank314-one-sign-flipped.bin'
 
 function address(text: string | null): string | null {
     try {
@@ -26,6 +28,7 @@ function address(text: string | null): string | null {
 function Solve() {
     const [checked, setChecked] = useState<Checked | null>(null)
     const [refusal, setRefusal] = useState<string | null>(null)
+    const [sampleError, setSampleError] = useState<string | null>(null)
     const [target, setTarget] = useState<string | null>(null)
     const { data: problems } = useProblems()
     const { connection } = useConnection()
@@ -44,6 +47,7 @@ function Solve() {
     }, [])
 
     const onFile = async (file: File) => {
+        setSampleError(null)
         setRefusal(null)
         setChecked(null)
         setTarget(null)
@@ -54,11 +58,21 @@ function Solve() {
         }
     }
 
-    // A scheme to try without one of your own: the rank-314 scheme of the 7×7×9 demo.
+    // A scheme to try without one of your own: fmm's rank-314 scheme for 7×7×9, or a broken copy.
     const trySample = async (broken: boolean) => {
-        const bytes = new Uint8Array(await (await fetch(SAMPLE)).arrayBuffer())
-        const name = broken ? '7x7x9-rank314-one-sign-flipped.bin' : '7x7x9-rank314.bin'
-        await onFile(new File([Uint8Array.from(broken ? brokenScheme(bytes) : bytes)], name))
+        let file: File
+        try {
+            const response = await fetch(SAMPLE)
+            if (!response.ok) throw new Error(`the server answered ${response.status}`)
+            const bytes = new Uint8Array(await response.arrayBuffer())
+            file = broken ? new File([Uint8Array.from(brokenScheme(bytes))], SAMPLE_BROKEN_NAME) : new File([bytes], SAMPLE_NAME)
+        } catch (error) {
+            setChecked(null)
+            setRefusal(null)
+            setSampleError(error instanceof Error ? error.message : String(error))
+            return
+        }
+        await onFile(file)
     }
 
     const answers =
@@ -105,7 +119,7 @@ function Solve() {
             )}
             <Dropzone onFile={onFile} />
             <p className="text-sm text-muted">
-                No scheme at hand? Try the demo&apos;s{' '}
+                No scheme at hand? Try fmm&apos;s{' '}
                 <button onClick={() => trySample(false)} className="text-accent hover:underline">
                     rank-314 scheme for 7×7×9
                 </button>
@@ -115,6 +129,11 @@ function Solve() {
                 </button>
                 .
             </p>
+            {sampleError && (
+                <Panel className="border-bad/40 p-4 text-sm text-bad" role="alert">
+                    Could not load the sample scheme: {sampleError}. Try again, or drop a scheme file of your own.
+                </Panel>
+            )}
             {refusal && (
                 <Panel className="border-bad/40 p-4 text-sm text-bad" role="alert">
                     This file is not a scheme the verifier accepts: {refusal}

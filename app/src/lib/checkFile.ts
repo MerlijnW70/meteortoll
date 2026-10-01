@@ -18,12 +18,34 @@ export interface Checked {
     millis: number
 }
 
-/// The same scheme with the sign of its last coefficient flipped: enough to make it fail.
+/// The same scheme with one coefficient negated (-128, which i8 cannot negate, becomes 127). The
+/// coefficient is the first of a product whose three factors are all nonzero: changing it adds a
+/// nonzero polynomial to the scheme side, so the copy fails at all but a negligible share of
+/// points. A coefficient of a product with an all-zero factor would change nothing.
 export function brokenScheme(scheme: Uint8Array): Uint8Array {
-    const copy = Uint8Array.from(scheme)
-    const last = copy.length - 1
-    copy[last] = (256 - copy[last]) & 0xff
-    return copy
+    const view = new DataView(scheme.buffer, scheme.byteOffset, scheme.byteLength)
+    if (scheme.length < 7) throw new Error('the scheme is too short to hold a header')
+    const rank = view.getUint32(3, true)
+    let at = 7
+    for (let r = 0; r < rank; r++) {
+        const start = at
+        const counts: number[] = []
+        for (let factor = 0; factor < 3; factor++) {
+            if (at + 2 > scheme.length) throw new Error('the scheme ends inside a factor')
+            const count = view.getUint16(at, true)
+            counts.push(count)
+            at += 2 + count * 3
+        }
+        if (at > scheme.length) throw new Error('the scheme ends inside a factor')
+        if (counts.every((count) => count > 0)) {
+            const copy = Uint8Array.from(scheme)
+            const value = start + 2 + 2
+            const old = view.getInt8(value)
+            copy[value] = (old === -128 ? 127 : -old) & 0xff
+            return copy
+        }
+    }
+    throw new Error('the scheme has no product with three nonzero factors')
 }
 
 export async function checkFile(file: File): Promise<Checked> {

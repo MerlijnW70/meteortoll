@@ -24,7 +24,7 @@ export function ProblemCard({ problem }: { problem: ProblemView }) {
             </div>
             <div className="mb-4 grid grid-cols-3 gap-2 text-sm">
                 <div>
-                    <div className="text-xs text-muted">Bounty</div>
+                    <div className="text-xs text-muted">{problem.phase === 'solved' ? 'Unclaimed' : 'Bounty'}</div>
                     <div className="num font-medium">{sol(problem.bountyLamports + problem.unsweptLamports)} SOL</div>
                 </div>
                 <div>

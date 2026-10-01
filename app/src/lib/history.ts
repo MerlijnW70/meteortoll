@@ -2,7 +2,7 @@
 // commitments, reveals, verdicts and claims. Closed attempts disappear from account lists, but
 // their transactions stay, so this history survives them.
 
-import { BorshCoder, type Idl } from '@coral-xyz/anchor'
+import { BorshCoder, type Idl, utils } from '@coral-xyz/anchor'
 import type { Connection, PublicKey, VersionedTransactionResponse } from '@solana/web3.js'
 import { commitment, TOLL, tollIdl } from '@meteortoll/core'
 import { withRetry } from './rpc'
@@ -28,12 +28,48 @@ export interface HistoryEvent {
     time: number | null
     actor: string
     detail?: string
+    /// For a claim: the lamports that left the bounty vault for the solver.
+    lamports?: bigint
+}
+
+export interface InnerInstructions {
+    index: number
+    instructions: { programIdIndex: number; accounts: number[]; data: string }[]
+}
+
+const TOKEN_PROGRAMS = new Set(['TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA', 'TokenzQdBNbLqP5VjTdYzSf9n2BNEMmFvpwM8FQCjQx5sNq'])
+const TRANSFER = 3
+const TRANSFER_CHECKED = 12
+
+/// What a top-level instruction moved out of a token account, read from the token transfers it made
+/// (its inner instructions). Balances before and after the whole transaction would not do: a claim
+/// usually shares its transaction with a sweep that fills the same vault first.
+export function transferredOut(keys: string[], inner: InnerInstructions[] | null | undefined, instruction: number, source: string): bigint {
+    let total = 0n
+    for (const group of inner ?? []) {
+        if (group.index !== instruction) continue
+        for (const ix of group.instructions) {
+            if (!TOKEN_PROGRAMS.has(keys[ix.programIdIndex]) || keys[ix.accounts[0]] !== source) continue
+            const data = utils.bytes.bs58.decode(ix.data)
+            if ((data[0] === TRANSFER || data[0] === TRANSFER_CHECKED) && data.length >= 9) {
+                total += new DataView(data.buffer, data.byteOffset, data.byteLength).getBigUint64(1, true)
+            }
+        }
+    }
+    return total
+}
+
+/// Lamports paid out to solvers across a history's claims.
+export function paidOut(events: HistoryEvent[]): bigint {
+    return events.reduce((sum, e) => sum + (e.kind === 'claim' ? (e.lamports ?? 0n) : 0n), 0n)
 }
 
 export interface DecodedCall {
     name: string
     data: Record<string, unknown>
     accounts: Record<string, string>
+    /// Position among the transaction's top-level instructions, which its inner instructions refer to.
+    index: number
 }
 
 const BATCH = 40
@@ -55,7 +91,7 @@ export async function fetchTransactions(connection: Connection, address: PublicK
 export function tollCalls(tx: VersionedTransactionResponse): DecodedCall[] {
     const keys = tx.transaction.message.getAccountKeys({ accountKeysFromLookups: tx.meta?.loadedAddresses })
     const calls: DecodedCall[] = []
-    for (const ix of tx.transaction.message.compiledInstructions) {
+    for (const [index, ix] of tx.transaction.message.compiledInstructions.entries()) {
         if (!keys.get(ix.programIdIndex)?.equals(TOLL)) continue
         const decoded = coder.instruction.decode(Buffer.from(ix.data))
         if (!decoded) continue
@@ -64,7 +100,7 @@ export function tollCalls(tx: VersionedTransactionResponse): DecodedCall[] {
         ix.accountKeyIndexes.forEach((index, i) => {
             if (names[i]) accounts[names[i]] = keys.get(index)?.toBase58() ?? ''
         })
-        calls.push({ name: camel(decoded.name), data: decoded.data as Record<string, unknown>, accounts })
+        calls.push({ name: camel(decoded.name), data: decoded.data as Record<string, unknown>, accounts, index })
     }
     return calls
 }
@@ -84,7 +120,10 @@ export async function fetchHistory(connection: Connection, problem: PublicKey): 
     const events: HistoryEvent[] = []
     for (const tx of txs) {
         const base = { signature: tx.transaction.signatures[0], slot: tx.slot, time: tx.blockTime ?? null }
-        const payer = tx.transaction.message.getAccountKeys().get(0)?.toBase58() ?? ''
+        const keys = tx.transaction.message.getAccountKeys({ accountKeysFromLookups: tx.meta?.loadedAddresses })
+        // In account-index order, which the recorded token balances refer to.
+        const keyList = keys.keySegments().flat().map((k) => k.toBase58())
+        const payer = keyList[0] ?? ''
         for (const call of tollCalls(tx)) {
             const kinds: Record<string, EventKind> = {
                 registerProblem: 'register',
@@ -98,7 +137,10 @@ export async function fetchHistory(connection: Connection, problem: PublicKey): 
                 sweepPositionFees: 'sweep',
             }
             const kind = kinds[call.name]
-            if (kind) events.push({ ...base, kind, actor: call.accounts.solver ?? call.accounts.cranker ?? payer })
+            if (kind === 'claim') {
+                const lamports = transferredOut(keyList, tx.meta?.innerInstructions, call.index, call.accounts.quote_vault)
+                events.push({ ...base, kind, actor: call.accounts.solver ?? payer, lamports })
+            } else if (kind) events.push({ ...base, kind, actor: call.accounts.solver ?? call.accounts.cranker ?? payer })
         }
         for (const event of programEvents(tx)) {
             if (event.name === 'Solved' || event.name === 'solved') {

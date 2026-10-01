@@ -47,7 +47,7 @@ export function TargetStep({ format, draft, onChange }: { format: KnownFormat; d
             )}
             {team && target >= team.rank && target < best && (
                 <p role="alert" className="rounded-lg bg-warn/10 p-3 text-sm text-warn">
-                    The meteortoll team&apos;s search tool already holds a rank-{team.rank} scheme for this format. The problem page will disclose that.
+                    The meteortoll team&apos;s search tool already holds a rank-{team.rank} scheme for this format, so a target of {team.rank} or more launches as a disclosed demo, not a public bounty. Use {team.rank - 1} or lower for a public bounty.
                 </p>
             )}
             <div className="grid gap-4 sm:grid-cols-2">

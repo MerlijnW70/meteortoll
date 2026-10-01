@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
+import { useHistory } from '@/hooks/useHistory'
 import type { ProblemView } from '@/lib/chain'
+import { paidOut } from '@/lib/history'
 import { Share } from '../Share'
 import { Panel, shape, sol, StatusBadge } from '../ui'
 
@@ -11,6 +13,21 @@ function Stat({ label, value, sub }: { label: string; value: ReactNode; sub?: Re
             {sub && <div className="num text-xs text-faint">{sub}</div>}
         </div>
     )
+}
+
+function BountyStat({ problem }: { problem: ProblemView }) {
+    const total = problem.bountyLamports + problem.unsweptLamports
+    const sub =
+        problem.unsweptLamports > 0n ? `${sol(problem.unsweptLamports)} SOL not yet swept` : total === 0n ? 'grows with every trade' : 'all fees swept'
+    return <Stat label="Bounty" value={`${sol(total)} SOL`} sub={sub} />
+}
+
+/// What the solver has been paid, from the claim transactions, and what waits for their next claim.
+function PaidStat({ problem }: { problem: ProblemView }) {
+    const history = useHistory(problem.address)
+    const waiting = problem.bountyLamports + problem.unsweptLamports
+    const value = history.data ? `${sol(paidOut(history.data))} SOL` : history.error ? '—' : '…'
+    return <Stat label="Paid to the solver" value={value} sub={`${sol(waiting)} SOL in fees waiting for the next claim`} />
 }
 
 /// Title, status, share actions, demo disclosure and the three headline numbers.
@@ -42,26 +59,8 @@ export function ProblemHeader({ problem }: { problem: ProblemView }) {
             {problem.info.kind === 'demo' && problem.info.demoNote && (
                 <Panel className="border-warn/30 bg-warn/5 p-4 text-sm text-warn">{problem.info.demoNote}</Panel>
             )}
-            {problem.info.kind !== 'demo' && problem.info.teamMeetsTarget && problem.info.team && (
-                <Panel className="border-warn/30 bg-warn/5 p-4 text-sm text-warn">
-                    Disclosure: the meteortoll team&apos;s search tool ({problem.info.team.tool}) already holds a rank-{problem.info.team.rank} scheme for this
-                    format, which meets this target. If the team ever submits it, it will say so publicly.
-                </Panel>
-            )}
             <Panel className="grid gap-6 p-5 sm:grid-cols-3">
-                <Stat
-                    label={problem.phase === 'solved' ? 'Unclaimed fees' : 'Bounty'}
-                    value={`${sol(problem.bountyLamports + problem.unsweptLamports)} SOL`}
-                    sub={
-                        problem.phase === 'solved'
-                            ? 'new fees, claimed by the solver as they arrive'
-                            : problem.unsweptLamports > 0n
-                              ? `${sol(problem.unsweptLamports)} SOL not yet swept`
-                              : problem.bountyLamports === 0n
-                                ? 'grows with every trade'
-                                : 'all fees swept'
-                    }
-                />
+                {problem.phase === 'solved' ? <PaidStat problem={problem} /> : <BountyStat problem={problem} />}
                 <Stat label="Record to beat" value={best ? `${best} → ${target}` : `≤ ${target}`} sub={`schoolbook ${naive} · ${Math.round((1 - target / naive) * 100)}% fewer`} />
                 <Stat label="Status" value={status} sub={`${problem.account.attempts} commitment${problem.account.attempts === 1 ? '' : 's'}`} />
             </Panel>

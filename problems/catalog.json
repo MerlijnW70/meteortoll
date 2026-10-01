@@ -42,27 +42,6 @@
         "coefficients": "{-1, 0, 1}",
         "tool": "fmm"
       }
-    },
-    "EjZWJhVFzund8EpYNQnRDdwpbBH8qXZEBtm48bybc9CG": {
-      "mint": "F4SphV61zyXRaopLxnSCzoXQgaFcYnzH2S65vz5s5k2h",
-      "name": "DEMO 9x11x13 rank<=834",
-      "symbol": "TEST1113",
-      "kind": "demo",
-      "demoNote": "Disclosed demo: launched by the team from this site's Launch page. fmm already holds a rank-833 scheme for this format, so it is not a public bounty.",
-      "coefficients": "integers, |c| <= 128",
-      "naive": 1287,
-      "bestKnown": {
-        "rank": 835,
-        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
-        "url": "https://fmm.univ-lille.fr/",
-        "asOf": "2026-09-30",
-        "ring": null
-      },
-      "ourRecord": {
-        "rank": 833,
-        "coefficients": "{-1, 0, 1}",
-        "tool": "fmm"
-      }
     }
   },
   "mainnet": {}
