@@ -20,6 +20,7 @@ npm run build -w app
 | Variable | Where it is read | Purpose |
 |---|---|---|
 | `SOLANA_RPC_URL` | server only (`src/lib/server.ts`) | The keyed RPC the `/api/rpc` proxy forwards to. Never give it a `NEXT_PUBLIC_` name: those are shipped to browsers |
+| `SOLANA_RPC_FALLBACK_URLS` | server only (`src/lib/upstream.ts`) | Optional, comma-separated: RPCs to fall over to when `SOLANA_RPC_URL` fails; the cluster's public endpoint is always the last resort |
 | `NEXT_PUBLIC_CLUSTER` | `src/lib/config.ts` | `devnet` (default) or `mainnet` |
 | `NEXT_PUBLIC_DEVNET_LAUNCHPAD`, `NEXT_PUBLIC_MAINNET_LAUNCHPAD` | `src/lib/config.ts` | Optional override of that cluster's launchpad in `LAUNCHPADS`; a build with neither refuses to start |
 | `NEXT_PUBLIC_SITE_URL` | `src/lib/server.ts` | Absolute URLs for share cards and token metadata |
