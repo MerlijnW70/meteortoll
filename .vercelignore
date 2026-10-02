@@ -1,0 +1,19 @@
+# Upload only what the web app builds from. Never upload keys or build output.
+/*
+!/app
+!/packages
+!/problems
+!/client
+!/package.json
+!/package-lock.json
+/app/.next
+/app/.env*
+!/app/.env.example
+/client/.env*
+**/*.tsbuildinfo
+/app/test-results
+/app/playwright-report
+/app/node_modules
+/client/node_modules
+/client/state/salts
+/packages/*/node_modules
