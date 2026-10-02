@@ -2,7 +2,7 @@
 // Meteora's docs say to index this event rather than rebuild trades from token transfers.
 
 import { BorshCoder, type Idl, utils } from '@coral-xyz/anchor'
-import type { Connection, PublicKey } from '@solana/web3.js'
+import type { Connection, PublicKey, VersionedTransactionResponse } from '@solana/web3.js'
 import { DynamicBondingCurveIdl } from '@meteora-ag/dynamic-bonding-curve-sdk'
 import { DBC } from '@meteortoll/core'
 
@@ -62,6 +62,37 @@ export function decodeSwaps(dataBase58: string[]): DecodedSwap[] {
     return found
 }
 
+/// The swaps on `pool` that one transaction made, from DBC's swap events in its inner instructions.
+export function tradesIn(tx: VersionedTransactionResponse, pool: PublicKey): Trade[] {
+    if (!tx.meta?.innerInstructions) return []
+    const keys = tx.transaction.message.getAccountKeys({ accountKeysFromLookups: tx.meta.loadedAddresses })
+    const dbcData = tx.meta.innerInstructions
+        .flatMap((group) => group.instructions)
+        .filter((ix) => keys.get(ix.programIdIndex)?.equals(DBC))
+        .map((ix) => ix.data)
+    const trades: Trade[] = []
+    for (const swap of decodeSwaps(dbcData)) {
+        if (!swap.pool.equals(pool)) continue
+        const buy = swap.trade_direction === QUOTE_TO_BASE
+        const input = BigInt(swap.swap_result.included_fee_input_amount.toString())
+        const output = BigInt(swap.swap_result.output_amount.toString())
+        trades.push({
+            signature: tx.transaction.signatures[0],
+            side: buy ? 'buy' : 'sell',
+            trader: keys.get(0)?.toBase58() ?? '',
+            quoteLamports: buy ? input : output,
+            baseAmount: buy ? output : input,
+            feeLamports: BigInt(swap.swap_result.trading_fee.toString()),
+            quoteReserve: BigInt(swap.quote_reserve_amount.toString()),
+            migrationThreshold: BigInt(swap.migration_threshold.toString()),
+            sqrtPrice: BigInt(swap.swap_result.next_sqrt_price.toString()),
+            time: tx.blockTime ?? null,
+        })
+    }
+    return trades
+}
+
+/// The latest trades on a pool, newest first.
 export async function fetchTrades(connection: Connection, pool: PublicKey, limit = 20): Promise<Trade[]> {
     const signatures = await connection.getSignaturesForAddress(pool, { limit }, 'confirmed')
     const ok = signatures.filter((s) => !s.err)
@@ -70,32 +101,5 @@ export async function fetchTrades(connection: Connection, pool: PublicKey, limit
         ok.map((s) => s.signature),
         { maxSupportedTransactionVersion: 0, commitment: 'confirmed' }
     )
-    const trades: Trade[] = []
-    transactions.forEach((tx, index) => {
-        if (!tx?.meta?.innerInstructions) return
-        const keys = tx.transaction.message.getAccountKeys({ accountKeysFromLookups: tx.meta.loadedAddresses })
-        const dbcData = tx.meta.innerInstructions
-            .flatMap((group) => group.instructions)
-            .filter((ix) => keys.get(ix.programIdIndex)?.equals(DBC))
-            .map((ix) => ix.data)
-        for (const swap of decodeSwaps(dbcData)) {
-            if (!swap.pool.equals(pool)) continue
-            const buy = swap.trade_direction === QUOTE_TO_BASE
-            const input = BigInt(swap.swap_result.included_fee_input_amount.toString())
-            const output = BigInt(swap.swap_result.output_amount.toString())
-            trades.push({
-                signature: ok[index].signature,
-                side: buy ? 'buy' : 'sell',
-                trader: keys.get(0)?.toBase58() ?? '',
-                quoteLamports: buy ? input : output,
-                baseAmount: buy ? output : input,
-                feeLamports: BigInt(swap.swap_result.trading_fee.toString()),
-                quoteReserve: BigInt(swap.quote_reserve_amount.toString()),
-                migrationThreshold: BigInt(swap.migration_threshold.toString()),
-                sqrtPrice: BigInt(swap.swap_result.next_sqrt_price.toString()),
-                time: tx.blockTime ?? null,
-            })
-        }
-    })
-    return trades
+    return transactions.flatMap((tx) => (tx ? tradesIn(tx, pool) : []))
 }

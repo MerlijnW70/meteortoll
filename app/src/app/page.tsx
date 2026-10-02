@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { ErrorPanel } from '@/components/ErrorPanel'
 import { ProblemCard } from '@/components/ProblemCard'
+import { StatsStrip } from '@/components/StatsStrip'
 import { Panel, shape, Skeleton, sol } from '@/components/ui'
 import { useProblems } from '@/hooks/useProblems'
 import type { ProblemView } from '@/lib/chain'
@@ -93,6 +94,7 @@ export default function Home() {
     return (
         <div className="space-y-10">
             <Hero problem={isLoading ? undefined : flagship} />
+            <StatsStrip />
             <HowItWorks />
             {error && <ErrorPanel error={error} what="Could not load the problems" onRetry={() => refetch()} />}
             <div className="grid gap-6 lg:grid-cols-3">

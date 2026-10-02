@@ -87,8 +87,22 @@ export interface DecodedCall {
 
 const BATCH = 40
 
+/// An address's signatures, newest first, paging past the RPC's 1,000 per call up to `cap`.
+export async function allSignatures(connection: Connection, address: PublicKey, cap: number) {
+    const all: Awaited<ReturnType<Connection['getSignaturesForAddress']>> = []
+    let before: string | undefined
+    while (all.length < cap) {
+        const limit = Math.min(1_000, cap - all.length)
+        const page = await withRetry(() => connection.getSignaturesForAddress(address, { limit, before }, 'confirmed'))
+        all.push(...page)
+        if (page.length < limit) break
+        before = page[page.length - 1].signature
+    }
+    return all
+}
+
 export async function fetchTransactions(connection: Connection, address: PublicKey, limit = 200): Promise<VersionedTransactionResponse[]> {
-    const signatures = await withRetry(() => connection.getSignaturesForAddress(address, { limit }, 'confirmed'))
+    const signatures = await allSignatures(connection, address, limit)
     const ok = signatures.filter((s) => !s.err).map((s) => s.signature)
     const out: VersionedTransactionResponse[] = []
     for (let i = 0; i < ok.length; i += BATCH) {
