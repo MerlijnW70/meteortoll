@@ -12,7 +12,7 @@
     "e2e": "playwright test"
   },
   "dependencies": {
-    "@coral-xyz/anchor": "^0.31.1",
+    "@coral-xyz/anchor": "^0.32.1",
     "@meteora-ag/dynamic-bonding-curve-sdk": "^1.5.13",
     "@meteortoll/core": "*",
     "@noble/hashes": "^1.8.0",
