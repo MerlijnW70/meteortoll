@@ -3,6 +3,7 @@ name = "toll"
 version = "0.1.0"
 description = "Bounty launchpad for open problems on Meteora DBC"
 edition = "2021"
+license = "MIT OR Apache-2.0"
 
 [lib]
 crate-type = ["cdylib", "lib"]

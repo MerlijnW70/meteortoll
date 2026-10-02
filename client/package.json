@@ -1,5 +1,6 @@
 {
   "name": "meteortoll-client",
+  "license": "MIT OR Apache-2.0",
   "private": true,
   "type": "module",
   "description": "Client for the toll program: launch problems on Meteora DBC, trade, sweep fees, solve and claim",

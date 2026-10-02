@@ -89,11 +89,27 @@ export default function Terms() {
 
             <Section title="No warranty">
                 <p>
-                    The software is open source under MIT or Apache-2.0 and is provided as is, without warranty of any kind. Questions and problems:{' '}
+                    The software is open source under{' '}
+                    <a href={`${REPO_URL}/blob/main/LICENSE-MIT`} className="text-accent hover:underline" target="_blank" rel="noreferrer">
+                        MIT
+                    </a>{' '}
+                    or{' '}
+                    <a href={`${REPO_URL}/blob/main/LICENSE-APACHE`} className="text-accent hover:underline" target="_blank" rel="noreferrer">
+                        Apache-2.0
+                    </a>
+                    , at your option, and is provided as is, without warranty of any kind. Third-party parts are listed in{' '}
+                    <a href={`${REPO_URL}/blob/main/THIRD_PARTY_NOTICES.md`} className="text-accent hover:underline" target="_blank" rel="noreferrer">
+                        the notices
+                    </a>
+                    . Questions and problems:{' '}
                     <a href={`${REPO_URL}/issues`} className="text-accent hover:underline" target="_blank" rel="noreferrer">
                         open an issue on GitHub
                     </a>
-                    .
+                    ; security flaws privately, as{' '}
+                    <a href={`${REPO_URL}/blob/main/SECURITY.md`} className="text-accent hover:underline" target="_blank" rel="noreferrer">
+                        the security policy
+                    </a>{' '}
+                    describes.
                 </p>
             </Section>
         </div>

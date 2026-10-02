@@ -17,5 +17,10 @@ test('the wallet stylesheet copy matches the installed package, minus the Google
 })
 
 test('the copy loads nothing from another origin', () => {
-    assert.doesNotMatch(local, /@import|fonts\.googleapis|https?:\/\//)
+    // Loads, not mentions: the license notice names the upstream repository.
+    assert.doesNotMatch(local, /@import|fonts\.googleapis|url\(\s*['"]?(https?:)?\/\//)
+})
+
+test('the copy carries the upstream license notice', () => {
+    assert.match(local, /^\/\*[\s\S]*Apache License 2\.0[\s\S]*\*\//)
 })

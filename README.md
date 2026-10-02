@@ -81,7 +81,8 @@ The program tests load mainnet program dumps from `programs/toll/tests/fixtures/
 
 ## Security
 
-See [`docs/security.md`](docs/security.md) for the web app and `SCOPE.md` for the program's rules.
+Report vulnerabilities privately, as [`SECURITY.md`](SECURITY.md) describes. See
+[`docs/security.md`](docs/security.md) for the web app and `SCOPE.md` for the program's rules.
 The program has had a self-review and extensive tests against the real Meteora programs; it has
 **not** had a third-party audit. During the hackathon the upgrade authority is held by the team.
 
@@ -103,4 +104,9 @@ Disclosed as the hackathon rules ask:
 
 ## License
 
-MIT OR Apache-2.0, as declared in the crates' `Cargo.toml`.
+Licensed under either of [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option.
+Third-party parts (Meteora's IDLs, the wallet adapter's styles, an LGPL dependency of web3.js, fonts
+and data sources) are listed in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+
+Unless you state otherwise, any contribution you submit for inclusion is licensed as above, without
+additional terms.
