@@ -45,3 +45,14 @@ export async function clusterOf(connection: Connection): Promise<string> {
     const genesis = await connection.getGenesisHash()
     return Object.entries(GENESIS).find(([, hash]) => hash === genesis)?.[0] ?? `unknown (${genesis})`
 }
+
+export function clusterProblem(served: string, expected: string): string | null {
+    if (served === expected) return null
+    if (served.startsWith('unknown') && expected !== 'mainnet' && expected !== 'devnet') return null
+    return `TOLL_CLUSTER is ${expected} but the RPC serves ${served}; set TOLL_CLUSTER and TOLL_RPC to the same cluster`
+}
+
+export async function assertCluster(connection: Connection, expected: string) {
+    const problem = clusterProblem(await clusterOf(connection), expected)
+    if (problem) throw new Error(problem)
+}

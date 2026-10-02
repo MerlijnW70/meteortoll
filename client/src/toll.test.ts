@@ -1,0 +1,36 @@
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import { Keypair } from '@solana/web3.js'
+import { treasuryPools } from './toll.js'
+
+const key = () => Keypair.generate().publicKey
+
+test('treasury pools', async () => {
+    const launchpad = key()
+    const [known, web, foreign] = [key(), key(), key()]
+    const [knownPool, webPool, foreignPool] = [key(), key(), key()]
+    const filters: unknown[] = []
+    const toll = {
+        account: {
+            problem: {
+                all: async (filter: unknown) => {
+                    filters.push(filter)
+                    return [
+                        { publicKey: known, account: { launchpad, pool: knownPool } },
+                        { publicKey: web, account: { launchpad, pool: webPool } },
+                        { publicKey: foreign, account: { launchpad: key(), pool: foreignPool } },
+                    ]
+                },
+            },
+        },
+    }
+    const pools = await treasuryPools(toll as never, launchpad, { '2x2x2r7': { problem: known.toBase58() } })
+    assert.deepEqual(filters, [[{ memcmp: { offset: 8, bytes: launchpad.toBase58() } }]])
+    assert.deepEqual(
+        pools.map(({ label, pool }) => [label, pool.toBase58()]),
+        [
+            ['2x2x2r7', knownPool.toBase58()],
+            [web.toBase58(), webPool.toBase58()],
+        ]
+    )
+})

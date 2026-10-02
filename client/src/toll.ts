@@ -35,3 +35,15 @@ export function submissionCreate(payer: PublicKey, submission: PublicKey, length
 
 export const SLOT_HASHES = SYSVAR_SLOT_HASHES_PUBKEY
 export { TOKEN_PROGRAM_ID }
+
+type Lister = Record<string, { all(filters: { memcmp: { offset: number; bytes: string } }[]): Promise<{ publicKey: PublicKey; account: unknown }[]> }>
+
+export async function launchpadProblems(toll: Pick<Toll, 'account'>, launchpad: PublicKey): Promise<{ problem: PublicKey; account: ProblemAccount }[]> {
+    const rows = await (toll.account as never as Lister).problem.all([{ memcmp: { offset: 8, bytes: launchpad.toBase58() } }])
+    return rows.map((row) => ({ problem: row.publicKey, account: row.account as ProblemAccount })).filter((row) => row.account.launchpad.equals(launchpad))
+}
+
+export async function treasuryPools(toll: Pick<Toll, 'account'>, launchpad: PublicKey, known: Record<string, { problem: string }>): Promise<{ label: string; pool: PublicKey }[]> {
+    const labels = new Map(Object.entries(known).map(([key, found]) => [found.problem, key]))
+    return (await launchpadProblems(toll, launchpad)).map(({ problem, account }) => ({ label: labels.get(problem.toBase58()) ?? problem.toBase58(), pool: account.pool }))
+}

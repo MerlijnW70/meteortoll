@@ -25,8 +25,9 @@ import {
 } from './env.js'
 import { launchParams, type Profile } from './params.js'
 import type { Economics } from '@meteortoll/core'
-import { BPF_LOADER_UPGRADEABLE, clusterOf, deployCost, LAUNCH_LAMPORTS, programDataMatches, SETUP_LAMPORTS, sha256, upgradeAuthority } from './preflight.js'
+import { assertCluster, BPF_LOADER_UPGRADEABLE, clusterOf, deployCost, LAUNCH_LAMPORTS, programDataMatches, SETUP_LAMPORTS, sha256, upgradeAuthority } from './preflight.js'
 import { metadataUri, SITE_URL } from './site.js'
+import { buyTransaction, MAX_FEE_PERCENT, parseLimits, SLIPPAGE_BPS } from './trade.js'
 import { commitment, encodeScheme, type FmmScheme, schemeHeader, VERIFY_BUDGET } from '@meteortoll/core'
 import {
     attemptAddress,
@@ -42,6 +43,7 @@ import {
     submissionCreate,
     TOKEN_PROGRAM_ID,
     tollProgram,
+    treasuryPools,
     vaultAddress,
 } from './toll.js'
 
@@ -170,15 +172,10 @@ async function launch(args: string[]) {
 async function buy(args: string[]) {
     const found = record(args[0])
     const lamports = Math.round(Number(args[1]) * LAMPORTS_PER_SOL)
-    const swap = await dbc.pool.swap({
-        owner: wallet.publicKey,
-        pool: new PublicKey(found.pool),
-        amountIn: new BN(lamports),
-        minimumAmountOut: new BN(0),
-        swapBaseForQuote: false,
-        referralTokenAccount: null,
-    })
-    console.log(`buy ${args[1]} SOL of ${found.symbol}: ${explorer(await sendTx(swap, wallet))}`)
+    const limits = parseLimits(flag(args, 'slippage', String(SLIPPAGE_BPS / 100)), flag(args, 'max-fee', String(MAX_FEE_PERCENT)))
+    const { tx, quote } = await buyTransaction(dbc, connection, wallet.publicKey, new PublicKey(found.pool), new BN(lamports), limits)
+    console.log(`quote ${quote.outputAmount.toString()} ${found.symbol} base units, at least ${quote.minimumAmountOut.toString()}, fee ${quote.feePercent.toFixed(2)}%`)
+    console.log(`buy ${args[1]} SOL of ${found.symbol}: ${explorer(await sendTx(tx, wallet))}`)
 }
 
 async function sweep(args: string[]) {
@@ -478,14 +475,13 @@ function clusterEconomics(): Economics {
 
 async function treasury() {
     const state = loadState()
-    if (!state.config) throw new Error('run setup first')
+    if (!state.config || !state.launchpad) throw new Error('run setup first')
     const config = await dbc.state.getPoolConfig(new PublicKey(state.config))
     if (!config) throw new Error('the launchpad config is missing on this network')
     if (!config.feeClaimer.equals(wallet.publicKey)) throw new Error(`the treasury is ${config.feeClaimer.toBase58()}; run this with that wallet`)
     const threshold = BigInt(config.migrationQuoteThreshold.toString())
     let claimed = 0
-    for (const [key, found] of Object.entries(state.problems)) {
-        const pool = new PublicKey(found.pool)
+    for (const { label: key, pool } of await treasuryPools(toll, new PublicKey(state.launchpad), state.problems)) {
         const account = await dbc.state.getPool(pool)
         const poolState = account?.poolState ?? (account as never)
         if (!poolState) continue
@@ -513,4 +509,5 @@ if (!commands[command]) {
     console.error(`commands: ${Object.keys(commands).join(', ')}`)
     process.exit(2)
 }
+if (command !== 'preflight') await assertCluster(connection, CLUSTER)
 await commands[command](rest)

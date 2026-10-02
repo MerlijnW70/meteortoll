@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { Keypair, type Connection } from '@solana/web3.js'
-import { clusterOf, deployCost, GENESIS, PROGRAM_DATA_HEADER, programDataMatches, upgradeAuthority } from './preflight.js'
+import { assertCluster, clusterOf, deployCost, GENESIS, PROGRAM_DATA_HEADER, programDataMatches, upgradeAuthority } from './preflight.js'
 
 function programData(body: number[], authority: Uint8Array | null, padding = 0): Uint8Array {
     const data = new Uint8Array(PROGRAM_DATA_HEADER + body.length + padding)
@@ -50,4 +50,16 @@ test('cluster name', async () => {
     assert.equal(await clusterOf(at(GENESIS.devnet)), 'devnet')
     assert.equal(await clusterOf(at(GENESIS.mainnet)), 'mainnet')
     assert.equal(await clusterOf(at('abc')), 'unknown (abc)')
+})
+
+test('cluster guard', async () => {
+    const at = (genesis: string) => ({ getGenesisHash: async () => genesis }) as unknown as Connection
+    await assertCluster(at(GENESIS.devnet), 'devnet')
+    await assertCluster(at(GENESIS.mainnet), 'mainnet')
+    await assertCluster(at('abc'), 'localnet')
+    await assert.rejects(assertCluster(at(GENESIS.mainnet), 'devnet'), /TOLL_CLUSTER is devnet but the RPC serves mainnet/)
+    await assert.rejects(assertCluster(at(GENESIS.devnet), 'mainnet'), /serves devnet/)
+    await assert.rejects(assertCluster(at(GENESIS.mainnet), 'localnet'), /serves mainnet/)
+    await assert.rejects(assertCluster(at('abc'), 'mainnet'), /unknown \(abc\)/)
+    await assert.rejects(assertCluster(at('abc'), 'devnet'), /unknown \(abc\)/)
 })
