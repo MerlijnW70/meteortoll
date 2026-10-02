@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og'
-import { fetchProblem } from '@/lib/chain'
+import { fetchProblem, ForeignProblemError } from '@/lib/chain'
 import { serverConnection } from '@/lib/server'
 
 export const alt = 'A matrix multiplication problem on meteortoll'
@@ -26,8 +26,15 @@ export default async function Image({ params }: { params: Promise<{ address: str
         badgeColor = problem.phase === 'open' ? colors.accent : colors.good
         if (problem.info.kind === 'demo') badge = `DEMO · ${badge}`
         figure = best ? `${best} → ${targetRank}` : `${n1 * n2 * n3} → ${targetRank}`
-    } catch {
-        // Fall back to the brand card.
+    } catch (error) {
+        // Another launchpad's problem must not travel under this site's name; anything else falls
+        // back to the brand card.
+        if (error instanceof ForeignProblemError) {
+            title = 'Not a meteortoll problem'
+            line = 'Registered on another launchpad. meteortoll does not list or vouch for it.'
+            badge = 'NOT LISTED'
+            badgeColor = colors.warn
+        }
     }
     return new ImageResponse(
         (

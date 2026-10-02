@@ -1,5 +1,5 @@
 import { PublicKey } from '@solana/web3.js'
-import { fetchProblem, tollReader } from '@/lib/chain'
+import { fetchProblem, ForeignProblemError, tollReader } from '@/lib/chain'
 import { serverConnection } from '@/lib/server'
 
 /// Byte offset of `base_mint` in a Problem account: discriminator, launchpad, pool.
@@ -24,6 +24,7 @@ export async function GET(request: Request, context: RouteContext<'/api/metadata
         if (matches.length === 0) return Response.json({ error: 'no problem uses this mint' }, { status: 404 })
         problem = await fetchProblem(connection, matches[0].publicKey.toBase58())
     } catch (error) {
+        if (error instanceof ForeignProblemError) return Response.json({ error: 'not a meteortoll problem' }, { status: 404 })
         console.error('[metadata] lookup failed', error)
         return Response.json({ error: 'metadata is temporarily unavailable' }, { status: 502, headers: { 'cache-control': 'no-store' } })
     }

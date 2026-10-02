@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { ProblemPage } from '@/components/ProblemPage'
-import { fetchProblem } from '@/lib/chain'
+import { fetchProblem, ForeignProblemError } from '@/lib/chain'
 import { serverConnection } from '@/lib/server'
 
 export async function generateMetadata(props: PageProps<'/p/[address]'>): Promise<Metadata> {
@@ -15,8 +15,8 @@ export async function generateMetadata(props: PageProps<'/p/[address]'>): Promis
                 ? `Multiply a ${n1}×${n2} by a ${n2}×${n3} matrix with ${targetRank} multiplications. Trading fees fund the bounty; a Solana program verifies the answer.`
                 : `Solved with a scheme of rank ${problem.account.solvedRank}, verified on-chain. Check it yourself in the browser.`
         return { title, description, openGraph: { title, description }, twitter: { card: 'summary_large_image', title, description } }
-    } catch {
-        return { title: 'Problem' }
+    } catch (error) {
+        return { title: error instanceof ForeignProblemError ? 'Not a meteortoll problem' : 'Problem', robots: { index: false } }
     }
 }
 

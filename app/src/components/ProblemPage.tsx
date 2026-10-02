@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useProblem } from '@/hooks/useProblems'
+import { ForeignProblemError } from '@/lib/chain'
 import { ErrorPanel } from './ErrorPanel'
 import { ForResearchers } from './problem/ForResearchers'
 import { History } from './problem/History'
@@ -18,6 +19,7 @@ import { Panel, Skeleton } from './ui'
 
 export function ProblemPage({ address }: { address: string }) {
     const { data: problem, isLoading, error, refetch } = useProblem(address)
+    if (error instanceof ForeignProblemError) return <ForeignProblem address={address} launchpad={error.launchpad} />
     if (error) {
         const missing = /Account does not exist|has no data|Invalid public key|Non-base58|invalid/i.test(String(error))
         return missing ? <ProblemNotFound address={address} /> : <ErrorPanel error={error} what="Could not load this problem" onRetry={() => refetch()} />
@@ -65,6 +67,28 @@ function ProblemNotFound({ address }: { address: string }) {
             <p className="text-sm text-muted">The link may be mistyped, or the problem is on another network than this site shows.</p>
             <Link href="/" className="inline-block rounded-lg bg-accent px-4 py-2 text-sm font-medium text-bg">
                 See all problems
+            </Link>
+        </Panel>
+    )
+}
+
+/// A problem account from another launchpad. It may look like ours, but its fees and rules are
+/// whatever that launchpad set, so the site shows it as what it is and nothing more.
+function ForeignProblem({ address, launchpad }: { address: string; launchpad: string }) {
+    return (
+        <Panel role="alert" className="mx-auto max-w-lg space-y-3 border-warn/40 p-6 text-center">
+            <h1 className="text-lg font-medium">Not a meteortoll problem</h1>
+            <p className="text-sm text-muted">
+                This account was registered on another launchpad, with its own launch settings. Its trading fees may not go to a bounty at all. meteortoll does not list or vouch for
+                it.
+            </p>
+            <p className="break-all font-mono text-xs text-faint">
+                {address}
+                <br />
+                launchpad {launchpad}
+            </p>
+            <Link href="/" className="inline-block rounded-lg bg-accent px-4 py-2 text-sm font-medium text-bg">
+                See meteortoll&apos;s problems
             </Link>
         </Panel>
     )

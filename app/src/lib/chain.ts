@@ -168,6 +168,23 @@ export async function fetchProblems(connection: Connection): Promise<ProblemView
     return views(connection, rows.map((row) => ({ publicKey: row.publicKey, account: row.account as ProblemAccount })), slot)
 }
 
+/// A problem registered on another launchpad: the same program, but someone else's rules (their
+/// own DBC config, which may route fees elsewhere, and their own grace window). The site never
+/// presents one as a meteortoll problem.
+export class ForeignProblemError extends Error {
+    constructor(
+        readonly address: string,
+        readonly launchpad: string
+    ) {
+        super(`problem ${address} belongs to launchpad ${launchpad}, not to this site's`)
+        this.name = 'ForeignProblemError'
+    }
+}
+
+export function assertOfficial(address: string, account: Pick<ProblemAccount, 'launchpad'>, launchpad: PublicKey = LAUNCHPAD) {
+    if (!account.launchpad.equals(launchpad)) throw new ForeignProblemError(address, account.launchpad.toBase58())
+}
+
 export async function fetchProblem(connection: Connection, address: string): Promise<ProblemView> {
     const toll = tollReader(connection)
     const key = new PublicKey(address)
@@ -175,6 +192,7 @@ export async function fetchProblem(connection: Connection, address: string): Pro
         (toll.account as never as Accounts).problem.fetch(key),
         connection.getSlot('confirmed'),
     ])
+    assertOfficial(address, account as ProblemAccount)
     const [view] = await views(connection, [{ publicKey: key, account: account as ProblemAccount }], slot)
     return view
 }
