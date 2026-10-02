@@ -81,8 +81,17 @@ impl<'a> Factor<'a> {
     /// Reads the factor at `at`, checks it against `len`, and returns it with the offset
     /// just past it.
     pub fn read(bytes: &'a [u8], at: usize, len: u32) -> Result<(Self, usize), Error> {
+        Self::read_within(bytes, at, len, usize::MAX)
+    }
+
+    /// Like `read`, but refuses a factor of more than `limit` entries before scanning any of
+    /// them, so the work spent on a factor that will be refused is bounded too.
+    pub fn read_within(bytes: &'a [u8], at: usize, len: u32, limit: usize) -> Result<(Self, usize), Error> {
         let count = bytes.get(at..at + 2).ok_or(Error::Truncated)?;
         let count = u16::from_le_bytes([count[0], count[1]]) as usize;
+        if count > limit {
+            return Err(Error::ProductTooLarge);
+        }
         let start = at + 2;
         let end = start + count * ENTRY_LEN;
         let entries = bytes.get(start..end).ok_or(Error::Truncated)?;

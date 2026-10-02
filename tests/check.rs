@@ -160,22 +160,69 @@ fn a_rank_larger_than_the_products_given_is_truncated() {
 
 #[test]
 fn a_product_too_heavy_for_one_call_is_refused() {
-    // A 128x128x1 shape lets one factor hold 16384 coefficients, more than one call may fold in.
-    let mut s = Builder::new(128, 128, 1);
-    let a: Vec<_> = (0..128).flat_map(|i| (0..128).map(move |j| ((i, j), 1i8))).collect();
-    assert!(a.len() as u32 > MAX_PRODUCT_COST);
+    // A 64x64x1 shape lets one factor hold 4096 coefficients: with one each in B and G the
+    // product is two over the limit.
+    let mut s = Builder::new(64, 64, 1);
+    let a: Vec<_> = (0..64).flat_map(|i| (0..64).map(move |j| ((i, j), 1i8))).collect();
+    assert_eq!(a.len() as u32, MAX_PRODUCT_COST);
     s.product(&a, &[((0, 0), 1)], &[((0, 0), 1)]);
     assert_eq!(verify(&s.encode(), &seed(0)), Err(Error::ProductTooLarge));
 }
 
 #[test]
+fn the_limit_counts_all_three_factors_together() {
+    // No single factor is over the limit, but the three together are.
+    let half = MAX_PRODUCT_COST as usize / 2 + 1;
+    let mut s = Builder::new(64, 64, 64);
+    let a: Vec<_> = (0..64).flat_map(|i| (0..64).map(move |j| ((i, j), 1i8))).take(half).collect();
+    let b: Vec<_> = (0..64).flat_map(|j| (0..64).map(move |k| ((j, k), 1i8))).take(half).collect();
+    s.product(&a, &b, &[((0, 0), 1)]);
+    assert_eq!(verify(&s.encode(), &seed(0)), Err(Error::ProductTooLarge));
+}
+
+#[test]
+fn the_third_factor_counts_against_what_the_first_two_left() {
+    // A and B together stay under the limit; G takes it over.
+    let mut s = Builder::new(64, 64, 64);
+    let a: Vec<_> = (0..64).flat_map(|i| (0..64).map(move |j| ((i, j), 1i8))).take(2_000).collect();
+    let b: Vec<_> = (0..64).flat_map(|j| (0..64).map(move |k| ((j, k), 1i8))).take(2_000).collect();
+    let g: Vec<_> = (0..64).flat_map(|i| (0..64).map(move |k| ((i, k), 1i8))).take(97).collect();
+    assert_eq!((a.len() + b.len() + g.len()) as u32, MAX_PRODUCT_COST + 1);
+    s.product(&a, &b, &g);
+    assert_eq!(verify(&s.encode(), &seed(0)), Err(Error::ProductTooLarge));
+    // One fewer in G is exactly the limit, and is folded in.
+    let mut fits = Builder::new(64, 64, 64);
+    fits.product(&a, &b, &g[..96]);
+    assert_ne!(verify(&fits.encode(), &seed(0)), Err(Error::ProductTooLarge));
+}
+
+#[test]
 fn a_product_at_the_limit_is_folded_in() {
-    // A takes all but two of the budget; B and G one coefficient each: exactly the limit.
-    let mut s = Builder::new(96, 128, 1);
-    let a: Vec<_> = (0..96).flat_map(|i| (0..128).map(move |j| ((i, j), 1i8))).take(MAX_PRODUCT_COST as usize - 2).collect();
-    assert_eq!(a.len() as u32 + 2, MAX_PRODUCT_COST);
+    // A takes all but two of the limit; B and G one coefficient each: exactly the limit.
+    let mut s = Builder::new(64, 64, 1);
+    let a: Vec<_> = (0..64).flat_map(|i| (0..64).map(move |j| ((i, j), 1i8))).take(MAX_PRODUCT_COST as usize - 2).collect();
     s.product(&a, &[((0, 0), 1)], &[((0, 0), 1)]);
     assert_ne!(verify(&s.encode(), &seed(0)), Err(Error::ProductTooLarge));
+}
+
+#[test]
+fn every_known_record_is_far_below_the_product_limit() {
+    for name in FIXTURES {
+        let encoded = fixture(name);
+        let rank = u32::from_le_bytes(encoded[3..7].try_into().unwrap());
+        let mut at = 7;
+        let mut densest = 0;
+        for _ in 0..rank {
+            let mut cost = 0;
+            for _ in 0..3 {
+                let count = u16::from_le_bytes([encoded[at], encoded[at + 1]]) as usize;
+                cost += count;
+                at += 2 + count * 3;
+            }
+            densest = densest.max(cost);
+        }
+        assert!(densest * 10 < MAX_PRODUCT_COST as usize, "{name}: densest product {densest}");
+    }
 }
 
 #[test]

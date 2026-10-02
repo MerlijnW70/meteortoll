@@ -41,11 +41,24 @@ impl Fp {
         self.add(other.neg())
     }
 
+    /// The product with 64-bit operations only: Solana's virtual machine has no 128-bit
+    /// multiply, and the compiler's wide helper costs several times this. With
+    /// `a = a1 2^32 + a0`, `b = b1 2^32 + b0` (so `a1, b1 < 2^29`) and `2^61 = 1` mod `P`:
+    /// `a1 b1 2^64 = 8 a1 b1`, below `2^61`; the middle term `m 2^32` with `m < 2^62` splits as
+    /// `m = mh 2^29 + ml` into `mh + ml 2^32`; and `a0 b0 < 2^64` folds once. The three parts sum
+    /// below `2^63`, so one more fold and at most one subtraction reduce it.
     #[must_use]
     pub const fn mul(self, other: Self) -> Self {
-        let wide = self.0 as u128 * other.0 as u128;
-        let folded = (wide & P as u128) + (wide >> 61);
-        Self(reduce64(folded as u64))
+        const LOW_32: u64 = (1 << 32) - 1;
+        const LOW_29: u64 = (1 << 29) - 1;
+        let (a1, a0) = (self.0 >> 32, self.0 & LOW_32);
+        let (b1, b0) = (other.0 >> 32, other.0 & LOW_32);
+        let high = (a1 * b1) << 3;
+        let middle = a1 * b0 + a0 * b1;
+        let middle = (middle >> 29) + ((middle & LOW_29) << 32);
+        let low = a0 * b0;
+        let low = (low & P) + (low >> 61);
+        Self(reduce64(high + middle + low))
     }
 }
 

@@ -96,3 +96,14 @@ fn the_builder_writes_what_the_reader_reads() {
     assert_eq!(w.iter().collect::<Vec<_>>(), [(3, 7)]);
     assert_eq!(after_w, encoded.len());
 }
+
+#[test]
+fn a_factor_at_its_limit_is_read_and_one_past_it_is_refused_before_scanning() {
+    let bytes = one_factor(&[(0, 1), (1, 1), (2, 1)]);
+    assert!(Factor::read_within(&bytes, 0, 4, 3).is_ok());
+    assert!(matches!(Factor::read_within(&bytes, 0, 4, 2), Err(Error::ProductTooLarge)));
+    // Refused on the count alone: the entries behind it are never looked at.
+    let mut claimed = bytes.clone();
+    claimed[..2].copy_from_slice(&u16::MAX.to_le_bytes());
+    assert!(matches!(Factor::read_within(&claimed, 0, 4, 3), Err(Error::ProductTooLarge)));
+}

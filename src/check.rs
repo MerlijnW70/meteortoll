@@ -21,10 +21,11 @@ use crate::scheme::{Error, Factor, HEADER_LEN, Header};
 
 pub const STATE_LEN: usize = 60;
 
-/// Most coefficients one product may store. The check folds in whole products, so a product
-/// must fit one call; the densest product of any scheme in the known records stores fewer than
-/// a thousand. A heavier product is refused as malformed.
-pub const MAX_PRODUCT_COST: u32 = 12_288;
+/// Most coefficients one product may store. The check folds in whole products, so one product
+/// must fit one call: a call does at most the larger of its budget and one product, and the
+/// program's budget is above this. The densest product of any scheme in the known records stores
+/// a few dozen. A heavier product is refused as malformed before its entries are scanned.
+pub const MAX_PRODUCT_COST: u32 = 4_096;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Seed(pub [u8; 32]);
@@ -204,13 +205,11 @@ impl Check {
         let mut left = budget.max(1);
         let first = self.products;
         while self.products < self.header.rank {
-            let (u, after_u) = Factor::read(encoded, self.offset, self.header.len_u())?;
-            let (v, after_v) = Factor::read(encoded, after_u, self.header.len_v())?;
-            let (w, after_w) = Factor::read(encoded, after_v, self.header.len_w())?;
+            let limit = MAX_PRODUCT_COST as usize;
+            let (u, after_u) = Factor::read_within(encoded, self.offset, self.header.len_u(), limit)?;
+            let (v, after_v) = Factor::read_within(encoded, after_u, self.header.len_v(), limit - u.count())?;
+            let (w, after_w) = Factor::read_within(encoded, after_v, self.header.len_w(), limit - u.count() - v.count())?;
             let cost = (u.count() + v.count() + w.count()).max(1) as u32;
-            if cost > MAX_PRODUCT_COST {
-                return Err(Error::ProductTooLarge);
-            }
             if self.products > first && cost > left {
                 return Ok(Verdict::Running);
             }
@@ -241,8 +240,17 @@ impl Check {
     }
 }
 
+/// `sum coef * r^index` over a factor. Nearly every coefficient in practice is 1 or -1, which
+/// need an addition, not a multiplication.
 fn dot(factor: Factor<'_>, powers: &Powers) -> Fp {
-    factor.iter().fold(Fp::ZERO, |sum, (index, coef)| sum.add(Fp::from_i64(i64::from(coef)).mul(powers.pow(index))))
+    factor.iter().fold(Fp::ZERO, |sum, (index, coef)| {
+        let value = powers.pow(index);
+        match coef {
+            1 => sum.add(value),
+            -1 => sum.sub(value),
+            _ => sum.add(Fp::from_i64(i64::from(coef)).mul(value)),
+        }
+    })
 }
 
 /// Runs a whole check in one call.
