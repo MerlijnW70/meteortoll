@@ -11,6 +11,7 @@ import { CLUSTER, rpcEndpoint, WS_ENDPOINT } from '@/lib/config'
 import { describeError } from '@/lib/errors'
 import { sendReport, worthReporting } from '@/lib/report'
 import { NetworkStatus } from '@/components/NetworkStatus'
+import { onWalletError, WalletHelp } from '@/components/WalletHelp'
 import '@/styles/wallet-adapter.css'
 
 globalThis.Buffer ??= Buffer
@@ -61,9 +62,10 @@ export function Providers({ children }: { children: ReactNode }) {
     return (
         <QueryClientProvider client={queries}>
             <ConnectionProvider endpoint={endpoint} config={{ commitment: 'confirmed', wsEndpoint: WS_ENDPOINT }}>
-                <WalletProvider wallets={wallets} autoConnect>
+                <WalletProvider wallets={wallets} autoConnect onError={onWalletError}>
                     <WalletModalProvider>
                         <NetworkStatus />
+                        <WalletHelp />
                         <UncaughtErrors />
                         {children}
                         <Toaster theme="dark" position="bottom-right" richColors />
