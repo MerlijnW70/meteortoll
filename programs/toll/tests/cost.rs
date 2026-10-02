@@ -32,7 +32,7 @@ fn verify_cost_per_record() {
 }
 
 fn one_product(n: u8, heavy: usize) -> Vec<u8> {
-    let mut bytes = vec![n, n, 1];
+    let mut bytes = vec![n, n, 2];
     bytes.extend_from_slice(&1u32.to_le_bytes());
     bytes.extend_from_slice(&(heavy as u16).to_le_bytes());
     for index in 0..heavy as u16 {
@@ -52,7 +52,7 @@ fn heaviest_product_fits() {
     let limit = meteortoll::check::MAX_PRODUCT_COST as usize;
     for (heavy, label) in [(limit - 2, "at_the_limit"), (limit - 1, "one_past_the_limit")] {
         let scheme = one_product(64, heavy);
-        let mut env = setup((64, 64, 1), 100);
+        let mut env = setup((64, 64, 2), 4096);
         let run = upload(&mut env, &scheme, [16u8; 32]);
         reveal(&mut env, &run).unwrap();
         let costs = verify_all(&mut env, &run, toll::VERIFY_BUDGET);

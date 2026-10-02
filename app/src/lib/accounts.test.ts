@@ -16,3 +16,15 @@ test('grace then solved', () => {
     assert.equal(problemPhase(problem(true), 150), 'solved')
     assert.equal(problemPhase(problem(true), 200), 'solved')
 })
+
+test('pending check', () => {
+    const busy = { ...problem(true), pending: 1 } as ProblemAccount
+    assert.equal(problemPhase(busy, 10_000), 'grace')
+    assert.equal(problemPhase({ ...busy, pending: 0 }, 10_000), 'solved')
+})
+
+test('problem space', async () => {
+    const { BorshAccountsCoder } = await import('@coral-xyz/anchor')
+    const { PROBLEM_SPACE, tollIdl } = await import('@meteortoll/core')
+    assert.equal(new BorshAccountsCoder(tollIdl as never).size('Problem'), PROBLEM_SPACE)
+})

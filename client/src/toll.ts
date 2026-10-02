@@ -1,7 +1,7 @@
 import { AnchorProvider, type Idl, Program, Wallet } from '@coral-xyz/anchor'
 import { type Keypair, type PublicKey, SYSVAR_SLOT_HASHES_PUBKEY, SystemProgram, type TransactionInstruction } from '@solana/web3.js'
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
-import { type AttemptAccount, type ProblemAccount, SUBMISSION_HEADER, TOLL, tollIdl } from '@meteortoll/core'
+import { type AttemptAccount, type ProblemAccount, PROBLEM_SPACE, SUBMISSION_HEADER, TOLL, tollIdl } from '@meteortoll/core'
 import { connection } from './env.js'
 
 export * from '@meteortoll/core'
@@ -36,10 +36,10 @@ export function submissionCreate(payer: PublicKey, submission: PublicKey, length
 export const SLOT_HASHES = SYSVAR_SLOT_HASHES_PUBKEY
 export { TOKEN_PROGRAM_ID }
 
-type Lister = Record<string, { all(filters: { memcmp: { offset: number; bytes: string } }[]): Promise<{ publicKey: PublicKey; account: unknown }[]> }>
+type Lister = Record<string, { all(filters: ({ dataSize: number } | { memcmp: { offset: number; bytes: string } })[]): Promise<{ publicKey: PublicKey; account: unknown }[]> }>
 
 export async function launchpadProblems(toll: Pick<Toll, 'account'>, launchpad: PublicKey): Promise<{ problem: PublicKey; account: ProblemAccount }[]> {
-    const rows = await (toll.account as never as Lister).problem.all([{ memcmp: { offset: 8, bytes: launchpad.toBase58() } }])
+    const rows = await (toll.account as never as Lister).problem.all([{ dataSize: PROBLEM_SPACE }, { memcmp: { offset: 8, bytes: launchpad.toBase58() } }])
     return rows.map((row) => ({ problem: row.publicKey, account: row.account as ProblemAccount })).filter((row) => row.account.launchpad.equals(launchpad))
 }
 

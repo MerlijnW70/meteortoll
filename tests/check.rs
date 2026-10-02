@@ -284,6 +284,35 @@ fn empty_dimension_state() {
 }
 
 #[test]
+fn forged_progress() {
+    let scheme = strassen().encode();
+    let good = Check::start(&scheme, &seed(0)).unwrap().save();
+    let mut saved = good;
+    saved[39..43].copy_from_slice(&8u32.to_le_bytes());
+    assert_eq!(Check::restore(&saved), Err(Error::Truncated));
+    saved[39..43].copy_from_slice(&7u32.to_le_bytes());
+    assert!(Check::restore(&saved).is_ok());
+    let mut far = good;
+    far[31..39].copy_from_slice(&u64::MAX.to_le_bytes());
+    let restored = Check::restore(&far);
+    if let Ok(mut check) = restored {
+        assert_eq!(check.run(&scheme, 1_000), Err(Error::Truncated));
+    }
+    let mut past = good;
+    past[31..39].copy_from_slice(&(scheme.len() as u64 + 1).to_le_bytes());
+    assert_eq!(Check::restore(&past).unwrap().run(&scheme, 1_000), Err(Error::Truncated));
+}
+
+#[test]
+fn finished_rerun() {
+    let scheme = strassen().encode();
+    let mut check = Check::start(&scheme, &seed(3)).unwrap();
+    assert_eq!(check.run(&scheme, u32::MAX), Ok(Verdict::Holds));
+    let mut again = Check::restore(&check.save()).unwrap();
+    assert_eq!(again.run(&scheme, 1), Ok(Verdict::Holds));
+}
+
+#[test]
 fn invalid_state() {
     let good = Check::start(&strassen().encode(), &seed(0)).unwrap().save();
     for at in [7, 15, 23, 43, 51] {
@@ -309,6 +338,7 @@ fn state_round_trip() {
     for at in [7, 15, 23, 43, 51] {
         saved[at + 7] &= 0x0f;
     }
+    saved[39..43].copy_from_slice(&0x1615_1412u32.to_le_bytes());
     saved[59] = 1;
     let check = Check::restore(&saved).unwrap();
     assert_eq!(check.save(), saved);

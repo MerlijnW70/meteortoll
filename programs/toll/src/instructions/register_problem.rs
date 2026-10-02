@@ -53,8 +53,9 @@ pub struct RegisterProblem<'info> {
 }
 
 pub fn handle_register_problem(ctx: Context<RegisterProblem>, n1: u8, n2: u8, n3: u8, target_rank: u32) -> Result<()> {
-    let naive = u32::from(n1) * u32::from(n2) * u32::from(n3);
-    require!(target_rank > 0 && target_rank < naive, TollError::BadStatement);
+    let (a, b, c) = (u32::from(n1), u32::from(n2), u32::from(n3));
+    let floor = (a * b).max(b * c).max(c * a);
+    require!(target_rank >= floor && target_rank < a * b * c, TollError::BadStatement);
 
     {
         let pool = ctx.accounts.pool.load()?;
@@ -83,6 +84,7 @@ pub fn handle_register_problem(ctx: Context<RegisterProblem>, n1: u8, n2: u8, n3
     problem.solved_at_slot = 0;
     problem.grace_slots = ctx.accounts.launchpad.grace_slots;
     problem.attempts = 0;
+    problem.pending = 0;
     problem.bump = ctx.bumps.problem;
     Ok(())
 }

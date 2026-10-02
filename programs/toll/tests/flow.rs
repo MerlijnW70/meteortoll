@@ -266,22 +266,29 @@ fn no_commit_after_solve() {
 }
 
 #[test]
-fn withdraw_after_grace_window() {
+fn pending_blocks_final() {
     let mut env = setup(SHAPE, RANK);
     let scheme = fixture(RECORD);
     let winner = upload(&mut env, &scheme, [12u8; 32]);
     let rival = upload(&mut env, &broken(&scheme), [13u8; 32]);
     reveal(&mut env, &winner).unwrap();
     reveal(&mut env, &rival).unwrap();
+    assert_eq!(problem(&env).pending, 2);
     verify_all(&mut env, &winner, 20_000);
+    assert_eq!(problem(&env).pending, 1);
 
+    advance(&mut env, GRACE);
+    let (base, quote) = wallets(&mut env, &winner.solver.pubkey());
+    let claim = claim_ix(&env, &winner.solver.pubkey(), base, quote);
+    assert!(error_in(&send(&mut env.svm, std::slice::from_ref(&claim), &winner.solver, &[]), "GracePending"));
     let close = close_ix(&env, &rival);
     assert!(error_in(&send(&mut env.svm, &[close], &rival.solver, &[]), "CheckPending"));
 
-    advance(&mut env, GRACE);
-    let cranker = new_solver(&mut env);
-    let verify = verify_ix(&env, &rival, &cranker.pubkey(), 20_000);
-    assert!(error_in(&send(&mut env.svm, &[compute_limit(1_400_000), verify], &cranker, &[]), "AlreadySolved"));
+    verify_all(&mut env, &rival, 20_000);
+    assert_eq!(attempt_of(&env, &rival.attempt).status, AttemptStatus::Fails);
+    assert_eq!(problem(&env).pending, 0);
+    env.svm.expire_blockhash();
+    send(&mut env.svm, &[claim], &winner.solver, &[]).unwrap();
     let close = close_ix(&env, &rival);
     send(&mut env.svm, &[close], &rival.solver, &[]).unwrap();
 }

@@ -142,11 +142,16 @@ impl Check {
             let value = word(at);
             if value < P { Ok(Fp::new(value)) } else { Err(Error::Truncated) }
         };
+        let header = Header::parse(&saved[..HEADER_LEN])?;
+        let products = u32::from_le_bytes([saved[39], saved[40], saved[41], saved[42]]);
+        if products > header.rank {
+            return Err(Error::Truncated);
+        }
         Ok(Self {
-            header: Header::parse(&saved[..HEADER_LEN])?,
+            header,
             point: [element(7)?, element(15)?, element(23)?],
             offset: usize::try_from(word(31)).map_err(|_| Error::Truncated)?,
-            products: u32::from_le_bytes([saved[39], saved[40], saved[41], saved[42]]),
+            products,
             lhs: element(43)?,
             rhs: element(51)?,
             direct: match saved[59] {
@@ -158,6 +163,9 @@ impl Check {
     }
 
     pub fn run(&mut self, encoded: &[u8], budget: u32) -> Result<Verdict, Error> {
+        if self.offset > encoded.len() {
+            return Err(Error::Truncated);
+        }
         let powers = [Powers::new(self.point[0]), Powers::new(self.point[1]), Powers::new(self.point[2])];
         let mut left = budget.max(1);
         let first = self.products;

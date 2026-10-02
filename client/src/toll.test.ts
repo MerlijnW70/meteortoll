@@ -25,7 +25,7 @@ test('treasury pools', async () => {
         },
     }
     const pools = await treasuryPools(toll as never, launchpad, { '2x2x2r7': { problem: known.toBase58() } })
-    assert.deepEqual(filters, [[{ memcmp: { offset: 8, bytes: launchpad.toBase58() } }]])
+    assert.deepEqual(filters, [[{ dataSize: 277 }, { memcmp: { offset: 8, bytes: launchpad.toBase58() } }]])
     assert.deepEqual(
         pools.map(({ label, pool }) => [label, pool.toBase58()]),
         [

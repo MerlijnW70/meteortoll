@@ -17,7 +17,7 @@ pub const DBC: Pubkey = toll::dynamic_bonding_curve::ID;
 pub const TOKEN: Pubkey = anchor_spl::token::ID;
 pub const SYSTEM: Pubkey = anchor_lang::system_program::ID;
 pub const SLOT_HASHES: Pubkey = solana_sdk_ids::sysvar::slot_hashes::ID;
-pub const GRACE: u64 = 100;
+pub const GRACE: u64 = 150;
 const COMPUTE_BUDGET: Pubkey = solana_sdk_ids::compute_budget::ID;
 
 pub type Sent = Result<TransactionMetadata, FailedTransactionMetadata>;
@@ -164,6 +164,20 @@ pub fn bare(n: (u8, u8, u8), target: u32) -> Env {
     env
 }
 
+pub fn launchpad_with_grace(grace_slots: u64) -> Sent {
+    let mut svm = LiteSVM::new();
+    let program = include_bytes!(concat!(env!("CARGO_TARGET_TMPDIR"), "/../deploy/toll.so"));
+    svm.add_program(toll::ID, program).unwrap();
+    let admin = Keypair::new();
+    svm.airdrop(&admin.pubkey(), 10_000_000_000).unwrap();
+    let launchpad = pda(&[toll::LAUNCHPAD_SEED, admin.pubkey().as_ref()]);
+    let init = ix(
+        toll::instruction::InitLaunchpad { dbc_config: Pubkey::new_unique(), grace_slots },
+        toll::accounts::InitLaunchpad { admin: admin.pubkey(), launchpad, system_program: SYSTEM },
+    );
+    send(&mut svm, &[init], &admin, &[])
+}
+
 pub fn register(env: &mut Env, n: (u8, u8, u8), target: u32) -> Sent {
     let register = ix(
         toll::instruction::RegisterProblem { n1: n.0, n2: n.1, n3: n.2, target_rank: target },
@@ -230,6 +244,7 @@ pub fn upload(env: &mut Env, scheme: &[u8], salt: [u8; 32]) -> Run {
     let submission = buffer.pubkey();
     put(&mut env.svm, submission, toll::ID, vec![0u8; toll::submission::HEADER_LEN + scheme.len()]);
     send(&mut env.svm, &[open_ix(&solver.pubkey(), &attempt, &submission, scheme.len())], &solver, &[&buffer]).unwrap();
+    advance(env, 1);
 
     for (index, chunk) in scheme.chunks(900).enumerate() {
         let write = ix(

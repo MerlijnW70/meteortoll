@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
 
-use crate::constants::LAUNCHPAD_SEED;
+use crate::constants::{LAUNCHPAD_SEED, MAX_GRACE_SLOTS, MIN_GRACE_SLOTS};
+use crate::error::TollError;
 use crate::state::Launchpad;
 
 #[derive(Accounts)]
@@ -19,6 +20,7 @@ pub struct InitLaunchpad<'info> {
 }
 
 pub fn handle_init_launchpad(ctx: Context<InitLaunchpad>, dbc_config: Pubkey, grace_slots: u64) -> Result<()> {
+    require!((MIN_GRACE_SLOTS..=MAX_GRACE_SLOTS).contains(&grace_slots), TollError::BadGrace);
     let launchpad = &mut ctx.accounts.launchpad;
     launchpad.admin = ctx.accounts.admin.key();
     launchpad.dbc_config = dbc_config;

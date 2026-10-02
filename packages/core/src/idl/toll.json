@@ -415,6 +415,7 @@
         },
         {
           "name": "problem",
+          "writable": true,
           "relations": [
             "attempt"
           ]
@@ -910,6 +911,16 @@
       "code": 6013,
       "name": "GracePending",
       "msg": "The solve is not final until its grace window has passed"
+    },
+    {
+      "code": 6014,
+      "name": "BadGrace",
+      "msg": "The grace window must be between 150 and 216000 slots"
+    },
+    {
+      "code": 6015,
+      "name": "WriteTooEarly",
+      "msg": "The scheme can be written from the slot after the commitment"
     }
   ],
   "types": [
@@ -1791,6 +1802,10 @@
           },
           {
             "name": "attempts",
+            "type": "u32"
+          },
+          {
+            "name": "pending",
             "type": "u32"
           },
           {

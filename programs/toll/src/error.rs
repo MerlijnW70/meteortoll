@@ -30,4 +30,8 @@ pub enum TollError {
     CheckPending,
     #[msg("The solve is not final until its grace window has passed")]
     GracePending,
+    #[msg("The grace window must be between 150 and 216000 slots")]
+    BadGrace,
+    #[msg("The scheme can be written from the slot after the commitment")]
+    WriteTooEarly,
 }

@@ -48,6 +48,7 @@ pub fn handle_verify(ctx: Context<Verify>, budget: u32) -> Result<()> {
             let committed_slot = ctx.accounts.attempt.committed_slot;
             ctx.accounts.attempt.status = AttemptStatus::Holds;
             let problem = &mut ctx.accounts.problem;
+            problem.pending = problem.pending.saturating_sub(1);
             if problem.takes_over(committed_slot) {
                 if problem.solver.is_none() {
                     problem.solved_at_slot = slot;
@@ -62,6 +63,7 @@ pub fn handle_verify(ctx: Context<Verify>, budget: u32) -> Result<()> {
             let bond = ctx.accounts.attempt.bond;
             ctx.accounts.attempt.bond = 0;
             ctx.accounts.attempt.status = AttemptStatus::Fails;
+            ctx.accounts.problem.pending = ctx.accounts.problem.pending.saturating_sub(1);
             ctx.accounts.attempt.sub_lamports(bond)?;
             ctx.accounts.problem.add_lamports(bond)?;
             emit!(Failed { problem: ctx.accounts.problem.key(), solver: ctx.accounts.attempt.solver });

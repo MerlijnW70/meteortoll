@@ -19,6 +19,7 @@ pub struct WriteSubmission<'info> {
 }
 
 pub fn handle_write_submission(ctx: Context<WriteSubmission>, offset: u32, bytes: Vec<u8>) -> Result<()> {
+    require!(Clock::get()?.slot > ctx.accounts.attempt.committed_slot, TollError::WriteTooEarly);
     let attempt_key = ctx.accounts.attempt.key();
     submission::write(&mut ctx.accounts.submission.try_borrow_mut_data()?, &attempt_key, offset, &bytes)
 }

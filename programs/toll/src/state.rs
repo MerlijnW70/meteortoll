@@ -29,13 +29,14 @@ pub struct Problem {
     pub solved_at_slot: u64,
     pub grace_slots: u64,
     pub attempts: u32,
+    pub pending: u32,
     pub bump: u8,
 }
 
 impl Problem {
     #[must_use]
     pub fn finalized(&self, slot: u64) -> bool {
-        self.solver.is_some() && slot >= self.solved_at_slot.saturating_add(self.grace_slots)
+        self.solver.is_some() && self.pending == 0 && slot >= self.solved_at_slot.saturating_add(self.grace_slots)
     }
 
     #[must_use]

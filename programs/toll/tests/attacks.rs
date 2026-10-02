@@ -188,3 +188,60 @@ fn register_twice() {
     env.svm.expire_blockhash();
     assert!(register(&mut env, SHAPE, RANK).is_err());
 }
+
+#[test]
+fn grace_bounds() {
+    assert!(error_in(&launchpad_with_grace(149), "BadGrace"));
+    assert!(error_in(&launchpad_with_grace(216_001), "BadGrace"));
+    assert!(error_in(&launchpad_with_grace(u64::MAX), "BadGrace"));
+    launchpad_with_grace(150).unwrap();
+    launchpad_with_grace(216_000).unwrap();
+}
+
+#[test]
+fn rank_floor() {
+    let mut env = bare(SHAPE, 62);
+    let creator = env.problem;
+    put_dbc_accounts(&mut env, creator);
+    assert!(error_in(&register(&mut env, SHAPE, 62), "BadStatement"));
+    let mut env = bare(SHAPE, 63);
+    let creator = env.problem;
+    put_dbc_accounts(&mut env, creator);
+    register(&mut env, SHAPE, 63).unwrap();
+}
+
+#[test]
+fn write_in_commit_slot() {
+    let mut env = setup(SHAPE, RANK);
+    let solver = new_solver(&mut env);
+    let (sent, attempt) = commit(&mut env, &solver, [5u8; 32]);
+    sent.unwrap();
+    let buffer = Keypair::new();
+    put(&mut env.svm, buffer.pubkey(), toll::ID, vec![0u8; toll::submission::HEADER_LEN + 8]);
+    send(&mut env.svm, &[open_ix(&solver.pubkey(), &attempt, &buffer.pubkey(), 8)], &solver, &[&buffer]).unwrap();
+    let write = ix(
+        toll::instruction::WriteSubmission { offset: 0, bytes: vec![1; 8] },
+        toll::accounts::WriteSubmission { solver: solver.pubkey(), attempt, submission: buffer.pubkey() },
+    );
+    assert!(error_in(&send(&mut env.svm, std::slice::from_ref(&write), &solver, &[]), "WriteTooEarly"));
+    advance(&mut env, 1);
+    send(&mut env.svm, &[write], &solver, &[]).unwrap();
+}
+
+#[test]
+fn unverified_reveal_bond() {
+    let mut env = setup(SHAPE, RANK);
+    let honest = upload(&mut env, &fixture(RECORD), [41u8; 32]);
+    let mut junk = fixture(RECORD);
+    let last = junk.len() - 1;
+    junk[last] = (junk[last] as i8).wrapping_neg() as u8;
+    let griefer = upload(&mut env, &junk, [42u8; 32]);
+    reveal(&mut env, &honest).unwrap();
+    verify_all(&mut env, &honest, 20_000);
+    reveal(&mut env, &griefer).unwrap();
+    advance(&mut env, GRACE * 4);
+    let close = close_ix(&env, &griefer);
+    assert!(error_in(&send(&mut env.svm, &[close], &griefer.solver, &[]), "CheckPending"));
+    verify_all(&mut env, &griefer, 20_000);
+    assert_eq!(attempt_of(&env, &griefer.attempt).bond, 0);
+}

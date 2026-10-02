@@ -12,6 +12,7 @@ use crate::submission;
 #[derive(Accounts)]
 pub struct Reveal<'info> {
     pub solver: Signer<'info>,
+    #[account(mut)]
     pub problem: Box<Account<'info, Problem>>,
     #[account(
         mut,
@@ -59,6 +60,8 @@ pub fn handle_reveal(ctx: Context<Reveal>, salt: [u8; 32]) -> Result<()> {
     let check = Check::start(scheme, &Seed(seed)).map_err(|_| error!(TollError::SchemeDoesNotAnswer))?;
     drop(data);
 
+    let problem = &mut ctx.accounts.problem;
+    problem.pending = problem.pending.saturating_add(1);
     let attempt = &mut ctx.accounts.attempt;
     attempt.check = check.save();
     attempt.seed_slot = slot;

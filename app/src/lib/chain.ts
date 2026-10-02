@@ -1,7 +1,7 @@
 import { AnchorProvider, BorshAccountsCoder, type Idl, Program } from '@coral-xyz/anchor'
 import { type AccountInfo, type Connection, PublicKey, type Transaction, type VersionedTransaction } from '@solana/web3.js'
 import { dbcIdl } from './dbc'
-import { DBC, type ProblemAccount, problemPhase, type ProblemPhase, tollIdl } from '@meteortoll/core'
+import { DBC, type ProblemAccount, PROBLEM_SPACE, problemPhase, type ProblemPhase, tollIdl } from '@meteortoll/core'
 import { classify } from './classify'
 import { CATALOG, LAUNCHPAD } from './config'
 import { type KnownFormat, knownFormat } from './known'
@@ -166,7 +166,7 @@ export async function fetchProblems(connection: Connection): Promise<ProblemView
     const toll = tollReader(connection)
     const accounts = toll.account as never as Accounts
     const [rows, slot] = await Promise.all([
-        accounts.problem.all([{ memcmp: { offset: 8, bytes: LAUNCHPAD.toBase58() } }]),
+        accounts.problem.all([{ dataSize: PROBLEM_SPACE }, { memcmp: { offset: 8, bytes: LAUNCHPAD.toBase58() } }]),
         connection.getSlot('confirmed'),
     ])
     return views(connection, rows.map((row) => ({ publicKey: row.publicKey, account: row.account as ProblemAccount })), slot)

@@ -134,6 +134,7 @@ fn problem(solver: Option<Pubkey>, commit: u64, solved_at: u64, grace: u64) -> P
         solved_at_slot: solved_at,
         grace_slots: grace,
         attempts: 1,
+        pending: 0,
         bump: 255,
     }
 }
@@ -146,6 +147,15 @@ fn finalized_at_grace_end() {
     assert!(solved.finalized(151));
     assert!(!problem(None, 0, 0, 0).finalized(u64::MAX));
     assert!(!problem(Some(Pubkey::new_unique()), 0, u64::MAX - 1, 10).finalized(5));
+}
+
+#[test]
+fn pending_not_final() {
+    let mut solved = problem(Some(Pubkey::new_unique()), 90, 100, 50);
+    solved.pending = 1;
+    assert!(!solved.finalized(u64::MAX));
+    solved.pending = 0;
+    assert!(solved.finalized(150));
 }
 
 #[test]

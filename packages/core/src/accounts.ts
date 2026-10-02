@@ -22,7 +22,10 @@ export interface ProblemAccount {
     solvedAtSlot: U64
     graceSlots: U64
     attempts: number
+    pending: number
 }
+
+export const PROBLEM_SPACE = 277
 
 export interface AttemptAccount {
     problem: PublicKey
@@ -43,5 +46,5 @@ export type ProblemPhase = 'open' | 'grace' | 'solved'
 
 export function problemPhase(problem: ProblemAccount, slot: number): ProblemPhase {
     if (!problem.solver) return 'open'
-    return slot >= problem.solvedAtSlot.toNumber() + problem.graceSlots.toNumber() ? 'solved' : 'grace'
+    return (problem.pending ?? 0) === 0 && slot >= problem.solvedAtSlot.toNumber() + problem.graceSlots.toNumber() ? 'solved' : 'grace'
 }
