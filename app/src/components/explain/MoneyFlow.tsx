@@ -46,8 +46,8 @@ export function MoneyFlow() {
                         held by the program, not a person
                     </Node>
                     <Arrow />
-                    <Node title="Paid to" value="The first solver" tone="text-accent">
-                        whose scheme the program verifies
+                    <Node title="Paid to" value="The solver" tone="text-accent">
+                        with the earliest commitment that verifies
                     </Node>
                 </div>
             </figure>
@@ -58,7 +58,7 @@ export function MoneyFlow() {
                     {LAUNCH_WINDOW && (
                         <li className="rounded-lg bg-panel-2 p-3 text-sm">
                             <span className="font-medium">Launch window</span>
-                            <span className="block text-xs text-muted">bots pay up to {LAUNCH_WINDOW.startingFeeBps / 100}% in the first minutes</span>
+                            <span className="block text-xs text-muted">bots pay up to {LAUNCH_WINDOW.startingFeeBps / 100}%, under 10% after about a minute</span>
                         </li>
                     )}
                     <li className="rounded-lg bg-panel-2 p-3 text-sm">
@@ -104,7 +104,7 @@ export function MoneyFlow() {
                             <dt className="inline font-medium">Launch window. </dt>
                             <dd className="inline text-muted">
                                 Right after a launch the fee is {LAUNCH_WINDOW_TEXT}, so bots that buy in the first seconds pay most of their fee into the bounty.
-                                The launcher&apos;s own first buy, made in the same transaction as the pool, pays the normal fee.
+                                The launcher&apos;s own first buy, up to 1 SOL and made in the same transaction as the pool, pays the normal fee.
                             </dd>
                         </div>
                     )}

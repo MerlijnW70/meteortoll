@@ -27,7 +27,7 @@ const GUARANTEES: { title: string; plain: string; detail: ReactNode }[] = [
         detail: (
             <>
                 The check treats the scheme as a polynomial identity and evaluates it at a random point. Three numbers drawn from a slot hash newer than the
-                submission give every matrix entry its value, so a wrong scheme passes with probability at most (n₁n₂ + n₂n₃ + n₃n₁)/2⁶¹: below one in 10¹⁵ for
+                submission give every matrix entry its value, so a wrong scheme passes with probability at most (n₁n₂ + n₂n₃ + n₃n₁)/2⁶¹: below one in 10¹⁵ per attempt for
                 every format here. Anyone can send the verify calls; the result does not depend on who does.
             </>
         ),
@@ -38,7 +38,7 @@ const GUARANTEES: { title: string; plain: string; detail: ReactNode }[] = [
         detail: (
             <>
                 The commitment is a hash of the problem, the solver, a secret salt and the scheme. Reveal checks the upload against it. If two schemes both
-                verify, the earlier commitment takes the solve during the grace window.
+                verify, the earlier commitment takes the solve during the grace window. A solve is final once that window ends and no revealed attempt is still being checked.
             </>
         ),
     },
@@ -48,7 +48,7 @@ const GUARANTEES: { title: string; plain: string; detail: ReactNode }[] = [
         detail: (
             <>
                 A revealed attempt cannot withdraw before its check ends. The bond does not make a wrong scheme pass more often: the random point is public
-                once drawn, so a solver can see a failure coming and simply not reveal, and each new slot gives a wrong scheme at most a (n₁n₂ + n₂n₃ +
+                once drawn, so a solver can see a failure coming and simply not reveal, and each new attempt gives a wrong scheme at most a (n₁n₂ + n₂n₃ +
                 n₃n₁)/2⁶¹ chance. What keeps wrong answers out is that bound, not the bond.
             </>
         ),
@@ -70,14 +70,14 @@ const FAQ: [string, ReactNode][] = [
         ? ([
               [
                   'Why is the fee so high right after a launch?',
-                  `To keep bots from sniping new tokens. For the first minutes the fee is ${LAUNCH_WINDOW_TEXT}, and what Meteora does not keep goes to the bounty. The launcher's own first buy pays the normal fee, and the trade panel shows the fee before you buy.`,
+                  `To keep bots from sniping new tokens. Right after a launch the fee is ${LAUNCH_WINDOW_TEXT}, under 10% after about a minute, and what Meteora does not keep goes to the bounty. The launcher's own first buy, up to 1 SOL, pays the normal fee, and the trade panel shows the fee before you buy.`,
               ],
           ] as [string, ReactNode][])
         : []),
     ['Do I need to understand the math to trade?', 'No. Trading works like any other token. The math matters to solvers; traders back the problems they find interesting and fund the bounty by trading.'],
     ['Can the team take the bounty?', 'No instruction lets anyone but a verified solver move it. During the hackathon the team can still upgrade the program; that authority moves to a multisig or is revoked before any public bounty is large.'],
-    ['What if nobody solves it?', 'The bounty stays in the vault and keeps growing with trading. There is no deadline.'],
-    ['What if two people solve it?', 'The earlier commitment wins. After the first scheme verifies there is a grace window, shown on each problem page, in which an earlier committed scheme can still take the solve.'],
+    ['What if nobody solves it?', 'The bounty stays in the vault and keeps growing with trading. There is no deadline and no refund: an unsolved bounty stays locked.'],
+    ['What if two people solve it?', 'The earliest commitment whose scheme verifies wins. After a scheme verifies there is a grace window, shown on each problem page, in which an earlier committed scheme can still take the solve. The solve is final once it ends and no revealed attempt is still being checked.'],
     ['What does submitting cost?', `The ${BOND_SOL} SOL bond, which comes back if the scheme holds, plus network fees and rent for the upload buffer, which is returned when the attempt closes. The Solve page checks your scheme in the browser first, for free.`],
     ['Who keeps the bounty topped up?', 'Anyone can move fees into the bounty, and a small keeper wallet does it every 30 minutes. It only pays transaction fees and can never receive anything.'],
     ['What is a disclosed demo?', 'A problem the meteortoll team can already answer, launched to show the full loop. It is marked on every page and is not a public bounty.'],

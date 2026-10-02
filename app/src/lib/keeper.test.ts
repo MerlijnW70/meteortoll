@@ -5,7 +5,7 @@ import { ComputeBudgetInstruction, ComputeBudgetProgram, type Connection, Keypai
 import { DAMM_V2 } from '@meteortoll/core'
 import { tollReader } from './chain'
 import { DAMM_POOL_DISCRIMINATOR, DAMM_TOKEN_A_MINT_OFFSET } from './sweeps'
-import { ATTEMPT_STATUS_OFFSET, ATTEMPT_SUBMISSION_OFFSET, checkableProblems, MAX_CRANKS, MIN_BALANCE, pendingChecks, REVEALED, runKeeper, SPEND_CAP } from './keeper'
+import { ATTEMPT_STATUS_OFFSET, ATTEMPT_SUBMISSION_OFFSET, checkableProblems, exitCode, MAX_CRANKS, MIN_BALANCE, pendingChecks, REVEALED, runKeeper, SPEND_CAP } from './keeper'
 
 const key = () => Keypair.generate().publicKey
 
@@ -170,6 +170,7 @@ test('low balance', async (t) => {
     const run = await runKeeper(connection, program, Keypair.generate(), (line) => lines.push(line))
     assert.deepEqual(run, { swept: [], checked: [], failures: [], skipped: true, capped: false })
     assert.equal(sent().length, 0)
+    assert.equal(exitCode(run), 1)
     assert.match(lines[0], /below/)
 })
 
@@ -181,4 +182,10 @@ test('spend cap', async (t) => {
     assert.equal(run.capped, true)
     assert.equal(sent().length, 4)
     assert.equal(run.checked[0].calls, 4)
+})
+
+test('exit codes', () => {
+    assert.equal(exitCode({ skipped: false, failures: [] }), 0)
+    assert.equal(exitCode({ skipped: true, failures: [] }), 1)
+    assert.equal(exitCode({ skipped: false, failures: ['x'] }), 1)
 })

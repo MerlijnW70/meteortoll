@@ -56,6 +56,8 @@ export interface KeeperRun {
     capped: boolean
 }
 
+export const exitCode = (run: Pick<KeeperRun, 'skipped' | 'failures'>) => (run.skipped || run.failures.length > 0 ? 1 : 0)
+
 export interface KeeperLimits {
     floor: number
     cap: number

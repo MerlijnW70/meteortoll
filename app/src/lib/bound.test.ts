@@ -9,7 +9,7 @@ test('matches core', () => {
 })
 
 test('formatting', () => {
-    assert.equal(errorBoundText(7, 7, 9), '175/2⁶¹, about 7.6·10⁻¹⁷')
+    assert.equal(errorBoundText(7, 7, 9), '175/2⁶¹, about 7.6·10⁻¹⁷ per attempt')
 })
 
 test('launch formats', () => {

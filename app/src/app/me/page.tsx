@@ -138,7 +138,7 @@ export default function Me() {
                         <Stat label="Holdings" hint="at the current curve price">
                             {sol(holdings)} SOL
                         </Stat>
-                        <Stat label="Profit and loss" hint={activity.data ? `realized ${realized < 0n ? '−' : ''}${sol(realized < 0n ? -realized : realized)} SOL` : 'reading your trades…'}>
+                        <Stat label="Gain/loss" hint={activity.data ? `realized ${realized < 0n ? '−' : ''}${sol(realized < 0n ? -realized : realized)} SOL` : 'reading your trades…'}>
                             {activity.data ? <Pnl lamports={unrealized + realized} /> : <Skeleton className="mt-1 h-6 w-24" />}
                         </Stat>
                         <Stat label="Added to bounties" hint="the fees your trades paid">

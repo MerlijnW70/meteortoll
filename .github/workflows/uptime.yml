@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SITE: https://meteortoll.vercel.app
+      CLUSTER: ${{ vars.CLUSTER || 'devnet' }}
+      METADATA_MINT: ${{ vars.METADATA_MINT }}
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
     steps:
@@ -27,6 +29,16 @@ jobs:
           rpc=$(curl -s -o /tmp/rpc -w '%{http_code}' --max-time 30 -H 'content-type: application/json' -H "origin: $SITE" \
             -d '{"jsonrpc":"2.0","id":1,"method":"getHealth"}' "$SITE/api/rpc") || rpc=000
           [ "$rpc" = 200 ] && jq -e '.result == "ok"' /tmp/rpc > /dev/null || problems+=("/api/rpc getHealth answered $rpc: $(head -c 200 /tmp/rpc)")
+          case "$CLUSTER" in
+            mainnet) genesis=5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d ;;
+            *) genesis=EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG; METADATA_MINT=${METADATA_MINT:-821eZL9FEuPhPRjk516GF29e6FMGUSS3HuouitUUCFDH} ;;
+          esac
+          gen=$(curl -s -o /tmp/genesis -w '%{http_code}' --max-time 30 -H 'content-type: application/json' -H "origin: $SITE"             -d '{"jsonrpc":"2.0","id":1,"method":"getGenesisHash"}' "$SITE/api/rpc") || gen=000
+          [ "$gen" = 200 ] && jq -e --arg g "$genesis" '.result == $g' /tmp/genesis > /dev/null || problems+=("/api/rpc getGenesisHash answered $gen, expected $CLUSTER: $(head -c 200 /tmp/genesis)")
+          if [ -n "$METADATA_MINT" ]; then
+            meta=$(curl -s -o /tmp/meta -w '%{http_code}' --max-time 60 "$SITE/api/metadata/$METADATA_MINT") || meta=000
+            [ "$meta" = 200 ] && jq -e '.name | strings' /tmp/meta > /dev/null || problems+=("/api/metadata answered $meta: $(head -c 200 /tmp/meta)")
+          fi
           if [ ${#problems[@]} -eq 0 ]; then echo "healthy=true" >> "$GITHUB_OUTPUT"; else
             echo "healthy=false" >> "$GITHUB_OUTPUT"
             printf '%s\n' "${problems[@]}" | sed 's/^/- /' > /tmp/report

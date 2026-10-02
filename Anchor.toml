@@ -10,6 +10,9 @@ toll = "3YjxqTwQnqSs8xMZ8TGz5S3gEJcG7qmvP5a6Y1bNJ5ey"
 [programs.devnet]
 toll = "3YjxqTwQnqSs8xMZ8TGz5S3gEJcG7qmvP5a6Y1bNJ5ey"
 
+[programs.mainnet]
+toll = "3YjxqTwQnqSs8xMZ8TGz5S3gEJcG7qmvP5a6Y1bNJ5ey"
+
 [provider]
 cluster = "devnet"
 wallet = "~/.config/solana/id.json"
