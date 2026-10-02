@@ -24,7 +24,7 @@ jobs:
           [ "$home" = 200 ] && grep -q meteortoll /tmp/home || problems+=("home page answered $home")
           stats=$(curl -s -o /tmp/stats -w '%{http_code}' --max-time 60 "$SITE/api/stats") || stats=000
           [ "$stats" = 200 ] && jq -e '.problems | numbers' /tmp/stats > /dev/null || problems+=("/api/stats answered $stats: $(head -c 200 /tmp/stats)")
-          rpc=$(curl -s -o /tmp/rpc -w '%{http_code}' --max-time 30 -H 'content-type: application/json' \
+          rpc=$(curl -s -o /tmp/rpc -w '%{http_code}' --max-time 30 -H 'content-type: application/json' -H "origin: $SITE" \
             -d '{"jsonrpc":"2.0","id":1,"method":"getHealth"}' "$SITE/api/rpc") || rpc=000
           [ "$rpc" = 200 ] && jq -e '.result == "ok"' /tmp/rpc > /dev/null || problems+=("/api/rpc getHealth answered $rpc: $(head -c 200 /tmp/rpc)")
           if [ ${#problems[@]} -eq 0 ]; then echo "healthy=true" >> "$GITHUB_OUTPUT"; else
