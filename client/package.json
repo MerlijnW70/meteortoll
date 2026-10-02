@@ -6,7 +6,8 @@
   "scripts": {
     "toll": "tsx src/cli.ts",
     "encode-config": "tsx src/encode-config.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test src/*.test.ts"
   },
   "dependencies": {
     "@meteortoll/core": "*",

@@ -23,6 +23,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test -w app
+      - run: npm test -w client
       - run: npm run lint -w app
       - run: npm run build -w app
 

@@ -18,7 +18,9 @@ import {
 export const PROFILES = {
     test: { initialMarketCap: 10, migrationMarketCap: 50 },
     devnet: { initialMarketCap: 0.2, migrationMarketCap: 1 },
-    mainnet: { initialMarketCap: 30, migrationMarketCap: 400 },
+    // Graduation has to be reachable during the launch itself: that is when the DAMM v2 half of the
+    // integration shows. params.test.ts holds the SOL it takes.
+    mainnet: { initialMarketCap: 10, migrationMarketCap: 50 },
 } as const
 
 export type Profile = keyof typeof PROFILES
