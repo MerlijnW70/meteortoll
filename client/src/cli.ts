@@ -1,6 +1,7 @@
 // toll client. Every command reads and writes client/state/<cluster>.json.
 //
 //   npm run toll -- setup [--grace <slots>]
+//   npm run toll -- preflight [--so <toll.so>] [--problems <count>]   checks before spending anything
 //   npm run toll -- launch <n1> <n2> <n3> <target> --name <name> --symbol <symbol> [--uri <uri>]
 //                      [--pool <pool> --base <mint>]   resume after the pool was created
 //   npm run toll -- buy <problem> <quote amount>
@@ -38,6 +39,8 @@ import {
     waitForSlot,
 } from './env.js'
 import { launchParams, type Profile } from './params.js'
+import { BPF_LOADER_UPGRADEABLE, clusterOf, deployCost, LAUNCH_LAMPORTS, programDataMatches, SETUP_LAMPORTS, sha256, upgradeAuthority } from './preflight.js'
+import { metadataUri, SITE_URL } from './site.js'
 import { commitment, encodeScheme, type FmmScheme, schemeHeader, VERIFY_BUDGET } from '@meteortoll/core'
 import {
     attemptAddress,
@@ -115,13 +118,13 @@ async function launch(args: string[]) {
     const [n1, n2, n3, target] = args.slice(0, 4).map(Number)
     const name = flag(args, 'name')
     const symbol = flag(args, 'symbol')
-    const uri = flag(args, 'uri', `https://meteortoll.invalid/${n1}x${n2}x${n3}r${target}.json`)
     const state = loadState()
     if (!state.config || !state.launchpad) throw new Error('run setup first')
     const config = new PublicKey(state.config)
     const resumePool = flag(args, 'pool', '')
     const base = resumePool ? null : Keypair.generate()
     const baseMint = base ? base.publicKey : new PublicKey(flag(args, 'base'))
+    const uri = flag(args, 'uri', metadataUri(SITE_URL, baseMint.toBase58()))
     const pool = deriveDbcPoolAddress(NATIVE_MINT, baseMint, config)
     if (resumePool && !pool.equals(new PublicKey(resumePool))) throw new Error('--pool does not match --base and the config')
     const problem = problemAddress(pool, [n1, n2, n3], target)
@@ -399,7 +402,54 @@ async function status(args: string[]) {
     }
 }
 
-const commands: Record<string, (args: string[]) => Promise<void>> = { setup, launch, buy, sweep, solve, claim, close, status }
+/// Margin on top of the computed cost, for priority fees and a retry or two.
+const MARGIN_LAMPORTS = 50_000_000
+
+async function preflight(args: string[]) {
+    let ok = true
+    const fail = (line: string) => {
+        ok = false
+        console.log(`  ✗ ${line}`)
+    }
+    const cluster = await clusterOf(connection)
+    console.log(`RPC cluster: ${cluster}`)
+    if (cluster !== CLUSTER) fail(`TOLL_CLUSTER is ${CLUSTER} but the RPC serves ${cluster}`)
+
+    const so = flag(args, 'so', '//wsl.localhost/meteortoll/home/dev/target-meteortoll/deploy/toll.so')
+    const local = readFileSync(so)
+    console.log(`local program: ${local.length} bytes, sha256 ${sha256(local)}`)
+
+    const base = await connection.getMinimumBalanceForRentExemption(0)
+    const perByte = (await connection.getMinimumBalanceForRentExemption(1000)) / 1000 - base / 1000
+    const rent = (bytes: number) => Math.ceil(base + perByte * bytes)
+    const programId = toll.programId
+    const [programData] = PublicKey.findProgramAddressSync([programId.toBuffer()], BPF_LOADER_UPGRADEABLE)
+    const deployed = await connection.getAccountInfo(programData)
+    let needed = 0
+    if (!deployed) {
+        const cost = deployCost(local.length, rent)
+        needed += cost.peak
+        console.log(`program ${programId.toBase58()}: not deployed; the deploy holds ${SOL(cost.peak)} SOL at its peak and keeps ${SOL(cost.kept)}`)
+    } else {
+        const authority = upgradeAuthority(deployed.data)
+        console.log(`program ${programId.toBase58()}: deployed, upgrade authority ${authority?.toBase58() ?? 'none (immutable)'}`)
+        if (programDataMatches(deployed.data, local)) console.log('  ✓ the deployed program is byte for byte the local build')
+        else fail('the deployed program differs from the local build')
+    }
+
+    const state = loadState()
+    if (!state.launchpad) needed += SETUP_LAMPORTS
+    console.log(`launchpad: ${state.launchpad ?? 'not set up'}`)
+    const problems = Number(flag(args, 'problems', '4'))
+    needed += problems * LAUNCH_LAMPORTS + MARGIN_LAMPORTS
+    const balance = await connection.getBalance(wallet.publicKey)
+    console.log(`wallet ${wallet.publicKey.toBase58()}: ${SOL(balance)} SOL; the remaining stages and ${problems} launch(es) need ${SOL(needed)} SOL`)
+    if (balance < needed) fail(`short by ${SOL(needed - balance)} SOL`)
+    console.log(ok ? 'preflight: go' : 'preflight: no go')
+    if (!ok) process.exitCode = 1
+}
+
+const commands: Record<string, (args: string[]) => Promise<void>> = { preflight, setup, launch, buy, sweep, solve, claim, close, status }
 const [command, ...rest] = process.argv.slice(2)
 if (!commands[command]) {
     console.error(`commands: ${Object.keys(commands).join(', ')}`)

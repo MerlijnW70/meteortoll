@@ -61,7 +61,7 @@ against their mainnet binaries and run end to end on devnet. Every path, instruc
 | `app/` | The web app (Next.js) |
 | `client/` | CLI: setup, launch, buy, sweep, solve, claim |
 | `problems/` | Known formats and records, curated problem notes |
-| `docs/` | Meteora integration, devnet run, security notes, plans |
+| `docs/` | Meteora integration, devnet run, mainnet runbook, security notes, plans |
 
 ## Build and test
 
