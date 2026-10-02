@@ -46,7 +46,7 @@ test('window validation', async () => {
     const window = { startingFeeBps: 5000, endingFeeBps: 100, numberOfPeriod: 24, totalDurationSlots: 360 }
     assert.equal(launchWindowProblem(window), null)
     assert.equal(launchWindowProblem(null), null)
-    assert.match(launchWindowProblem({ ...window, endingFeeBps: 50 })!, /normal trading fee/)
+    assert.equal(launchWindowProblem({ ...window, endingFeeBps: 50 }), 'launchWindow.endingFeeBps must be 100, the normal trading fee')
     assert.match(launchWindowProblem({ ...window, startingFeeBps: 100 })!, /above 100/)
     assert.match(launchWindowProblem({ ...window, startingFeeBps: 9901 })!, /at most 9900/)
     assert.match(launchWindowProblem({ ...window, totalDurationSlots: 361 })!, /whole multiple/)
@@ -57,4 +57,23 @@ test('window validation', async () => {
 test('window per cluster', () => {
     assert.ok(economics.mainnet.launchWindow, 'mainnet has a launch window')
     assert.equal(economics.devnet.launchWindow, null)
+})
+
+test('fee bounds', () => {
+    assert.equal(economicsProblem({ treasurySharePercent: 0, launchFeeSol: 0.001 }), null)
+    assert.match(economicsProblem({ treasurySharePercent: 0, launchFeeSol: NaN })!, /launchFeeSol/)
+    assert.match(economicsProblem({ treasurySharePercent: 0, launchFeeSol: -1 })!, /launchFeeSol/)
+})
+
+test('window bounds', async () => {
+    const { launchWindowProblem, launchWindowText } = await import('@meteortoll/core')
+    const window = { startingFeeBps: 9900, endingFeeBps: 100, numberOfPeriod: 1, totalDurationSlots: 1 }
+    assert.equal(launchWindowProblem(window), null)
+    assert.equal(launchWindowProblem({ ...window, numberOfPeriod: 1000, totalDurationSlots: 1000 }), null)
+    assert.match(launchWindowProblem({ ...window, numberOfPeriod: 0 })!, /from 1 to 1000/)
+    assert.match(launchWindowProblem({ ...window, numberOfPeriod: 1001, totalDurationSlots: 1001 })!, /from 1 to 1000/)
+    assert.match(launchWindowProblem({ ...window, numberOfPeriod: 1.5, totalDurationSlots: 3 })!, /from 1 to 1000/)
+    assert.match(launchWindowProblem({ ...window, numberOfPeriod: 24, totalDurationSlots: 0 })!, /whole multiple/)
+    assert.match(launchWindowProblem({ ...window, totalDurationSlots: 1.5 })!, /whole multiple/)
+    assert.equal(launchWindowText({ ...window, totalDurationSlots: 225 }), '99% falling to 1% over about 2 minutes')
 })

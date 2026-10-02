@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { webcrypto } from 'node:crypto'
-import { encodeScheme, type FmmScheme } from '@meteortoll/core'
+import { encodeScheme, schemeWork, verifyCalls, type FmmScheme } from '@meteortoll/core'
 import { brokenScheme } from './checkFile'
 import { Verifier } from './verifier'
 
@@ -70,4 +70,32 @@ test('untransposed c', async () => {
     const json = JSON.parse(readFileSync(new URL('../../public/samples/strassen-2x2x2.json', import.meta.url), 'utf8')) as FmmScheme
     const untransposed = { ...json, w: json.w.map(([c11, c21, c12, c22]) => [c11, c12, c21, c22]) }
     assert.equal((await verifier).verify(encodeScheme(untransposed), seed()).verdict, 'fails')
+})
+
+const tiny = (x: number | string, v: (number | string)[][] = [[1]], w: (number | string)[][] = [[1]]): FmmScheme => ({ n: [1, 1, 1], u: [[x]], v, w })
+
+test('i8 range', () => {
+    assert.deepEqual([...encodeScheme(tiny(-128)).subarray(7, 12)], [1, 0, 0, 0, 0x80])
+    assert.deepEqual([...encodeScheme(tiny(127)).subarray(7, 12)], [1, 0, 0, 0, 127])
+    for (const bad of [-129, 128, 1.5, '0.5']) assert.throws(() => encodeScheme(tiny(bad)), /i8 encoding/)
+})
+
+test('rank mismatch', () => {
+    assert.throws(() => encodeScheme(tiny(1, [[1]], [[1], [1]])), /different ranks/)
+    assert.throws(() => encodeScheme(tiny(1, [[1], [1]], [[1]])), /different ranks/)
+})
+
+test('scheme work', () => {
+    const scheme = encode([2, 1, 1], [
+        [[[0, 1], [1, -1]], [[0, 2]], [[1, 3]]],
+        [[], [], []],
+    ])
+    assert.equal(schemeWork(scheme), 5)
+    assert.equal(schemeWork(encode([1, 1, 1], [])), 0)
+})
+
+test('verify calls', () => {
+    assert.equal(verifyCalls(5, 2), 3)
+    assert.equal(verifyCalls(1, 100), 1)
+    assert.equal(verifyCalls(0, 100), 1)
 })

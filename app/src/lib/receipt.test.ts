@@ -41,3 +41,7 @@ test('not a receipt', () => {
     assert.throws(() => parseReceipt(JSON.stringify(missing)), /no salt/)
     assert.equal(parseReceipt(JSON.stringify(receipt())).kind, RECEIPT_KIND)
 })
+
+test('wrong version', () => {
+    assert.throws(() => parseReceipt(JSON.stringify({ ...receipt(), version: 2 })), /not a commitment receipt/)
+})

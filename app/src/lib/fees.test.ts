@@ -15,6 +15,11 @@ test('percentile', () => {
     assert.equal(priorityPrice([5]), 5)
 })
 
+test('unsorted prices', () => {
+    assert.equal(priorityPrice([70, 0, 40, 10, 60, 20, 50, 30]), 60)
+    assert.equal(priorityPrice([9, 1, 5, 3]), 9)
+})
+
 test('no prices', () => {
     assert.equal(priorityPrice([]), 0)
     assert.equal(priorityPrice([0, 0, 0]), 0)

@@ -49,3 +49,33 @@ test('budget', () => {
     assert.ok(!budget.over('a', 1, 1_100), 'a new window starts fresh')
     assert.ok(!budget.over('a', 0, 1_100))
 })
+
+test('null call', () => {
+    assert.match(refusal(null as never)!, /object/)
+    assert.match(refusal('getSlot' as never)!, /object/)
+})
+
+test('window edge', () => {
+    const budget = new Budget(3, 1000)
+    assert.ok(!budget.over('a', 2, 600))
+    assert.ok(budget.over('a', 2, 700))
+    assert.ok(!budget.over('b', 3, 2000))
+    assert.ok(budget.over('b', 1, 3000))
+    assert.ok(!budget.over('b', 1, 3001))
+})
+
+test('budget kept', () => {
+    const budget = new Budget(3, 1000)
+    assert.ok(!budget.over('a', 3, 0))
+    assert.ok(!budget.over('b', 1, 0))
+    assert.ok(budget.over('a', 1, 10))
+})
+
+test('budget size cap', () => {
+    const budget = new Budget(3, 1000)
+    for (let i = 0; i < 10_000; i++) budget.over(`c${i}`, 3, 0)
+    assert.ok(!budget.over('new', 1, 0))
+    assert.ok(budget.over('c0', 1, 0))
+    assert.ok(!budget.over('newer', 1, 0))
+    assert.ok(!budget.over('c1', 1, 0))
+})

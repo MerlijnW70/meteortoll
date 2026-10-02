@@ -50,3 +50,8 @@ test('launch window', () => {
     const flat = launchParams('mainnet') as unknown as typeof p
     assert.equal(flat.enableFirstSwapWithMinFee, false)
 })
+
+test('no dynamic fee', () => {
+    const p = launchParams('mainnet') as unknown as { poolFees: { dynamicFee: unknown } }
+    assert.equal(p.poolFees.dynamicFee, null)
+})

@@ -66,3 +66,14 @@ test('launch window error', async () => {
     assert.match(friendly.detail!, /42% right now and falls to 1% in about 75 s/)
     assert.equal(friendly.kind, 'cancelled')
 })
+
+test('logs win over code', () => {
+    const logs = ['Program log: AnchorError occurred. Error Code: InsufficientLiquidity. Error Number: 6033. Error Message: Liquidity in bonding curve is insufficient.']
+    const friendly = describeError(new ProgramFailure('failed', TOLL, 6004, logs))
+    assert.equal(friendly.title, 'The curve does not have that much left')
+})
+
+test('detail cut', () => {
+    assert.equal(describeError(new Error('x'.repeat(240))).detail, 'x'.repeat(240))
+    assert.equal(describeError(new Error('x'.repeat(241))).detail, `${'x'.repeat(240)}…`)
+})
