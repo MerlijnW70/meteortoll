@@ -4,7 +4,8 @@ import { BN, utils } from '@coral-xyz/anchor'
 import { ComputeBudgetInstruction, ComputeBudgetProgram, type Connection, Keypair, PublicKey, Transaction } from '@solana/web3.js'
 import { DAMM_V2 } from '@meteortoll/core'
 import { tollReader } from './chain'
-import { ATTEMPT_STATUS_OFFSET, ATTEMPT_SUBMISSION_OFFSET, checkableProblems, MAX_CRANKS, pendingChecks, REVEALED, runKeeper } from './keeper'
+import { DAMM_POOL_DISCRIMINATOR, DAMM_TOKEN_A_MINT_OFFSET } from './sweeps'
+import { ATTEMPT_STATUS_OFFSET, ATTEMPT_SUBMISSION_OFFSET, checkableProblems, MAX_CRANKS, MIN_BALANCE, pendingChecks, REVEALED, runKeeper, SPEND_CAP } from './keeper'
 
 const key = () => Keypair.generate().publicKey
 
@@ -63,7 +64,7 @@ function tokenAccount(mint: PublicKey, amount: bigint): Uint8Array {
 
 const pda = (...seeds: Buffer[]) => PublicKey.findProgramAddressSync(seeds, DAMM_V2)[0]
 
-async function chain({ statuses, position = false }: { statuses: (n: number) => number; position?: boolean }) {
+async function chain({ statuses, position = false, balances = () => 1e9 }: { statuses: (n: number) => number; position?: boolean; balances?: (sent: number) => number }) {
     const problem = key()
     const attemptKey = key()
     const fields = { launchpad: key(), pool: key(), baseMint: key(), quoteMint: key(), baseVault: key(), quoteVault: key() }
@@ -73,9 +74,15 @@ async function chain({ statuses, position = false }: { statuses: (n: number) => 
     const tokenAccounts: { pubkey: PublicKey; account: { data: Buffer } }[] = []
     if (position) {
         const mint = key()
+        const dammPool = key()
         const data = Buffer.alloc(200)
-        data.set(key().toBytes(), 8)
+        data.set(dammPool.toBytes(), 8)
         data.set(mint.toBytes(), 40)
+        const poolData = Buffer.alloc(1112)
+        poolData.set(DAMM_POOL_DISCRIMINATOR, 0)
+        poolData.set(fields.baseMint.toBytes(), DAMM_TOKEN_A_MINT_OFFSET)
+        poolData.set(fields.quoteMint.toBytes(), DAMM_TOKEN_A_MINT_OFFSET + 32)
+        accounts.set(dammPool.toBase58(), { owner: DAMM_V2, data: poolData, lamports: 1, executable: false })
         accounts.set(pda(Buffer.from('position'), mint.toBuffer()).toBase58(), { owner: DAMM_V2, data, lamports: 1, executable: false })
         tokenAccounts.push({ pubkey: pda(Buffer.from('position_nft_account'), mint.toBuffer()), account: { data: Buffer.from(tokenAccount(mint, 1n)) } })
     }
@@ -89,6 +96,7 @@ async function chain({ statuses, position = false }: { statuses: (n: number) => 
             return [{ pubkey: attemptKey, account: attemptData(REVEALED) }]
         },
         getSlot: async () => 0,
+        getBalance: async () => balances(landed.size),
         getMultipleAccountsInfo: async (keys: PublicKey[]) => keys.map((k) => accounts.get(k.toBase58()) ?? null),
         getAccountInfo: async (k: PublicKey) => (k.equals(attemptKey) ? attemptData(statuses(reads++)) : null),
         getTokenAccountsByOwner: async () => ({ value: tokenAccounts }),
@@ -133,7 +141,7 @@ test('keeper cranks', async (t) => {
     t.mock.method(globalThis, 'setTimeout', instant)
     const { connection, program, attemptKey, sent } = await chain({ statuses: (n) => (n < 2 ? REVEALED : 2) })
     const run = await runKeeper(connection, program, Keypair.generate())
-    assert.deepEqual(run, { swept: [], checked: [{ attempt: attemptKey.toBase58(), calls: 3, status: 'holds' }], failures: [] })
+    assert.deepEqual(run, { swept: [], checked: [{ attempt: attemptKey.toBase58(), calls: 3, status: 'holds' }], failures: [], skipped: false, capped: false })
     assert.deepEqual(sent().map(price), [1001, 1002, 1003])
 })
 
@@ -153,4 +161,24 @@ test('keeper sweeps', async (t) => {
     assert.equal(run.failures.length, 0)
     assert.equal(run.checked[0].status, 'fails')
     assert.equal(sent().length, 2)
+})
+
+test('low balance', async (t) => {
+    t.mock.method(globalThis, 'setTimeout', instant)
+    const { connection, program, sent } = await chain({ statuses: () => REVEALED, position: true, balances: () => MIN_BALANCE - 1 })
+    const lines: string[] = []
+    const run = await runKeeper(connection, program, Keypair.generate(), (line) => lines.push(line))
+    assert.deepEqual(run, { swept: [], checked: [], failures: [], skipped: true, capped: false })
+    assert.equal(sent().length, 0)
+    assert.match(lines[0], /below/)
+})
+
+test('spend cap', async (t) => {
+    t.mock.method(globalThis, 'setTimeout', instant)
+    const start = 1e9
+    const { connection, program, sent } = await chain({ statuses: () => REVEALED, balances: (n) => start - n * (SPEND_CAP / 4) })
+    const run = await runKeeper(connection, program, Keypair.generate())
+    assert.equal(run.capped, true)
+    assert.equal(sent().length, 4)
+    assert.equal(run.checked[0].calls, 4)
 })

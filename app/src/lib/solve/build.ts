@@ -115,7 +115,8 @@ export async function claimGroup(program: Program, problemAddress: PublicKey, pr
 }
 
 export async function claimTxs(connection: Connection, program: Program, problemAddress: PublicKey, problem: ProblemAccount, solver: PublicKey, submission: PublicKey | null) {
-    const groups = [...(await sweepGroups(connection, program, problemAddress, problem, solver)), await claimGroup(program, problemAddress, problem, solver, submission)]
+    const sweeps = await sweepGroups(connection, program, problemAddress, problem, solver).catch(() => [])
+    const groups = [...sweeps, await claimGroup(program, problemAddress, problem, solver, submission)]
     return pack(groups, solver)
 }
 

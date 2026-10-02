@@ -11,6 +11,8 @@ export const ATTEMPT_STATUS_OFFSET = 8 + 32 + 32 + 32 + 8 + 32 + 8
 export const ATTEMPT_SUBMISSION_OFFSET = 8 + 32 + 32 + 32 + 8
 export const REVEALED = 1
 export const MAX_CRANKS = 40
+export const MIN_BALANCE = 20_000_000
+export const SPEND_CAP = 100_000_000
 
 const STATUS_NAMES = ['committed', 'revealed', 'holds', 'fails']
 
@@ -50,13 +52,40 @@ export interface KeeperRun {
     swept: string[]
     checked: { attempt: string; calls: number; status: string }[]
     failures: string[]
+    skipped: boolean
+    capped: boolean
 }
 
-export async function runKeeper(connection: Connection, program: Program, keeper: Keypair, log: (line: string) => void = () => {}): Promise<KeeperRun> {
-    const run: KeeperRun = { swept: [], checked: [], failures: [] }
+export interface KeeperLimits {
+    floor: number
+    cap: number
+}
+
+export async function runKeeper(
+    connection: Connection,
+    program: Program,
+    keeper: Keypair,
+    log: (line: string) => void = () => {},
+    limits: KeeperLimits = { floor: MIN_BALANCE, cap: SPEND_CAP }
+): Promise<KeeperRun> {
+    const run: KeeperRun = { swept: [], checked: [], failures: [], skipped: false, capped: false }
+    const balance = () => connection.getBalance(keeper.publicKey, 'confirmed')
+    const start = await balance()
+    if (start < limits.floor) {
+        log(`balance ${start / 1e9} SOL is below the ${limits.floor / 1e9} SOL floor, skipping`)
+        return { ...run, skipped: true }
+    }
+    const within = async () => {
+        if (run.capped) return false
+        if (start - (await balance()) < limits.cap) return true
+        log(`spent the ${limits.cap / 1e9} SOL cap, stopping`)
+        run.capped = true
+        return false
+    }
     const problems: ProblemView[] = await fetchProblems(connection)
 
     for (const problem of problems) {
+        if (!(await within())) return run
         try {
             const txs = await sweepTxs(connection, program, new PublicKey(problem.address), problem.account, keeper.publicKey)
             const signatures = await send(connection, keeper, txs)
@@ -75,10 +104,11 @@ export async function runKeeper(connection: Connection, program: Program, keeper
         filters: [{ memcmp: { offset: ATTEMPT_STATUS_OFFSET, bytes: utils.bytes.bs58.encode([REVEALED]) } }],
     })
     for (const pending of pendingChecks(accounts.map((a) => ({ pubkey: a.pubkey, data: a.account.data })), checkable)) {
+        if (!(await within())) return run
         let calls = 0
         try {
             const price = await estimatePrice(connection, [])
-            while (calls < MAX_CRANKS) {
+            while (calls < MAX_CRANKS && (await within())) {
                 calls += 1
                 await send(connection, keeper, [await verifyTx(program, { cranker: keeper.publicKey, ...pending }, price + calls)])
                 const info = await connection.getAccountInfo(pending.attempt, 'confirmed')

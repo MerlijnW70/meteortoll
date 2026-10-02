@@ -5,8 +5,8 @@ import { type AccountInfo, Connection, Keypair, PublicKey, SystemProgram, Transa
 import { DynamicBondingCurveIdl } from '@meteora-ag/dynamic-bonding-curve-sdk'
 import { DAMM_V2, DBC, type ProblemAccount } from '@meteortoll/core'
 import { tollReader } from './chain'
-import { claimGroup } from './solve/build'
-import { BUDGET_ROOM, findPositions, pack, PACKET, planDbcSweeps, positionNfts, previewGain, productive, sweepInstructions, sweepPlan, tokenAccountAmount } from './sweeps'
+import { claimGroup, claimTxs } from './solve/build'
+import { BUDGET_ROOM, DAMM_POOL_DISCRIMINATOR, DAMM_TOKEN_A_MINT_OFFSET, findPositions, pack, PACKET, planDbcSweeps, positionNfts, previewGain, productive, sweepInstructions, sweepPlan, tokenAccountAmount } from './sweeps'
 
 const key = () => Keypair.generate().publicKey
 const big = (n: bigint) => ({ toString: () => n.toString() })
@@ -115,6 +115,14 @@ function positionData(dammPool: PublicKey, mint: PublicKey, length: number): Uin
     return data.slice(0, length)
 }
 
+function poolData(tokenA: PublicKey, tokenB: PublicKey): Uint8Array {
+    const data = new Uint8Array(1112)
+    data.set(DAMM_POOL_DISCRIMINATOR, 0)
+    data.set(tokenA.toBytes(), DAMM_TOKEN_A_MINT_OFFSET)
+    data.set(tokenB.toBytes(), DAMM_TOKEN_A_MINT_OFFSET + 32)
+    return data
+}
+
 function chainOf(accounts: Map<string, AccountInfo<Buffer> | null>, tokenAccounts: { pubkey: PublicKey; account: { data: Buffer } }[] = []) {
     return {
         getTokenAccountsByOwner: async () => ({ value: tokenAccounts }),
@@ -134,6 +142,7 @@ test('find positions', async () => {
         [positionOf(mints[2]).toBase58(), account(key(), positionData(dammPool, mints[2], 200))],
         [positionOf(mints[3]).toBase58(), account(DAMM_V2, positionData(dammPool, mints[3], 71))],
         [positionOf(mints[4]).toBase58(), account(DAMM_V2, positionData(dammPool, key(), 200))],
+        [dammPool.toBase58(), account(DAMM_V2, poolData(baseMint, quoteMint))],
     ])
     const found = await findPositions(chainOf(accounts, tokenAccounts), problem, baseMint, quoteMint)
     assert.deepEqual(
@@ -247,4 +256,59 @@ test('productive', async () => {
     const ixs = Array.from({ length: 5 }, transfer)
     assert.deepEqual(await productive(connection, ixs, key(), vaults), [ixs[0], ixs[2], ixs[4]])
     assert.deepEqual(await productive(connection, [], key(), vaults), [])
+})
+
+test('junk position', async () => {
+    const problem = key()
+    const [baseMint, quoteMint] = [key(), key()]
+    const pools = [key(), key(), key(), key(), key(), key()]
+    const mints = pools.map(() => key())
+    const tokenAccounts = mints.map((mint) => ({ pubkey: nftAccountOf(mint), account: { data: Buffer.from(tokenAccount(mint, problem, 1n)) } }))
+    const wrongTag = poolData(baseMint, quoteMint)
+    wrongTag[0] ^= 1
+    const accounts = new Map<string, AccountInfo<Buffer> | null>([
+        ...mints.map((mint, i) => [positionOf(mint).toBase58(), account(DAMM_V2, positionData(pools[i], mint, 200))] as const),
+        [pools[0].toBase58(), account(DAMM_V2, poolData(baseMint, quoteMint))],
+        [pools[1].toBase58(), account(DAMM_V2, poolData(key(), key()))],
+        [pools[2].toBase58(), account(DAMM_V2, poolData(quoteMint, baseMint))],
+        [pools[3].toBase58(), account(key(), poolData(baseMint, quoteMint))],
+        [pools[4].toBase58(), account(DAMM_V2, wrongTag)],
+    ])
+    const found = await findPositions(chainOf(accounts, tokenAccounts), problem, baseMint, quoteMint)
+    assert.deepEqual(found.map((f) => f.dammPool.toBase58()), [pools[0].toBase58()])
+})
+
+test('failed simulation', async () => {
+    const { connection, vaults } = simulator([
+        [15n, 20n],
+        [15n, 20n],
+    ])
+    const simulate = connection.simulateTransaction.bind(connection)
+    let call = 0
+    connection.simulateTransaction = (async (...args: Parameters<Connection['simulateTransaction']>) => {
+        if (call++ === 0) throw new Error('simulation failed')
+        return simulate(...args)
+    }) as Connection['simulateTransaction']
+    const ixs = [transfer(), transfer()]
+    assert.deepEqual(await productive(connection, ixs, key(), vaults), [ixs[1]])
+})
+
+test('claim survives', async () => {
+    const program = tollReader(new Connection('http://127.0.0.1:1'))
+    const problemAddress = key()
+    const solver = key()
+    const problem = { pool: key(), baseMint: key(), quoteMint: NATIVE_MINT, baseVault: key(), quoteVault: key() } as unknown as ProblemAccount
+    const broken = {
+        getAccountInfo: async () => {
+            throw new Error('broken')
+        },
+        getTokenAccountsByOwner: async () => ({ value: [] }),
+    } as unknown as Connection
+    const txs = await claimTxs(broken, program, problemAddress, problem, solver, null)
+    const claim = await claimGroup(program, problemAddress, problem, solver, null)
+    assert.equal(txs.length, 1)
+    assert.deepEqual(
+        txs[0].instructions.map((ix) => ix.programId.toBase58()),
+        claim.map((ix) => ix.programId.toBase58())
+    )
 })
