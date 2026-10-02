@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
+import Link from 'next/link'
 import { Header } from '@/components/Header'
 import { REPO_URL } from '@/lib/config'
 import { SITE_URL } from '@/lib/server'
@@ -28,7 +29,11 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
                         Built on Meteora Dynamic Bonding Curve · verifier runs on-chain and in your browser ·{' '}
                         <a href={REPO_URL} className="hover:text-text" target="_blank" rel="noreferrer">
                             source on GitHub
-                        </a>
+                        </a>{' '}
+                        ·{' '}
+                        <Link href="/terms" className="hover:text-text">
+                            terms and risks
+                        </Link>
                     </footer>
                 </Providers>
             </body>

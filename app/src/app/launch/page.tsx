@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { FormatPicker } from '@/components/launch/FormatPicker'
 import { type Draft, suggestedDraft, TargetStep } from '@/components/launch/TargetStep'
 import { useLaunch } from '@/components/launch/useLaunch'
@@ -69,6 +70,12 @@ export default function Launch() {
                     >
                         {!publicKey ? 'Connect wallet' : busy ? 'Launching…' : 'Launch'}
                     </button>
+                    <p className="text-xs text-faint">
+                        Launching creates a public token anyone can trade, and a bounty the toll program pays out on its own.{' '}
+                        <Link href="/terms" className="underline hover:text-muted">
+                            Terms and risks
+                        </Link>
+                    </p>
                 </Panel>
             )}
         </div>
