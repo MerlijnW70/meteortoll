@@ -1,0 +1,44 @@
+name: keeper
+
+on:
+  schedule:
+    - cron: '7,37 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: keeper
+  cancel-in-progress: false
+
+jobs:
+  keep:
+    runs-on: ubuntu-latest
+    env:
+      HAS_KEY: ${{ secrets.KEEPER_SECRET_KEY != '' }}
+      NEXT_PUBLIC_CLUSTER: ${{ vars.CLUSTER || 'devnet' }}
+    steps:
+      - name: Need a keeper key
+        id: key
+        run: |
+          if [ "$HAS_KEY" != "true" ]; then
+            echo "::notice::Keeper skipped: add a KEEPER_SECRET_KEY repository secret (a funded wallet's secret key as a JSON array)."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.key.outputs.ready == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - if: steps.key.outputs.ready == 'true'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22
+          cache: npm
+      - if: steps.key.outputs.ready == 'true'
+        run: npm ci --ignore-scripts
+      - if: steps.key.outputs.ready == 'true'
+        run: node node_modules/tsx/dist/cli.mjs --tsconfig app/tsconfig.json app/scripts/keeper.mts
+        env:
+          KEEPER_SECRET_KEY: ${{ secrets.KEEPER_SECRET_KEY }}
+          SOLANA_RPC_URL: ${{ secrets.SOLANA_RPC_URL }}

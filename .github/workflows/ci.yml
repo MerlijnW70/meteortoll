@@ -1,0 +1,76 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test -w app
+      - run: npm test -w client
+      - run: npm run lint -w app
+      - run: npm run build -w app
+
+  verifier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d # stable
+      - run: cargo test -p meteortoll --quiet
+
+  e2e:
+    runs-on: ubuntu-latest
+    env:
+      HAS_RPC: ${{ secrets.SOLANA_RPC_URL != '' }}
+    steps:
+      - name: Need a dedicated RPC
+        id: rpc
+        run: |
+          if [ "$HAS_RPC" != "true" ]; then
+            echo "::notice::Browser tests skipped: add a SOLANA_RPC_URL repository secret (a devnet RPC URL) to run them."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.rpc.outputs.ready == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - if: steps.rpc.outputs.ready == 'true'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22
+          cache: npm
+      - if: steps.rpc.outputs.ready == 'true'
+        run: npm ci
+      - if: steps.rpc.outputs.ready == 'true'
+        run: npx playwright install --with-deps chromium
+        working-directory: app
+      - if: steps.rpc.outputs.ready == 'true'
+        run: npm run build -w app
+        env:
+          SOLANA_RPC_URL: ${{ secrets.SOLANA_RPC_URL }}
+      - if: steps.rpc.outputs.ready == 'true'
+        run: npm run e2e -w app
+        env:
+          SOLANA_RPC_URL: ${{ secrets.SOLANA_RPC_URL }}
+      - if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: playwright-traces
+          path: app/test-results
+          retention-days: 7
