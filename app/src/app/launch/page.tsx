@@ -65,7 +65,7 @@ function Step({
 export default function Launch() {
     const [format, setFormat] = useState<KnownFormat | null>(null)
     const [draft, setDraft] = useState<Draft | null>(null)
-    const { publicKey, busy, note, launch, launched } = useLaunch()
+    const { publicKey, busy, note, launch, launched, unfinished, finish } = useLaunch()
     const terms = useLaunchTerms()
     const problems = useProblems()
 
@@ -109,14 +109,10 @@ export default function Launch() {
         setDraft((current) => ({ ...draftFor(next), firstBuy: current?.firstBuy ?? '0' }))
     }
 
-    if (launched && format && draft) {
+    if (launched) {
         return (
             <div className="mx-auto max-w-2xl">
-                <LaunchedPanel
-                    launched={launched}
-                    statement={`⟨${format.n.join('×')} : ≤${draft.target}⟩`}
-                    onAnother={() => window.location.reload()}
-                />
+                <LaunchedPanel launched={launched} statement={`⟨${launched.n.join('×')} : ≤${launched.target}⟩`} onAnother={() => window.location.reload()} />
             </div>
         )
     }
@@ -125,6 +121,16 @@ export default function Launch() {
     return (
         <div className="space-y-6">
             <PageIntro title="Launch a problem">Pick a problem, set the target, launch. One wallet approval.</PageIntro>
+            {unfinished && (
+                <Panel className="flex flex-wrap items-center justify-between gap-3 p-4" role="alert">
+                    <p className="text-sm text-warn">
+                        Your launch of ⟨{unfinished.n.join('×')} : ≤{unfinished.target}⟩ created its pool, but the problem is not registered yet. Finish it to open the bounty.
+                    </p>
+                    <button type="button" onClick={finish} disabled={busy} className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-bg disabled:opacity-40">
+                        {busy ? 'Registering…' : 'Finish registration'}
+                    </button>
+                </Panel>
+            )}
             <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
                 <div className="space-y-4">
                     <Step
@@ -170,6 +176,7 @@ export default function Launch() {
                             />
                         )}
                         {problem && format && draft && !tokenProblem(draft) && <p className="text-sm text-warn">{problem}</p>}
+                        {terms.error && <p className="text-sm text-warn">{terms.error.message}</p>}
                         <p className="min-h-5 text-sm text-accent-2" aria-live="polite">
                             {note}
                         </p>

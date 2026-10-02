@@ -1,9 +1,22 @@
 import type { Program } from '@coral-xyz/anchor'
 import type BN from 'bn.js'
-import { ACCOUNT_SIZE, TOKEN_PROGRAM_ID } from '@solana/spl-token'
-import { type Connection, Keypair, type PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js'
-import { createDbcProgram, deriveDbcPoolAddress, DynamicBondingCurveClient, type FirstBuyParams, getCurrentPoint, type PoolConfig } from '@meteora-ag/dynamic-bonding-curve-sdk'
-import { problemAddress, vaultAddress } from '@meteortoll/core'
+import { ACCOUNT_SIZE, NATIVE_MINT, TOKEN_PROGRAM_ID } from '@solana/spl-token'
+import { type Connection, Keypair, PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js'
+import {
+    BaseFeeMode,
+    createDbcProgram,
+    deriveDbcPoolAddress,
+    DynamicBondingCurveClient,
+    type FirstBuyParams,
+    getBaseFeeParams,
+    getCurrentPoint,
+    MigrationFeeOption,
+    MigrationOption,
+    type PoolConfig,
+} from '@meteora-ag/dynamic-bonding-curve-sdk'
+import { creatorTradingFeePercentage, type Economics, problemAddress, vaultAddress } from '@meteortoll/core'
+import { CLUSTER, DBC_CONFIG } from './config'
+import { ECONOMICS } from './economics'
 import { quoteFirstBuy } from './firstBuy'
 import { withRetry } from './rpc'
 import { methods } from './solve/program'
@@ -36,11 +49,55 @@ interface Launchpad {
 
 type Accounts = Record<string, { fetch(key: PublicKey): Promise<unknown>; size: number }>
 
-export async function launchTerms(connection: Connection, program: Program, launchpad: PublicKey): Promise<{ address: PublicKey; config: PoolConfig }> {
+export interface Pinned {
+    config: PublicKey | null
+    economics: Economics
+}
+
+const PINNED: Pinned = { config: DBC_CONFIG, economics: ECONOMICS }
+
+function expectedBaseFee(economics: Economics) {
+    const window = economics.launchWindow
+    return getBaseFeeParams(
+        window
+            ? {
+                  baseFeeMode: BaseFeeMode.FeeSchedulerExponential,
+                  feeSchedulerParam: { startingFeeBps: window.startingFeeBps, endingFeeBps: window.endingFeeBps, numberOfPeriod: window.numberOfPeriod, totalDuration: window.totalDurationSlots },
+              }
+            : { baseFeeMode: BaseFeeMode.FeeSchedulerLinear, feeSchedulerParam: { startingFeeBps: 100, endingFeeBps: 100, numberOfPeriod: 0, totalDuration: 0 } }
+    )
+}
+
+export function termsProblem(config: PoolConfig, economics: Economics): string | null {
+    if (!config.quoteMint.equals(NATIVE_MINT)) return 'it does not trade against SOL'
+    if (BigInt(config.poolCreationFee.toString()) !== BigInt(Math.round(economics.launchFeeSol * 1e9)))
+        return `its launch fee is ${Number(config.poolCreationFee.toString()) / 1e9} SOL, not ${economics.launchFeeSol} SOL`
+    const share = creatorTradingFeePercentage(economics)
+    if (config.creatorTradingFeePercentage !== share) return `it sends ${config.creatorTradingFeePercentage}% of trading fees to the bounty, not ${share}%`
+    const fee = expectedBaseFee(economics)
+    const actual = config.poolFees.baseFee
+    const sameFee =
+        actual.baseFeeMode === fee.baseFeeMode &&
+        actual.firstFactor === fee.firstFactor &&
+        actual.cliffFeeNumerator.eq(fee.cliffFeeNumerator) &&
+        actual.secondFactor.eq(fee.secondFactor) &&
+        actual.thirdFactor.eq(fee.thirdFactor) &&
+        Number(config.enableFirstSwapWithMinFee) === (economics.launchWindow ? 1 : 0)
+    if (!sameFee) return 'its fee schedule differs'
+    if (config.migrationOption !== MigrationOption.MET_DAMM_V2 || config.migrationFeeOption !== MigrationFeeOption.FixedBps100) return 'its migration differs'
+    return null
+}
+
+export async function launchTerms(connection: Connection, program: Program, launchpad: PublicKey, pinned: Pinned = PINNED): Promise<{ address: PublicKey; config: PoolConfig }> {
+    const expected = pinned.config
+    if (!expected) throw new Error(`Launching is not open on ${CLUSTER} yet: no launchpad config is pinned for it.`)
     const { dbcConfig: address } = (await withRetry(() => (program.account as never as Accounts).launchpad.fetch(launchpad))) as Launchpad
-    const config = await withRetry(() => new DynamicBondingCurveClient(connection, 'confirmed').state.getPoolConfig(address))
+    if (!address.equals(expected)) throw new Error(`The launchpad reports config ${address.toBase58()}, not the expected ${expected.toBase58()}. Launching is refused.`)
+    const config = await withRetry(() => new DynamicBondingCurveClient(connection, 'confirmed').state.getPoolConfig(expected))
     if (!config) throw new Error('the launchpad config is missing on this network')
-    return { address, config }
+    const problem = termsProblem(config, pinned.economics)
+    if (problem) throw new Error(`The launchpad config does not match the published terms: ${problem}. Launching is refused.`)
+    return { address: expected, config }
 }
 
 const FIRST_BUY_TOLERANCE_BPS = 50
@@ -59,9 +116,10 @@ export async function prepareLaunch(
     launchpad: PublicKey,
     owner: PublicKey,
     request: LaunchRequest,
-    siteUrl: string
+    siteUrl: string,
+    pinned: Pinned = PINNED
 ): Promise<PreparedLaunch> {
-    const { address: config, config: poolConfig } = await launchTerms(connection, program, launchpad)
+    const { address: config, config: poolConfig } = await launchTerms(connection, program, launchpad, pinned)
     const dbc = new DynamicBondingCurveClient(connection, 'confirmed')
     const quoteMint = poolConfig.quoteMint
 
@@ -86,28 +144,82 @@ export async function prepareLaunch(
         firstBuyParam = { buyer: owner, buyAmount: request.firstBuy, minimumAmountOut, referralTokenAccount: null }
     }
     const create = await withRetry(() => dbc.creator.createPoolWithFirstBuy({ createPoolParam, firstBuyParam }))
+    const register = await registerTransaction(connection, program, { launchpad, config, pool, quoteMint, baseMint: baseMint.publicKey, owner }, request, true)
+    return { create, register, baseMint, pool, problem }
+}
 
-    const handOver = await createDbcProgram(connection)
-        .program.methods.transferPoolCreator()
-        .accountsPartial({ virtualPool: pool, config, creator: owner, newCreator: problem })
-        .instruction()
+interface RegisterAccounts {
+    launchpad: PublicKey
+    config: PublicKey
+    pool: PublicKey
+    quoteMint: PublicKey
+    baseMint: PublicKey
+    owner: PublicKey
+}
+
+async function registerTransaction(
+    connection: Connection,
+    program: Program,
+    { launchpad, config, pool, quoteMint, baseMint, owner }: RegisterAccounts,
+    { n, target }: Pick<LaunchRequest, 'n' | 'target'>,
+    handOver: boolean
+): Promise<Transaction> {
+    const problem = problemAddress(pool, n, target)
+    const tx = new Transaction()
+    if (handOver) {
+        tx.add(
+            await createDbcProgram(connection)
+                .program.methods.transferPoolCreator()
+                .accountsPartial({ virtualPool: pool, config, creator: owner, newCreator: problem })
+                .instruction()
+        )
+    }
     const register = await methods(program)
-        .registerProblem(request.n[0], request.n[1], request.n[2], request.target)
+        .registerProblem(n[0], n[1], n[2], target)
         .accountsPartial({
             payer: owner,
             launchpad,
             config,
             pool,
             problem,
-            baseMint: baseMint.publicKey,
+            baseMint,
             quoteMint,
-            baseVault: vaultAddress(problem, baseMint.publicKey),
+            baseVault: vaultAddress(problem, baseMint),
             quoteVault: vaultAddress(problem, quoteMint),
             baseTokenProgram: TOKEN_PROGRAM_ID,
             quoteTokenProgram: TOKEN_PROGRAM_ID,
         })
         .instruction()
-    return { create, register: new Transaction().add(handOver, register), baseMint, pool, problem }
+    return tx.add(register)
+}
+
+export interface PendingLaunch {
+    n: [number, number, number]
+    target: number
+    pool: string
+    baseMint: string
+}
+
+export async function finishRegistration(
+    connection: Connection,
+    program: Program,
+    launchpad: PublicKey,
+    owner: PublicKey,
+    pending: PendingLaunch,
+    pinned: Pinned = PINNED
+): Promise<{ register: Transaction; problem: PublicKey } | null> {
+    const pool = new PublicKey(pending.pool)
+    const baseMint = new PublicKey(pending.baseMint)
+    const problem = problemAddress(pool, pending.n, pending.target)
+    if (await withRetry(() => connection.getAccountInfo(problem, 'confirmed'))) return null
+    const state = await withRetry(() => new DynamicBondingCurveClient(connection, 'confirmed').state.getPool(pool))
+    if (!state) return null
+    const { creator, baseMint: mint, config: poolConfigAddress } = state.poolState
+    if (!mint.equals(baseMint) || !(creator.equals(owner) || creator.equals(problem))) return null
+    const { address: config, config: poolConfig } = await launchTerms(connection, program, launchpad, pinned)
+    if (!poolConfigAddress.equals(config)) return null
+    const register = await registerTransaction(connection, program, { launchpad, config, pool, quoteMint: poolConfig.quoteMint, baseMint, owner }, pending, !creator.equals(problem))
+    return { register, problem }
 }
 
 export async function launchCost(connection: Connection, program: Program, prepared: PreparedLaunch, owner: PublicKey): Promise<bigint> {

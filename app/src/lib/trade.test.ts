@@ -1,11 +1,11 @@
-import { test } from 'node:test'
+import { type TestContext, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import BN from 'bn.js'
 import { Connection, Keypair, Transaction } from '@solana/web3.js'
 import { createDbcProgram, DynamicBondingCurveClient, type PoolConfig, SwapMode } from '@meteora-ag/dynamic-bonding-curve-sdk'
 import { freshPool } from './firstBuy'
-import { executeSwap, lamports, LaunchWindowError, type Quote, quoteSwap, swapTransaction, windowSeconds } from './trade'
+import { executeSwap, lamports, LaunchWindowError, PriceMovedError, type Quote, quoteSwap, swapTransaction, windowSeconds } from './trade'
 
 const ONE = new BN(1_000_000_000)
 const owner = Keypair.generate().publicKey
@@ -19,6 +19,23 @@ function testConfig(): PoolConfig {
 
 const atSlot = (slot: number) => ({ getSlot: async () => slot, getBlockTime: async () => 0 }) as never as Connection
 const poolService = () => Object.getPrototypeOf(new DynamicBondingCurveClient(atSlot(0), 'confirmed').pool)
+const stateService = () => Object.getPrototypeOf(new DynamicBondingCurveClient(atSlot(0), 'confirmed').state)
+
+function mockMarket(t: TestContext) {
+    const config = testConfig()
+    t.mock.method(stateService(), 'getPool', async () => freshPool(config, new BN(0)))
+    t.mock.method(stateService(), 'getPoolConfig', async () => config)
+    const floors: string[] = []
+    t.mock.method(poolService(), 'swap2', async (params: { minimumAmountOut: BN }) => {
+        floors.push(params.minimumAmountOut.toString())
+        throw new Error('built')
+    })
+    return floors
+}
+
+const priced = (minimumAmountOut: BN, feePercent = 50): Quote => ({ outputAmount: minimumAmountOut, minimumAmountOut, tradingFee: ONE, bounty: ONE, spent: ONE, unspent: ONE, feePercent, windowSlotsLeft: 360 })
+const send = async () => 'sig'
+const FRESH_OUT = new BN('48076918660877')
 
 test('buy quote', async () => {
     const config = testConfig()
@@ -74,13 +91,31 @@ test('sol to lamports', () => {
 })
 
 test('fee guard', async (t) => {
-    t.mock.method(poolService(), 'swap2', async () => {
-        throw new Error('built')
-    })
-    const priced = (feePercent: number): Quote => ({ outputAmount: ONE, minimumAmountOut: ONE, tradingFee: ONE, spent: ONE, unspent: ONE, feePercent, windowSlotsLeft: 360 })
-    const send = async () => 'sig'
-    await assert.rejects(executeSwap(atSlot(0), owner, send, pool, 'buy', ONE, priced(50), 10), (error: unknown) => error instanceof LaunchWindowError && error.secondsLeft === 144 && error.feePercent === 50)
-    await assert.rejects(executeSwap(atSlot(0), owner, send, pool, 'buy', ONE, priced(10), 10), /built/)
-    await assert.rejects(executeSwap(atSlot(0), owner, send, pool, 'buy', ONE, priced(5), 10), /built/)
-    await assert.rejects(executeSwap(atSlot(0), owner, send, pool, 'buy', ONE, priced(50)), /built/)
+    mockMarket(t)
+    await assert.rejects(executeSwap(atSlot(0), owner, send, pool, 'buy', ONE, undefined, 10), (error: unknown) => error instanceof LaunchWindowError && error.secondsLeft === 144 && error.feePercent === 50)
+    await assert.rejects(executeSwap(atSlot(0), owner, send, pool, 'buy', ONE, priced(ONE, 1), 10), (error: unknown) => error instanceof LaunchWindowError)
+    await assert.rejects(executeSwap(atSlot(0), owner, send, pool, 'buy', ONE, undefined, 50), /built/)
+    await assert.rejects(executeSwap(atSlot(0), owner, send, pool, 'buy', ONE), /built/)
+})
+
+test('price moved', async (t) => {
+    const floors = mockMarket(t)
+    await assert.rejects(executeSwap(atSlot(0), owner, send, pool, 'buy', ONE, priced(FRESH_OUT.addn(1))), PriceMovedError)
+    assert.deepEqual(floors, [])
+})
+
+test('displayed floor', async (t) => {
+    const floors = mockMarket(t)
+    await assert.rejects(executeSwap(atSlot(0), owner, send, pool, 'buy', ONE, priced(FRESH_OUT)), /built/)
+    await assert.rejects(executeSwap(atSlot(0), owner, send, pool, 'buy', ONE, priced(new BN(123))), /built/)
+    await assert.rejects(executeSwap(atSlot(0), owner, send, pool, 'buy', ONE), /built/)
+    assert.deepEqual(floors, [FRESH_OUT.toString(), '123', FRESH_OUT.muln(99).divn(100).toString()])
+})
+
+test('bounty share', async () => {
+    const config = testConfig()
+    config.creatorTradingFeePercentage = 80
+    const quote = await quoteSwap(atSlot(0), { pool: freshPool(config, new BN(0)), config } as never, 'buy', ONE)
+    assert.equal(quote.tradingFee.toString(), '400000000')
+    assert.equal(quote.bounty.toString(), '320000000')
 })

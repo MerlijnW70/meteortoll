@@ -2,18 +2,17 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import BN from 'bn.js'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useConnection, useWallet } from '@solana/wallet-adapter-react'
 import { useWalletModal } from '@solana/wallet-adapter-react-ui'
-import { LAMPORTS_PER_SOL } from '@solana/web3.js'
 import { toast } from 'sonner'
 import { describeError } from '@/lib/errors'
 import { notifyError, notifySuccess } from '@/lib/notify'
 import type { ProblemView } from '@/lib/chain'
 import { CLUSTER } from '@/lib/config'
 import { useBalances, useMarket } from '@/hooks/useMarket'
-import { executeSwap, quoteSwap, SLIPPAGE_BPS, windowSeconds } from '@/lib/trade'
+import { parseUnits, portion } from '@/lib/firstBuy'
+import { executeSwap, PriceMovedError, quoteSwap, SLIPPAGE_BPS, windowSeconds } from '@/lib/trade'
 import { BASE_DECIMALS, tokens } from '@/lib/format'
 import { sol } from '../ui'
 
@@ -36,10 +35,8 @@ export function TradePanel({ problem }: { problem: ProblemView }) {
     }, [])
 
     const amountIn = useMemo(() => {
-        const value = Number(amount)
-        if (!Number.isFinite(value) || value <= 0) return null
-        const scale = side === 'buy' ? LAMPORTS_PER_SOL : 10 ** BASE_DECIMALS
-        return new BN(Math.floor(value * scale).toString())
+        const value = parseUnits(amount, side === 'buy' ? 9 : BASE_DECIMALS)
+        return value && value.gtn(0) ? value : null
     }, [amount, side])
 
     const shortfall = (() => {
@@ -79,10 +76,15 @@ export function TradePanel({ problem }: { problem: ProblemView }) {
         setBusy(true)
         const pending = toast.loading(side === 'buy' ? 'Buying…' : 'Selling…')
         try {
-            const signature = await executeSwap(connection, publicKey, sendTransaction, problem.account.pool, side, amountIn)
+            const signature = await executeSwap(connection, publicKey, sendTransaction, problem.account.pool, side, amountIn, quote.data)
             notifySuccess(side === 'buy' ? 'Bought' : 'Sold', signature, pending)
             await Promise.all(['problem', 'problems', 'market', 'balances', 'trades', 'portfolio'].map((key) => queries.invalidateQueries({ queryKey: [key] })))
         } catch (error) {
+            if (error instanceof PriceMovedError) {
+                toast.info('Price moved', { id: pending, description: error.message })
+                await Promise.all(['market', 'quote'].map((key) => queries.invalidateQueries({ queryKey: [key] })))
+                return
+            }
             notifyError(error, pending)
         } finally {
             setBusy(false)
@@ -94,13 +96,13 @@ export function TradePanel({ problem }: { problem: ProblemView }) {
             ? `${tokens(BigInt(quote.data.outputAmount.toString()))} ${problem.info.symbol || 'tokens'}`
             : `${sol(BigInt(quote.data.outputAmount.toString()), 6)} SOL`
         : '—'
-    const toBounty = quote.data ? BigInt(quote.data.tradingFee.toString()) : 0n
+    const toBounty = quote.data ? BigInt(quote.data.bounty.toString()) : 0n
     const presets = side === 'buy' ? BUY_PRESETS.map((v) => [String(v), `${v} SOL`]) : SELL_PRESETS.map((p) => [String(p), `${p}%`])
 
     const pickPreset = (value: string) => {
         if (side === 'buy') return setAmount(value)
         const held = balances.data?.tokens ?? 0n
-        setAmount(String((Number(held) * Number(value)) / 100 / 10 ** BASE_DECIMALS))
+        setAmount(portion(held, Number(value), BASE_DECIMALS))
     }
 
     return (

@@ -1,6 +1,7 @@
 import BN from 'bn.js'
 import type { Connection, PublicKey, Transaction } from '@solana/web3.js'
 import { DynamicBondingCurveClient, getCurrentPoint, SwapMode } from '@meteora-ag/dynamic-bonding-curve-sdk'
+import { bountyPart } from './firstBuy'
 import { withRetry } from './rpc'
 import { sendWithWallet, type WalletSend } from './tx'
 
@@ -21,6 +22,7 @@ export interface Quote {
     outputAmount: BN
     minimumAmountOut: BN
     tradingFee: BN
+    bounty: BN
     spent: BN
     unspent: BN
     feePercent: number
@@ -57,6 +59,7 @@ export async function quoteSwap(connection: Connection, market: Market, side: 'b
         outputAmount: quote.outputAmount,
         minimumAmountOut: quote.minimumAmountOut ?? withSlippage(quote.outputAmount),
         tradingFee: quote.tradingFee,
+        bounty: bountyPart(quote.tradingFee, market.config.creatorTradingFeePercentage),
         spent: quote.includedFeeInputAmount,
         unspent: BN.max(new BN(0), amountIn.sub(quote.includedFeeInputAmount)),
         feePercent: feePercent(quote.tradingFee.add(quote.protocolFee), side === 'buy' ? quote.includedFeeInputAmount : quote.outputAmount.add(quote.tradingFee).add(quote.protocolFee)),
@@ -87,6 +90,13 @@ export class LaunchWindowError extends Error {
     }
 }
 
+export class PriceMovedError extends Error {
+    constructor() {
+        super('The price moved since your quote. Review the new quote and try again.')
+        this.name = 'PriceMovedError'
+    }
+}
+
 export async function executeSwap(
     connection: Connection,
     owner: PublicKey,
@@ -97,9 +107,10 @@ export async function executeSwap(
     quote?: Quote,
     maxFeePercent?: number
 ): Promise<string> {
-    const priced = quote ?? (await quoteSwap(connection, await loadMarket(connection, pool), side, amountIn))
-    if (maxFeePercent !== undefined && priced.feePercent > maxFeePercent) throw new LaunchWindowError(priced.feePercent, windowSeconds(priced.windowSlotsLeft))
-    const tx = await swapTransaction(connection, owner, pool, side, amountIn, priced.minimumAmountOut)
+    const fresh = await quoteSwap(connection, await loadMarket(connection, pool), side, amountIn)
+    if (maxFeePercent !== undefined && fresh.feePercent > maxFeePercent) throw new LaunchWindowError(fresh.feePercent, windowSeconds(fresh.windowSlotsLeft))
+    if (quote && fresh.outputAmount.lt(quote.minimumAmountOut)) throw new PriceMovedError()
+    const tx = await swapTransaction(connection, owner, pool, side, amountIn, (quote ?? fresh).minimumAmountOut)
     return sendWithWallet(connection, tx, owner, send)
 }
 

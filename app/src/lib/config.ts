@@ -27,6 +27,21 @@ export function launchpadFor(cluster: Cluster, override: string | undefined, leg
     return new PublicKey(address)
 }
 
+export const DBC_CONFIGS: Record<Cluster, string | undefined> = {
+    devnet: 'Z4PT2dz65c2AW7jVYCoArmRvDSuLqZhQ7AnqFA2y1wT',
+    mainnet: undefined,
+}
+
+const DBC_CONFIG_OVERRIDES: Record<Cluster, string | undefined> = {
+    devnet: process.env.NEXT_PUBLIC_DEVNET_DBC_CONFIG,
+    mainnet: process.env.NEXT_PUBLIC_MAINNET_DBC_CONFIG,
+}
+
+export function dbcConfigFor(cluster: Cluster, override: string | undefined): PublicKey | null {
+    const address = override || DBC_CONFIGS[cluster]
+    return address ? new PublicKey(address) : null
+}
+
 export const CLUSTER = parseCluster(process.env.NEXT_PUBLIC_CLUSTER)
 export const PUBLIC_RPC = CLUSTER === 'mainnet' ? 'https://api.mainnet-beta.solana.com' : 'https://api.devnet.solana.com'
 
@@ -37,6 +52,7 @@ export function rpcEndpoint(): string {
 
 export const WS_ENDPOINT = PUBLIC_RPC.replace('https://', 'wss://')
 export const LAUNCHPAD = launchpadFor(CLUSTER, LAUNCHPAD_OVERRIDES[CLUSTER], process.env.NEXT_PUBLIC_LAUNCHPAD)
+export const DBC_CONFIG = dbcConfigFor(CLUSTER, DBC_CONFIG_OVERRIDES[CLUSTER])
 
 export interface CatalogEntry {
     mint: string
