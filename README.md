@@ -54,8 +54,9 @@ LiteSVM (`programs/toll/tests/dbc.rs`), and run end to end on devnet:
 | Curve fees → bounty | `sweep_trading_fees` | CPI `claim_creator_trading_fee` |
 | Surplus → bounty | `sweep_surplus` | CPI `creator_withdraw_surplus` |
 | Graduated fees → bounty | `sweep_position_fees` | CPI DAMM v2 `claim_position_fee` |
-| Trading in the app | quotes and swaps | DBC SDK `swapQuote`, `swap` |
+| Trading in the app | quotes and swaps that fill partially, so a last buy can complete the curve | DBC SDK `swapQuote2`, `swap2` |
 | Live trades | decoded `EvtSwap2` events | DBC event CPI |
+| Fees from every source, by anyone | the problem page's sweep button sends the three sweeps above | `sweep_trading_fees`, `sweep_surplus`, `sweep_position_fees` |
 
 ## Repository
 
@@ -78,6 +79,7 @@ scripts/build.sh test                        # program + LiteSVM tests (in the W
 scripts/mutants.sh                           # mutation testing of the program (cargo-mutants, WSL)
 scripts/build-wasm.sh                        # browser verifier → app/public/verifier.wasm
 npm install && npm test -w app               # app unit tests
+npm run e2e -w app                           # browser tests (a production build; needs a devnet RPC in SOLANA_RPC_URL)
 npm run build -w app                         # web app
 npm run toll -w client -- status             # CLI against devnet
 ```

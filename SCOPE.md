@@ -14,8 +14,8 @@ trading on DAMM v2 as a live market on the problem.
 First problem class: **matrix multiplication rank** — "find a scheme that multiplies an
 n×m by m×p matrix with at most R multiplications", with R set one below the best known.
 This is a real research frontier (AlphaTensor, flip-graph papers, the Sedoglavic table),
-and `F:\fmm` already holds schemes that beat that table on several formats, so the demo
-is real research, not a toy.
+and the team's search tool `fmm` already holds schemes that beat that table on several formats,
+so the demo is real research, not a toy.
 
 Why it targets the judging criteria:
 
@@ -101,23 +101,10 @@ All of it is permissionless and tested against the mainnet DBC, DAMM v2 and Meta
 
 ## Status
 
-Done: verifier core, the whole `toll` program (register, three sweeps, commit, upload, reveal,
-verify, claim, close) tested against mainnet program binaries and mutation-tested, devnet deploy
-and full lifecycle (`docs/devnet-run.md`), CLI, and the web app at https://meteortoll.vercel.app.
-Next: mainnet launch, demo video, submission.
-
-## Plan
-
-| Day | Date | Work |
-|---|---|---|
-| 1 | Oct 2 | Spike: devnet DBC config + pool via SDK with a PDA creator; prove claim CPIs; read DBC fee/migration code paths |
-| 2–3 | Oct 3–4 | Verifier core + tests on all `fmm` records and mutations; measure compute units per point |
-| 4–5 | Oct 5–6 | `toll` program: create problem, sweep, commit, reveal, verify, payout; localnet tests with a forked DBC |
-| 6–7 | Oct 7–8 | Web app on fun-launch; solver CLI |
-| 8 | Oct 9 | Mainnet: deploy program, launch the first 3 problems, cap vault sizes |
-| 9–10 | Oct 10–11 | Hardening and self-review of fund-handling paths; README; public problem page; outreach to people who work on matrix multiplication |
-| 11 | Oct 12 | Pitch deck + Loom video; submit on Superteam **and** Colosseum main track |
-| — | Oct 13 06:59 UTC | Deadline: everything in by the evening of Oct 12 |
+What is built and proven is recorded where it can be checked: the program's tests, the app's tests,
+and the transactions in `docs/devnet-run.md`. Remaining before the deadline: mainnet launch
+(program, launch config and launchpad, the first problems), demo video, pitch, and submission on
+Superteam and the Colosseum main track, everything in by the evening of Oct 12.
 
 ## Integrity rule (important)
 
@@ -134,7 +121,7 @@ funded by the public, it looks like a rug. Two rules:
 | Risk | Mitigation |
 |---|---|
 | DBC CPI or PDA-creator path does not work | Retired: tested against mainnet DBC and DAMM v2 binaries |
-| Program holds user funds | Small mainnet caps, minimal instruction set, review of every lamport path, no upgrade authority games (state who holds it); the program is mutation-tested (`scripts/mutants.sh`) |
+| Program holds user funds | Minimal instruction set, review of every lamport path, the upgrade authority's holder stated on the site, the program mutation-tested (`scripts/mutants.sh`). The program has no cap on vault size: until an audit, the team keeps its own launches and buys small |
 | Judges see it as niche | Lead with "new asset class: open problems"; matrix rank is example #1 |
 | Low organic traction | Launch by day 8; push to the research community; live verify in the video |
 | Running out of time | Cuts above; the web app may stay thin as long as launch, trade and submit all work |

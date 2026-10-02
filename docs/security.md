@@ -7,13 +7,13 @@ rules are in `SCOPE.md`; this covers the website.
 
 | Risk | Protection | Where |
 |---|---|---|
-| RPC key leaking to browsers | The key lives only in the server variable `SOLANA_RPC_URL`; browsers call `/api/rpc`. Checked after each deploy: no client script contains it | `app/src/app/api/rpc/route.ts`, `app/src/lib/server.ts` |
+| RPC key leaking to browsers | The key lives only in the server variable `SOLANA_RPC_URL`, which has no `NEXT_PUBLIC_` prefix, so Next.js never puts it in browser code; browsers call `/api/rpc` | `app/src/app/api/rpc/route.ts`, `app/src/lib/upstream.ts` |
 | Other sites spending our RPC through their visitors | `/api/rpc` refuses requests whose `Origin` is another host | same |
 | RPC abuse | Method allowlist; `getProgramAccounts` only for the toll program; bodies ≤ 64 KiB; batches ≤ 50; a per-instance budget per client address | same |
 | Clickjacking a transaction approval | `frame-ancestors 'none'` and `X-Frame-Options: DENY` | `app/next.config.ts` |
 | Injected scripts and exfiltration | Content Security Policy: scripts and connections limited to this origin and Solana's public websocket endpoints; no `object`, no foreign `base` or `form` targets | same |
 | MIME sniffing, referrer leaks, device APIs | `nosniff`, `strict-origin-when-cross-origin`, `Permissions-Policy` disabling camera, microphone, location, payment | same |
-| A test key wallet reaching users | The dev wallet needs both the build flag `NEXT_PUBLIC_DEV_BURNER=1` and a `localhost` page; `.env.local` is never uploaded (`.vercelignore` is an allowlist) | `app/src/app/providers.tsx`, `.vercelignore` |
+| A test key wallet reaching users | The dev wallet needs the build flag `NEXT_PUBLIC_DEV_BURNER=1`, a `localhost` page and a cluster other than mainnet; `.env.local` is never uploaded (`.vercelignore` is an allowlist) | `app/src/app/providers.tsx`, `.vercelignore` |
 | Freezing the tab with a huge file | Files over 5 MiB are refused before parsing; encodings over the program's 1 MiB limit are refused | `app/src/lib/checkFile.ts` |
 | One RPC provider failing or rate-limiting | The relay and every server read fall over to `SOLANA_RPC_FALLBACK_URLS`, then the cluster's public endpoint; logs name hosts, never URLs, which carry keys | `app/src/lib/upstream.ts` |
 | Error reports leaking secrets or identities | Reports carry only message, stack, page and release; long base58 runs and 32+ number arrays are redacted on both sides; same-origin only, ≤ 8 KiB, a per-instance budget; the client address is never logged | `app/src/lib/report.ts`, `app/src/app/api/report/route.ts` |
