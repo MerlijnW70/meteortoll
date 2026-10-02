@@ -18,9 +18,15 @@ fn modulus_and_error_bound() {
     println!("fact: modulus 2^61 - 1 = {P}");
     println!("fact: modulus width {bits} bits");
     // A wrong scheme passes with probability at most (n1 n2 + n2 n3 + n3 n1) / P.
-    for (name, header) in [("7x7x9", shape(7, 7, 9)), ("9x11x13", shape(9, 11, 13)), ("largest", shape(255, 255, 255))] {
+    for header in [shape(7, 7, 9), shape(9, 11, 13), shape(255, 255, 255)] {
         let bound = error_bound(&header);
-        println!("fact: error bound {name} {bound}/2^61, at most {:.1e}", bound as f64 / P as f64);
+        println!(
+            "fact: error bound for n1 {} n2 {} n3 {}: {bound}/2^61, at most {:.1e}",
+            header.n1,
+            header.n2,
+            header.n3,
+            bound as f64 / P as f64
+        );
     }
     assert_eq!(error_bound(&shape(7, 7, 9)), 175);
     assert_eq!(error_bound(&shape(9, 11, 13)), 359);
