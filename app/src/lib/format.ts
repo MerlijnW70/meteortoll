@@ -21,3 +21,13 @@ export function tokens(atoms: bigint): string {
     const whole = Number(atoms) / 10 ** BASE_DECIMALS
     return whole.toLocaleString(LOCALE, { maximumFractionDigits: whole < 1 ? 6 : 0 })
 }
+
+/// How long ago a unix time was, in the largest whole unit: 42s, 5m, 3h, 2d. Empty when unknown.
+export function ago(seconds: number | null, now = Date.now() / 1000): string {
+    if (!seconds) return ''
+    const delta = Math.max(0, now - seconds)
+    if (delta < 60) return `${Math.floor(delta)}s`
+    if (delta < 3600) return `${Math.floor(delta / 60)}m`
+    if (delta < 86400) return `${Math.floor(delta / 3600)}h`
+    return `${Math.floor(delta / 86400)}d`
+}

@@ -3,18 +3,10 @@
 import type { ProblemView } from '@/lib/chain'
 import { explorer } from '@/lib/config'
 import { useTrades } from '@/hooks/useMarket'
+import { ago } from '@/lib/format'
 import { Panel, short, Skeleton, sol } from '../ui'
 
 const FEED_LENGTH = 20
-
-function ago(seconds: number | null): string {
-    if (!seconds) return ''
-    const delta = Math.max(0, Date.now() / 1000 - seconds)
-    if (delta < 60) return `${Math.floor(delta)}s`
-    if (delta < 3600) return `${Math.floor(delta / 60)}m`
-    if (delta < 86400) return `${Math.floor(delta / 3600)}h`
-    return `${Math.floor(delta / 86400)}d`
-}
 
 export function TradeFeed({ problem }: { problem: ProblemView }) {
     const { data: all, isLoading, error } = useTrades(problem.account.pool)

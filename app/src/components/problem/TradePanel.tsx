@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import BN from 'bn.js'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -30,9 +30,14 @@ export function TradePanel({ problem }: { problem: ProblemView }) {
     const queries = useQueryClient()
     const market = useMarket(problem.account.pool)
     const balances = useBalances(publicKey, problem.account.baseMint)
-    const [side, setSide] = useState<'buy' | 'sell'>('buy')
+    // `/p/<address>#sell` (the portfolio's Sell link) opens the panel on the sell side. The panel
+    // mounts only in the browser, once the problem has loaded, so the hash is there to read.
+    const [side, setSide] = useState<'buy' | 'sell'>(() => (typeof window !== 'undefined' && window.location.hash === '#sell' ? 'sell' : 'buy'))
     const [amount, setAmount] = useState('0.1')
     const [busy, setBusy] = useState(false)
+    useEffect(() => {
+        if (window.location.hash === '#sell') document.getElementById('trade')?.scrollIntoView({ block: 'center' })
+    }, [])
 
     const amountIn = useMemo(() => {
         const value = Number(amount)
@@ -102,7 +107,7 @@ export function TradePanel({ problem }: { problem: ProblemView }) {
     }
 
     return (
-        <div className="space-y-3">
+        <div id="trade" className="scroll-mt-24 space-y-3">
             <div className="grid grid-cols-2 rounded-lg bg-panel-2 p-1 text-sm" role="tablist">
                 {(['buy', 'sell'] as const).map((s) => (
                     <button

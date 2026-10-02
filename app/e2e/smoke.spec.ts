@@ -1,4 +1,5 @@
 import { expect, type Page, test } from '@playwright/test'
+import { existsSync, readFileSync } from 'node:fs'
 
 // What a visitor without a wallet sees, on every page, on desktop and phone: content loads from
 // the chain, the in-browser verifier gives the right verdicts, nothing throws, and nothing is
@@ -134,5 +135,27 @@ test('the solve page lists open bounties, documents the format and checks a JSON
     await expect(page.getByText('✓ Holds', { exact: true })).toBeVisible()
     await expect(page.getByText('⟨2×2×2 : 7⟩')).toBeVisible()
     await fitsTheScreen(page)
+    expect(errors).toEqual([])
+})
+
+// Needs the local devnet key, which never leaves this machine; CI skips it.
+const DEVNET_KEY = '../.keys/devnet.json'
+
+test('the portfolio of a wallet with trades shows cost, profit and loss, bounty funded and activity', async ({ page }) => {
+    test.skip(!existsSync(DEVNET_KEY), 'no local devnet key')
+    test.setTimeout(120_000)
+    const errors = watch(page)
+    const secret = readFileSync(DEVNET_KEY, 'utf8')
+    await page.addInitScript((key) => {
+        localStorage.setItem('meteortoll:devWallet', key)
+        localStorage.setItem('walletName', JSON.stringify('Dev Wallet (local test key)'))
+    }, secret)
+    await page.goto('/me')
+    await expect(page.getByText('Added to bounties')).toBeVisible({ timeout: 60_000 })
+    const lcheck = page.getByRole('row').filter({ hasText: 'LCHECK' })
+    await expect(lcheck).toContainText('0.05 SOL', { timeout: 90_000 })
+    await expect(lcheck).toContainText('%')
+    await expect(page.getByText('Launched').first()).toBeVisible()
+    await expect(lcheck.getByRole('link', { name: 'Sell' })).toHaveAttribute('href', /#sell$/)
     expect(errors).toEqual([])
 })
