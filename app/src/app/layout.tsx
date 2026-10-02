@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import Link from 'next/link'
+import { Analytics } from '@vercel/analytics/next'
 import { Header } from '@/components/Header'
 import { REPO_URL } from '@/lib/config'
 import { SITE_URL } from '@/lib/server'
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
                         </Link>
                     </footer>
                 </Providers>
+                <Analytics />
             </body>
         </html>
     )

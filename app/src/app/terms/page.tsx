@@ -79,7 +79,7 @@ export default function Terms() {
 
             <Section title="Privacy">
                 <ul className="list-disc space-y-1 pl-5">
-                    <li>There are no accounts, cookies or tracking scripts.</li>
+                    <li>There are no accounts and no cookies. Page views are counted with Vercel Web Analytics, which sets no cookies and stores no personal data.</li>
                     <li>Your browser stores the salt of each commitment you make, so you can reveal later. It never leaves your browser.</li>
                     <li>The site&apos;s RPC relay uses your IP address, in memory only, to limit how many requests one visitor can send. Our host, Vercel, keeps standard request logs.</li>
                     <li>

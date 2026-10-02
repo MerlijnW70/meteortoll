@@ -20,6 +20,7 @@
     "@solana/wallet-adapter-react-ui": "^0.9.40",
     "@solana/web3.js": "1.99.0",
     "@tanstack/react-query": "^5.104.0",
+    "@vercel/analytics": "^2.0.1",
     "bn.js": "^5.2.5",
     "buffer": "^6.0.3",
     "lightweight-charts": "^5.2.1",
@@ -38,7 +39,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
     "tailwindcss": "^4",
-    "typescript": "^5",
-    "tsx": "^4.23.15"
+    "tsx": "^4.23.15",
+    "typescript": "^5"
   }
 }
