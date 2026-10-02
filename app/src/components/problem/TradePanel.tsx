@@ -171,7 +171,7 @@ export function TradePanel({ problem }: { problem: ProblemView }) {
             >
                 {!publicKey ? 'Connect wallet' : busy ? 'Confirm in wallet…' : !amountIn ? 'Enter an amount' : shortfall ?? (side === 'buy' ? 'Buy' : 'Sell')}
             </button>
-            <p className="text-center text-[11px] text-faint">
+            <p className="text-center text-xs text-faint">
                 Tokens can lose all their value. Not financial advice.{' '}
                 <Link href="/terms" className="underline hover:text-muted">
                     Terms and risks

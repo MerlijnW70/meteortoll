@@ -35,7 +35,7 @@ function Hero({ problem }: { problem: ProblemView | undefined }) {
                 <p className="mb-3 text-sm text-accent-2">
                     {problem.info.kind === 'demo' ? 'Disclosed demo · not a public bounty' : 'Open problems you can trade'}
                 </p>
-                <h1 className="mb-3 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
+                <h1 className="mb-4 text-4xl font-semibold sm:text-5xl">
                     Multiply a {n1}×{n2} by a {n2}×{n3} matrix with <span className="text-accent">{target}</span> multiplications.
                 </h1>
                 <p className="mb-6 text-muted">
@@ -72,7 +72,7 @@ function HowItWorks() {
                     <span className="num grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent/15 text-xs text-accent">{i + 1}</span>
                     <div>
                         <div className="text-sm font-medium">{title}</div>
-                        <p className="mt-0.5 text-xs text-muted">{body}</p>
+                        <p className="mt-1 text-sm text-muted">{body}</p>
                     </div>
                 </li>
             ))}

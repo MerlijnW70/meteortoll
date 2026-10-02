@@ -32,13 +32,45 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Type scale. Reading text is 15-16px and nothing is smaller than 13px, as in current product
+   interfaces; headings step up clearly and tighten as they grow. Every component's text-* class
+   follows from here, so the whole site moves together. */
+@theme {
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.25rem;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.5rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.65rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.7rem;
+  --text-xl: 1.3125rem;
+  --text-xl--line-height: 1.8rem;
+  --text-2xl: 1.75rem;
+  --text-2xl--line-height: 2.15rem;
+  --text-2xl--letter-spacing: -0.02em;
+  --text-3xl: 2.125rem;
+  --text-3xl--line-height: 2.5rem;
+  --text-3xl--letter-spacing: -0.025em;
+  --text-4xl: 2.75rem;
+  --text-4xl--line-height: 3.1rem;
+  --text-4xl--letter-spacing: -0.03em;
+  --text-5xl: 3.5rem;
+  --text-5xl--line-height: 1.05;
+  --text-5xl--letter-spacing: -0.035em;
+}
+
 html {
   color-scheme: dark;
+  font-size: 100%;
 }
 
 body {
   background: var(--bg);
   color: var(--text);
+  font-size: var(--text-base);
+  line-height: var(--text-base--line-height);
+  -webkit-font-smoothing: antialiased;
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 

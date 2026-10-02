@@ -15,7 +15,7 @@ function Tile({ label, value, sub }: { label: string; value: string; sub?: strin
     return (
         <div className="rounded-xl border border-border p-3">
             <div className="text-xs text-muted">{label}</div>
-            <div className="num text-lg font-semibold">{value}</div>
+            <div className="num text-2xl font-semibold">{value}</div>
             {sub && <div className="num text-xs text-faint">{sub}</div>}
         </div>
     )

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { TOLL } from '@meteortoll/core'
 import { Strassen } from '@/components/explain/Strassen'
-import { Panel } from '@/components/ui'
+import { PageIntro, Panel } from '@/components/ui'
 import { explorer, REPO_URL } from '@/lib/config'
 
 const steps: [string, string][] = [
@@ -18,10 +18,9 @@ export const metadata: Metadata = { title: 'How it works' }
 export default function Trust() {
     return (
         <div className="mx-auto max-w-3xl space-y-8">
-            <div>
-                <h1 className="text-2xl font-semibold tracking-tight">How it works</h1>
-                <p className="mt-1 text-muted">Every rule below is enforced by code you can read and check. There is no committee and no oracle.</p>
-            </div>
+            <PageIntro title="How it works">
+                Every rule below is enforced by code you can read and check. There is no committee and no oracle.
+            </PageIntro>
             <div id="why">
                 <Strassen />
             </div>

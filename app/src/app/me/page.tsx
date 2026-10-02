@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ErrorPanel } from '@/components/ErrorPanel'
 import { AttemptRow } from '@/components/me/AttemptRow'
 import { ClaimPanel } from '@/components/problem/ClaimPanel'
-import { Panel, shape, Skeleton, sol } from '@/components/ui'
+import { PageIntro, Panel, shape, Skeleton, sol } from '@/components/ui'
 import { useProblems } from '@/hooks/useProblems'
 import { tokens } from '@/lib/format'
 import { fetchPortfolio } from '@/lib/portfolio'
@@ -55,10 +55,9 @@ export default function Me() {
 
     return (
         <div className="mx-auto max-w-3xl space-y-6">
-            <div>
-                <h1 className="text-2xl font-semibold tracking-tight">Your portfolio</h1>
-                <p className="mt-1 break-all font-mono text-xs text-muted">{publicKey.toBase58()}</p>
-            </div>
+            <PageIntro title="Your portfolio">
+                <p className="break-all font-mono text-xs text-muted">{publicKey.toBase58()}</p>
+            </PageIntro>
             {error && <ErrorPanel error={error} what="Could not load your portfolio" onRetry={() => (problems.error ? problems.refetch() : portfolio.refetch())} />}
             {!data && !error && <Skeleton className="h-64" />}
             {data && (

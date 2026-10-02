@@ -27,7 +27,7 @@ export function StepList({
                 const state = stepState(step, current, failed, claimed)
                 return (
                     <li key={step} className="flex gap-3" aria-current={state === 'current' ? 'step' : undefined}>
-                        <span aria-hidden className={`num mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] ${badge[state]}`}>
+                        <span aria-hidden className={`num mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs ${badge[state]}`}>
                             {state === 'done' ? '✓' : state === 'failed' ? '✕' : index + 1}
                         </span>
                         <div className="text-sm">

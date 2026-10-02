@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { Panel } from '@/components/ui'
+import { PageIntro, Panel } from '@/components/ui'
 import { REPO_URL } from '@/lib/config'
 
 export const metadata: Metadata = { title: 'Terms and risks' }
@@ -19,10 +19,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function Terms() {
     return (
         <div className="mx-auto max-w-3xl space-y-8">
-            <div>
-                <h1 className="text-2xl font-semibold tracking-tight">Terms and risks</h1>
-                <p className="mt-1 text-muted">Plain language, because the risks are real. Last updated {UPDATED}.</p>
-            </div>
+            <PageIntro title="Terms and risks">Plain language, because the risks are real. Last updated {UPDATED}.</PageIntro>
 
             <Panel className="border-warn/30 bg-warn/5 p-4 text-sm text-warn">
                 Problem tokens can lose all their value. Only trade what you can afford to lose. Nothing on this site is financial, investment, legal or tax advice.

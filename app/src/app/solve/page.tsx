@@ -8,7 +8,7 @@ import { PublicKey } from '@solana/web3.js'
 import { CheckResult } from '@/components/solve/CheckResult'
 import { Dropzone } from '@/components/solve/Dropzone'
 import { SolveFlow } from '@/components/solve/SolveFlow'
-import { Panel, shape, sol } from '@/components/ui'
+import { PageIntro, Panel, shape, sol } from '@/components/ui'
 import { useProblems } from '@/hooks/useProblems'
 import { brokenScheme, type Checked, checkFile } from '@/lib/checkFile'
 import { sharedVerifier } from '@/lib/verifier'
@@ -99,13 +99,9 @@ function Solve() {
 
     return (
         <div className="mx-auto max-w-3xl space-y-6">
-            <div>
-                <h1 className="text-2xl font-semibold tracking-tight">Solve</h1>
-                <p className="mt-1 text-muted">
-                    Check a scheme here first. This runs the same verifier the Solana program runs, compiled to WebAssembly, entirely in your browser. Nothing is
-                    uploaded until you choose to submit.
-                </p>
-            </div>
+            <PageIntro title="Solve">
+                Check a scheme here first. This runs the same verifier the Solana program runs, compiled to WebAssembly, entirely in your browser. Nothing is uploaded until you choose to submit.
+            </PageIntro>
             {publicKey && (
                 <p className="num text-xs text-muted">
                     Solving as <span className="break-all font-mono text-text">{publicKey.toBase58()}</span>

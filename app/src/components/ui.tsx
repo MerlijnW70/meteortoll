@@ -67,3 +67,14 @@ export function shape(problem: ProblemView) {
 export function short(address: string): string {
     return `${address.slice(0, 4)}…${address.slice(-4)}`
 }
+
+/// A page's title and the sentence or two that says what the page is for. One size for every
+/// page, so the site reads as one piece.
+export function PageIntro({ title, children }: { title: ReactNode; children?: ReactNode }) {
+    return (
+        <div className="space-y-2">
+            <h1 className="text-3xl font-semibold">{title}</h1>
+            {children && <div className="max-w-2xl text-lg text-muted">{children}</div>}
+        </div>
+    )
+}

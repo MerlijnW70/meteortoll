@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { FormatPicker } from '@/components/launch/FormatPicker'
 import { type Draft, suggestedDraft, TargetStep } from '@/components/launch/TargetStep'
 import { useLaunch } from '@/components/launch/useLaunch'
-import { Panel } from '@/components/ui'
+import { PageIntro, Panel } from '@/components/ui'
 import type { KnownFormat } from '@/lib/known'
 import { type LaunchRequest, statementProblem } from '@/lib/launch'
 
@@ -30,13 +30,9 @@ export default function Launch() {
 
     return (
         <div className="mx-auto max-w-3xl space-y-6">
-            <div>
-                <h1 className="text-2xl font-semibold tracking-tight">Launch a problem</h1>
-                <p className="mt-1 text-muted">
-                    Turn an open matrix multiplication problem into a token on a Meteora bonding curve. Trading funds the bounty; the toll program pays whoever
-                    first submits a scheme that verifies.
-                </p>
-            </div>
+            <PageIntro title="Launch a problem">
+                Turn an open matrix multiplication problem into a token on a Meteora bonding curve. Trading funds the bounty; the toll program pays whoever first submits a scheme that verifies.
+            </PageIntro>
             <Panel className="p-5">
                 <FormatPicker value={format} onChange={pick} />
             </Panel>
