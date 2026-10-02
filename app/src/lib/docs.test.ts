@@ -14,7 +14,7 @@ const ROOT = new URL('../../../', import.meta.url)
 const read = (path: string) => readFileSync(new URL(path, ROOT), 'utf8')
 const exists = (path: string) => existsSync(new URL(path, ROOT))
 
-const DOCS = ['README.md', 'SCOPE.md', 'app/README.md', 'docs/security.md', 'docs/devnet-run.md']
+const DOCS = ['README.md', 'SCOPE.md', 'app/README.md', 'docs/meteora.md', 'docs/security.md', 'docs/devnet-run.md']
 
 /// Every file under a directory, skipping tests.
 function sources(dir: string): string[] {
@@ -112,8 +112,8 @@ test('every command the README offers exists', () => {
     }
 })
 
-test('the calls the Meteora table names are the calls the code makes', () => {
-    const table = read('README.md').split('## Meteora integration')[1].split('\n## ')[0]
+test('the calls docs/meteora.md names are the calls the code makes', () => {
+    const table = read('docs/meteora.md')
     // Our TypeScript: the app, the CLI (which encodes the launch config) and the shared package.
     const app = [...sources('app/src'), ...sources('client/src'), ...sources('packages/core/src')].map(read).join('\n')
     const appOnly = sources('app/src').map(read).join('\n')
@@ -128,7 +128,7 @@ test('the calls the Meteora table names are the calls the code makes', () => {
             // swapQuote2, and "swap" in a comment is not a call.
             const used = new RegExp(`\\b${name}\\s*\\(|\\.${name}\\b|import[^;]*\\b${name}\\b`)
             const found = /^[a-z]+(_[a-z0-9]+)+$/.test(name) ? program.includes(name) || meteora.includes(`"${name}"`) : used.test(typescript)
-            assert.ok(found, `README's Meteora table names \`${name}\`, which the code does not use`)
+            assert.ok(found, `docs/meteora.md names \`${name}\`, which the code does not use`)
         }
     }
 })

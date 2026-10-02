@@ -44,19 +44,9 @@ flowchart LR
 
 ## Meteora integration
 
-Everything below is tested against the **mainnet** DBC, DAMM v2 and Metaplex program binaries in
-LiteSVM (`programs/toll/tests/dbc.rs`), and run end to end on devnet:
-
-| Path | Instruction | Meteora call |
-|---|---|---|
-| Launch config | built by Meteora's SDK (`buildCurveWithMarketCap`) | `create_config` |
-| Problem owns its pool | `register_problem` checks `pool.creator == problem` | `initialize_virtual_pool_with_spl_token`, `transfer_pool_creator` |
-| Curve fees → bounty | `sweep_trading_fees` | CPI `claim_creator_trading_fee` |
-| Surplus → bounty | `sweep_surplus` | CPI `creator_withdraw_surplus` |
-| Graduated fees → bounty | `sweep_position_fees` | CPI DAMM v2 `claim_position_fee` |
-| Trading in the app | quotes and swaps that fill partially, so a last buy can complete the curve | DBC SDK `swapQuote2`, `swap2` |
-| Live trades | decoded `EvtSwap2` events | DBC event CPI |
-| Fees from every source, by anyone | the problem page's sweep button sends the three sweeps above | `sweep_trading_fees`, `sweep_surplus`, `sweep_position_fees` |
+Launch, trading, all three fee sources and graduation run through Meteora's DBC and DAMM v2, tested
+against their mainnet binaries and run end to end on devnet. Every path, instruction and call:
+[`docs/meteora.md`](docs/meteora.md).
 
 ## Repository
 
@@ -69,7 +59,7 @@ LiteSVM (`programs/toll/tests/dbc.rs`), and run end to end on devnet:
 | `app/` | The web app (Next.js) |
 | `client/` | CLI: setup, launch, buy, sweep, solve, claim |
 | `problems/` | Known formats and records, curated problem notes |
-| `docs/` | Devnet run, security notes, plans |
+| `docs/` | Meteora integration, devnet run, security notes, plans |
 
 ## Build and test
 
