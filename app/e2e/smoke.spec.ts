@@ -38,6 +38,9 @@ test('problem page', async ({ page }) => {
     await expect(page.getByRole('heading', { level: 1 })).toContainText('⟨')
     await expect(page.getByText('Record to beat').first()).toBeVisible()
     await expect(page.getByRole('heading', { name: 'History' })).toBeVisible()
+    await page.getByRole('link', { name: 'transaction' }).first().waitFor({ timeout: 30_000 })
+    const all = page.getByRole('button', { name: /^All \d+/ })
+    if (await all.isVisible()) await all.click()
     await expect(page.getByText('Launched').first()).toBeVisible()
     await fitsTheScreen(page)
     expect(errors).toEqual([])
@@ -105,7 +108,7 @@ test('launch flow', async ({ page }) => {
     await expect(page.getByText('Your name and symbol.')).toBeVisible()
     await expect(page.getByText('One below the record')).toBeVisible()
     await page.getByLabel('Raise the target').click()
-    await expect(page.getByText('already published')).toBeVisible()
+    await expect(page.getByText('already published').first()).toBeVisible()
     await page.getByLabel('Lower the target').click()
     await expect(page.getByText('MM21215')).toHaveCount(2)
     await page.getByRole('radio', { name: '0.1 SOL' }).click()
@@ -135,12 +138,12 @@ test('how it works tabs', async ({ page }) => {
 
     await page.getByRole('tab', { name: 'Questions' }).click()
     await page.getByText('What if nobody solves it?').click()
-    await expect(page.getByText('There is no deadline.')).toBeVisible()
+    await expect(page.getByText('There is no deadline and no refund', { exact: false })).toBeVisible()
 
     await page.goto('/trust#roles')
     for (const [title, cta] of [
         ['I want to trade', 'Browse problems'],
-        ['I want to solve & earn', 'Open the solver'],
+        ['I want to solve & claim', 'Open the solver'],
         ['I want to launch a problem', 'Launch a problem'],
     ]) {
         const column = page.getByRole('listitem').filter({ has: page.getByRole('heading', { name: title }) })
@@ -154,7 +157,7 @@ test('how it works tabs', async ({ page }) => {
 
 test('home roles', async ({ page }) => {
     await page.goto('/')
-    for (const title of ['I want to trade', 'I want to solve & earn', 'I want to launch a problem']) {
+    for (const title of ['I want to trade', 'I want to solve & claim', 'I want to launch a problem']) {
         await expect(page.getByRole('heading', { name: title })).toBeVisible()
     }
     await fitsTheScreen(page)

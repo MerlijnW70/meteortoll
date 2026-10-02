@@ -111,9 +111,33 @@ test('token history', async () => {
             fetched.push(signatures)
             return []
         },
+        getMultipleAccountsInfo: async (keys: PublicKey[]) => keys.map((k) => (k.equals(ata) ? {} : null)),
     }
-    const list = [{ address: PublicKey.unique().toBase58(), account: { baseMint: mint } }] as unknown as ProblemView[]
+    const list = [mint, PublicKey.unique()].map((baseMint) => ({ address: PublicKey.unique().toBase58(), account: { baseMint } })) as unknown as ProblemView[]
     assert.deepEqual(await fetchActivity(connection as never, owner, list), [])
     assert.deepEqual(asked.sort(), [owner.toBase58(), ata.toBase58()].sort())
     assert.deepEqual(fetched.flat().sort(), ['a', 'b', 'c'])
+})
+
+test('existing accounts only', async () => {
+    const owner = PublicKey.unique()
+    const batches: number[] = []
+    const asked: string[] = []
+    const mints = Array.from({ length: 150 }, () => PublicKey.unique())
+    const held = getAssociatedTokenAddressSync(mints[120], owner, true)
+    const connection = {
+        getSignaturesForAddress: async (address: PublicKey) => {
+            asked.push(address.toBase58())
+            return []
+        },
+        getTransactions: async () => [],
+        getMultipleAccountsInfo: async (keys: PublicKey[]) => {
+            batches.push(keys.length)
+            return keys.map((k) => (k.equals(held) ? {} : null))
+        },
+    }
+    const list = mints.map((baseMint) => ({ address: PublicKey.unique().toBase58(), account: { baseMint } })) as unknown as ProblemView[]
+    await fetchActivity(connection as never, owner, list)
+    assert.deepEqual(batches, [100, 50])
+    assert.deepEqual(asked.sort(), [owner.toBase58(), held.toBase58()].sort())
 })

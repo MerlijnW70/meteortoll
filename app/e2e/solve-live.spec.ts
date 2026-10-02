@@ -5,6 +5,7 @@ import { attemptAddress } from '@meteortoll/core'
 
 const DEVNET_KEY = '../.keys/devnet.json'
 const PROBLEM = process.env.LIVE_SOLVE_PROBLEM ?? ''
+const SCHEME = process.env.LIVE_SOLVE_SCHEME ?? 'public/samples/strassen-2x2x2.json'
 
 test('live solve', async ({ page }) => {
     test.skip(!PROBLEM || !existsSync(DEVNET_KEY), 'set LIVE_SOLVE_PROBLEM to an open devnet problem the sample solves')
@@ -16,10 +17,10 @@ test('live solve', async ({ page }) => {
         localStorage.setItem('walletName', JSON.stringify('Dev Wallet (local test key)'))
     }, secret)
     await page.goto(`/solve?problem=${PROBLEM}`)
-    await page.locator('input[type=file]').first().setInputFiles('public/samples/strassen-2x2x2.json')
+    await page.locator('input[type=file]').first().setInputFiles(SCHEME)
     await expect(page.getByText('✓ Holds', { exact: true })).toBeVisible()
     await page.getByRole('button', { name: /Commit and stake/ }).click()
-    await expect(page.getByText(/one prompt/)).toBeVisible({ timeout: 60_000 })
+    await expect(page.getByText(/Prompt 1 of 2/)).toBeVisible({ timeout: 60_000 })
 
     const connection = new Connection(process.env.LIVE_RPC ?? 'https://api.devnet.solana.com', 'confirmed')
     const attempt = attemptAddress(new PublicKey(PROBLEM), solver)

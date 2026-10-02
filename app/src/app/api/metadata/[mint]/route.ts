@@ -3,9 +3,11 @@ import type { ProblemView } from '@/lib/chain'
 import { Budget } from '@/lib/rpcPolicy'
 import { serverProblems } from '@/lib/server'
 
-const lookups = new Budget(60, 60_000)
+const lookups = new Budget(600, 60_000)
 
 export async function GET(request: Request, context: RouteContext<'/api/metadata/[mint]'>) {
+    const client = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+    if (lookups.over(client, 1)) return Response.json({ error: 'too many requests' }, { status: 429 })
     const { mint } = await context.params
     let key: PublicKey
     try {
@@ -13,8 +15,6 @@ export async function GET(request: Request, context: RouteContext<'/api/metadata
     } catch {
         return Response.json({ error: 'not a mint address' }, { status: 400 })
     }
-    const client = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-    if (lookups.over(client, 1)) return Response.json({ error: 'too many requests' }, { status: 429 })
     let problem: ProblemView | undefined
     try {
         problem = (await serverProblems()).find((p) => p.account.baseMint.equals(key))
@@ -30,7 +30,7 @@ export async function GET(request: Request, context: RouteContext<'/api/metadata
         {
             name: problem.info.name,
             symbol: problem.info.symbol,
-            description: `${problem.info.kind === 'demo' ? 'Disclosed demo. ' : ''}Multiply a ${n1}×${n2} by a ${n2}×${n3} matrix with at most ${targetRank} multiplications. Trading fees fund a bounty paid to the first scheme a Solana program verifies.${record}`,
+            description: `${problem.info.kind === 'demo' ? 'Disclosed demo. ' : ''}Multiply a ${n1}×${n2} by a ${n2}×${n3} matrix with at most ${targetRank} multiplications. Trading fees fund a bounty paid to the earliest committed scheme a Solana program verifies.${record}`,
             image: `${origin}/p/${problem.address}/opengraph-image`,
             external_url: `${origin}/p/${problem.address}`,
         },

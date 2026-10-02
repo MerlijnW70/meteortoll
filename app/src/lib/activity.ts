@@ -2,6 +2,7 @@ import type { Connection, PublicKey, VersionedTransactionResponse } from '@solan
 import { getAssociatedTokenAddressSync } from '@solana/spl-token'
 import type { ProblemView } from './chain'
 import { allSignatures, tollCalls, transactionsFor, transferredOut } from './history'
+import { withRetry } from './rpc'
 import { tradesIn } from './trades'
 
 export type ActivityKind = 'buy' | 'sell' | 'launch' | 'commit' | 'claim' | 'close'
@@ -43,9 +44,23 @@ export function activityIn(tx: VersionedTransactionResponse, owner: string, prob
 }
 
 const PER_TOKEN = 200
+const ACCOUNTS_PER_CALL = 100
+
+async function existing(connection: Connection, addresses: PublicKey[]): Promise<PublicKey[]> {
+    const found: PublicKey[] = []
+    for (let i = 0; i < addresses.length; i += ACCOUNTS_PER_CALL) {
+        const page = addresses.slice(i, i + ACCOUNTS_PER_CALL)
+        const infos = await withRetry(() => connection.getMultipleAccountsInfo(page, 'confirmed'))
+        page.forEach((address, j) => infos[j] && found.push(address))
+    }
+    return found
+}
 
 export async function fetchActivity(connection: Connection, owner: PublicKey, problems: ProblemView[], limit = 300): Promise<Activity[]> {
-    const accounts = problems.map((p) => getAssociatedTokenAddressSync(p.account.baseMint, owner, true))
+    const accounts = await existing(
+        connection,
+        problems.map((p) => getAssociatedTokenAddressSync(p.account.baseMint, owner, true))
+    )
     const lists = await Promise.all([allSignatures(connection, owner, limit), ...accounts.map((a) => allSignatures(connection, a, PER_TOKEN))])
     const signatures = [...new Set(lists.flat().filter((s) => !s.err).map((s) => s.signature))]
     const txs = await transactionsFor(connection, signatures)

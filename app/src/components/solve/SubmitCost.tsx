@@ -27,7 +27,7 @@ function useSubmitCost(schemeLength: number) {
     })
 }
 
-const APPROVALS = 4
+const APPROVALS = 3
 
 export function SubmitCost({ schemeLength, verifyCalls }: { schemeLength: number; verifyCalls: number }) {
     const cost = useSubmitCost(schemeLength)
@@ -53,7 +53,7 @@ export function SubmitCost({ schemeLength, verifyCalls }: { schemeLength: number
                 </div>
             </dl>
             <p className="text-xs text-muted">
-                Plus network fees for about {transactions} transactions, in {APPROVALS} wallet approvals: commit, upload, reveal and verify, claim.
+                Plus network fees for about {transactions} transactions, in {APPROVALS} wallet approvals: commit; upload, reveal and verify; claim.
             </p>
             {short && (
                 <p role="alert" className="text-xs text-warn">

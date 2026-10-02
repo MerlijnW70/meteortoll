@@ -6,7 +6,7 @@ export const BOND_SOL = Number(BOND_LAMPORTS) / 1e9
 
 export const STEPS: [Step, string, string][] = [
     ['commit', 'Commit and stake', `Posts a hash of your scheme and a ${BOND_SOL} SOL bond. Nobody can read the scheme yet.`],
-    ['upload', 'Upload', 'Writes the scheme into its buffer; one wallet approval covers every chunk.'],
+    ['upload', 'Upload', 'Writes the scheme into its buffer. One approval covers the upload, reveal and verification.'],
     ['reveal', 'Reveal', 'Proves the upload matches the commitment and fixes the random test point.'],
     ['verify', 'Verify on-chain', 'The program checks the scheme at that point.'],
     ['grace', 'Grace window', 'An earlier commitment that also holds could still take the solve.'],

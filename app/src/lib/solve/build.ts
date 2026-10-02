@@ -10,12 +10,18 @@ import {
     Transaction,
 } from '@solana/web3.js'
 import { attemptAddress, commitment, type ProblemAccount, SUBMISSION_HEADER, TOLL, VERIFY_BUDGET, verifyCalls } from '@meteortoll/core'
+import { estimatePrice, MAX_PRICE } from '../fees'
 import { withRetry } from '../rpc'
 import { pack, productive, sweepInstructions, sweepPlan } from '../sweeps'
 import { methods } from './program'
 
 export const CHUNK = 900
 const VERIFY_UNITS = 1_400_000
+const REVEAL_BASE_UNITS = 60_000
+
+export const revealUnits = (length: number) => Math.min(VERIFY_UNITS, REVEAL_BASE_UNITS + Math.ceil(length / 2))
+
+export const verifyPrice = (price: number, index: number, count: number) => Math.min(Math.max(0, price), MAX_PRICE - count) + index
 
 export async function commitAndOpen(connection: Connection, program: Program, problem: PublicKey, solver: PublicKey, scheme: Uint8Array) {
     const attempt = attemptAddress(problem, solver)
@@ -55,32 +61,28 @@ export async function uploadTxs(connection: Connection, program: Program, solver
 }
 
 export async function revealAndVerifyTxs(
+    connection: Connection,
     program: Program,
-    problem: PublicKey,
-    solver: PublicKey,
-    attempt: PublicKey,
-    submission: PublicKey,
-    salt: Uint8Array,
-    work: number,
-    revealed: boolean
+    accounts: { problem: PublicKey; solver: PublicKey; attempt: PublicKey; submission: PublicKey },
+    plan: { salt: Uint8Array; work: number; length: number; revealed: boolean }
 ) {
-    const txs: Transaction[] = []
-    if (!revealed) {
-        txs.push(
-            new Transaction().add(
-                ComputeBudgetProgram.setComputeUnitLimit({ units: 400_000 }),
-                await methods(program)
-                    .reveal([...salt])
-                    .accountsPartial({ solver, problem, attempt, submission, slotHashes: SYSVAR_SLOT_HASHES_PUBKEY })
-                    .instruction()
-            )
-        )
-    }
-    const cranks = verifyCalls(work, VERIFY_BUDGET) + 1
-    for (let i = 0; i < cranks; i++) {
-        txs.push(await verifyTx(program, { cranker: solver, problem, attempt, submission }, i + 1))
-    }
-    return txs
+    const { problem, solver, attempt, submission } = accounts
+    const cranks = verifyCalls(plan.work, VERIFY_BUDGET) + 1
+    const cranking = { cranker: solver, problem, attempt, submission }
+    const price = await estimatePrice(connection, [await verifyTx(program, cranking, 0)])
+    const verifies: Transaction[] = []
+    for (let i = 0; i < cranks; i++) verifies.push(await verifyTx(program, cranking, verifyPrice(price, i, cranks)))
+    if (plan.revealed) return verifies
+    const budget = [ComputeBudgetProgram.setComputeUnitLimit({ units: revealUnits(plan.length) })]
+    if (price > 0) budget.push(ComputeBudgetProgram.setComputeUnitPrice({ microLamports: price }))
+    const reveal = new Transaction().add(
+        ...budget,
+        await methods(program)
+            .reveal([...plan.salt])
+            .accountsPartial({ solver, problem, attempt, submission, slotHashes: SYSVAR_SLOT_HASHES_PUBKEY })
+            .instruction()
+    )
+    return [reveal, ...verifies]
 }
 
 export async function verifyTx(program: Program, accounts: { cranker: PublicKey; problem: PublicKey; attempt: PublicKey; submission: PublicKey }, microLamports: number) {
