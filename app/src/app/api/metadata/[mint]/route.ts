@@ -1,6 +1,6 @@
 import { PublicKey } from '@solana/web3.js'
-import { fetchProblem, ForeignProblemError, tollReader } from '@/lib/chain'
-import { serverConnection } from '@/lib/server'
+import { ForeignProblemError, type ProblemView, tollReader } from '@/lib/chain'
+import { serverConnection, serverProblem } from '@/lib/server'
 
 /// Byte offset of `base_mint` in a Problem account: discriminator, launchpad, pool.
 const BASE_MINT_OFFSET = 8 + 32 + 32
@@ -18,14 +18,16 @@ export async function GET(request: Request, context: RouteContext<'/api/metadata
         return Response.json({ error: 'not a mint address' }, { status: 400 })
     }
     const connection = serverConnection()
-    let problem: Awaited<ReturnType<typeof fetchProblem>>
+    let problem: ProblemView
     try {
         const matches = await (tollReader(connection).account as never as Accounts).problem.all([{ memcmp: { offset: BASE_MINT_OFFSET, bytes: key.toBase58() } }])
-        if (matches.length === 0) return Response.json({ error: 'no problem uses this mint' }, { status: 404 })
-        problem = await fetchProblem(connection, matches[0].publicKey.toBase58())
+        // Short: a token's metadata is first fetched seconds after its pool exists, possibly before
+        // its problem is registered.
+        if (matches.length === 0) return Response.json({ error: 'no problem uses this mint' }, { status: 404, headers: { 'cache-control': 'public, s-maxage=30' } })
+        problem = await serverProblem(matches[0].publicKey.toBase58())
     } catch (error) {
-        if (error instanceof ForeignProblemError) return Response.json({ error: 'not a meteortoll problem' }, { status: 404 })
-        console.error('[metadata] lookup failed', error)
+        if (error instanceof ForeignProblemError) return Response.json({ error: 'not a meteortoll problem' }, { status: 404, headers: { 'cache-control': 'public, s-maxage=300' } })
+        console.error('[metadata] lookup failed', error instanceof Error ? error.message : String(error))
         return Response.json({ error: 'metadata is temporarily unavailable' }, { status: 502, headers: { 'cache-control': 'no-store' } })
     }
     const { n1, n2, n3, targetRank } = problem.account
@@ -39,6 +41,6 @@ export async function GET(request: Request, context: RouteContext<'/api/metadata
             image: `${origin}/p/${problem.address}/opengraph-image`,
             external_url: `${origin}/p/${problem.address}`,
         },
-        { headers: { 'cache-control': 'public, max-age=300' } }
+        { headers: { 'cache-control': 'public, max-age=300, s-maxage=300' } }
     )
 }

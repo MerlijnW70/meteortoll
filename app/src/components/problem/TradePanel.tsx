@@ -59,6 +59,7 @@ export function TradePanel({ problem }: { problem: ProblemView }) {
         enabled: !!market.data && !!amountIn && !problem.graduated,
         queryFn: () => quoteSwap(connection, market.data!, side, amountIn!),
         retry: false,
+        refetchInterval: 10_000,
     })
 
     if (problem.graduated) {
@@ -82,7 +83,9 @@ export function TradePanel({ problem }: { problem: ProblemView }) {
         setBusy(true)
         const pending = toast.loading(side === 'buy' ? 'Buying…' : 'Selling…')
         try {
-            const signature = await executeSwap(connection, publicKey, sendTransaction, problem.account.pool, side, amountIn, quote.data)
+            // Priced again from the pool as it is now: the slippage limit then protects against moves
+            // after this moment, not since the quote on screen was taken.
+            const signature = await executeSwap(connection, publicKey, sendTransaction, problem.account.pool, side, amountIn)
             notifySuccess(side === 'buy' ? 'Bought' : 'Sold', signature, pending)
             await Promise.all(['problem', 'problems', 'market', 'balances', 'trades', 'portfolio'].map((key) => queries.invalidateQueries({ queryKey: [key] })))
         } catch (error) {

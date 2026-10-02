@@ -15,6 +15,7 @@ const contentSecurityPolicy = [
     "base-uri 'self'",
     "form-action 'self'",
     "object-src 'none'",
+    'upgrade-insecure-requests',
 ].join('; ')
 
 const securityHeaders = [
@@ -23,6 +24,9 @@ const securityHeaders = [
     { key: 'X-Content-Type-Options', value: 'nosniff' },
     { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
     { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
+    { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' },
+    // Isolates the page from windows it did not open, while wallets that sign in a popup still work.
+    { key: 'Cross-Origin-Opener-Policy', value: 'same-origin-allow-popups' },
 ]
 
 const nextConfig: NextConfig = {

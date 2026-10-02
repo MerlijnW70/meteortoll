@@ -8,9 +8,15 @@ rules are in `SCOPE.md`; this covers the website.
 | Risk | Protection | Where |
 |---|---|---|
 | RPC key leaking to browsers | The key lives only in the server variable `SOLANA_RPC_URL`, which has no `NEXT_PUBLIC_` prefix, so Next.js never puts it in browser code; browsers call `/api/rpc` | `app/src/app/api/rpc/route.ts`, `app/src/lib/upstream.ts` |
-| Other sites spending our RPC through their visitors | `/api/rpc` refuses requests whose `Origin` is another host | same |
-| RPC abuse | Method allowlist; `getProgramAccounts` only for the toll program; bodies ≤ 64 KiB; batches ≤ 50; a per-instance budget per client address | same |
+| Other sites and scripts spending our RPC | `/api/rpc` serves only same-origin browser requests (`Origin` and `Sec-Fetch-Site`); a request with neither is refused | `app/src/lib/rpcPolicy.ts` |
+| RPC abuse | Method allowlist; `getProgramAccounts` only for the toll program and only filtered; bodies ≤ 64 KiB; batches ≤ 50; the request forwarded is rebuilt from the checked fields (no duplicate-key smuggling); per-instance budgets per client, tighter for sending and simulating transactions | same |
+| Paid RPC work on demand | `/api/stats` redirects any query string away (one CDN entry) and recomputes at most once a minute per instance; problem lookups for pages, preview images and token metadata are remembered for 30 s per instance, misses included, and cached at the CDN | `app/src/app/api/stats/route.ts`, `app/src/lib/server.ts` |
+| A stale price at signing | Swaps are priced again from the pool when the button is pressed; the 1% slippage limit applies from that price | `app/src/components/problem/TradePanel.tsx` |
+| The keeper wasting its fees | It checks attempts only on problems whose solve is not final, and simulates every transaction before paying for it | `app/src/lib/keeper.ts` |
+| CI or a dependency stealing secrets | Workflows hold read-only tokens; actions are pinned to full commits; the keeper's key reaches only the step that runs it, after an install with scripts disabled | `.github/workflows/` |
+| The mainnet key leaking from development | Mainnet uses its own key, never used in tests, browsers or devnet; `preflight` refuses a mainnet key that is the devnet key | `client/src/cli.ts`, `docs/mainnet-runbook.md` |
 | Clickjacking a transaction approval | `frame-ancestors 'none'` and `X-Frame-Options: DENY` | `app/next.config.ts` |
+| Downgrade and cross-window attacks | HSTS, `upgrade-insecure-requests`, `Cross-Origin-Opener-Policy: same-origin-allow-popups` (wallet popups keep working) | same |
 | Injected scripts and exfiltration | Content Security Policy: scripts and connections limited to this origin and Solana's public websocket endpoints; no `object`, no foreign `base` or `form` targets | same |
 | MIME sniffing, referrer leaks, device APIs | `nosniff`, `strict-origin-when-cross-origin`, `Permissions-Policy` disabling camera, microphone, location, payment | same |
 | A test key wallet reaching users | The dev wallet needs the build flag `NEXT_PUBLIC_DEV_BURNER=1`, a `localhost` page and a cluster other than mainnet; `.env.local` is never uploaded (`.vercelignore` is an allowlist) | `app/src/app/providers.tsx`, `.vercelignore` |

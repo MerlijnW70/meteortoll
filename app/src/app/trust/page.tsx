@@ -23,7 +23,7 @@ const SOURCES: [string, string][] = [
     ['Trading fees on the curve', `Every trade pays 1%. Meteora's protocol keeps ${PROTOCOL_FEE_PERCENT}% of that fee; the rest, ${BOUNTY_SHARE} of the trade, is the bounty's.`],
     ['The surplus at graduation', "When the curve fills, the pool's creator share of what it raised beyond the migration amount goes to the bounty."],
     ['A locked DAMM v2 position', 'After graduation the problem owns a permanently locked liquidity position. Its trading fees keep arriving, forever.'],
-    ['Bonds of wrong answers', `Every submission stakes ${BOND_SOL} SOL. A scheme that fails the check loses its bond to the bounty.`],
+    ['Bonds of wrong answers', `Every submission stakes ${BOND_SOL} SOL. A revealed scheme that fails the check loses its bond to the bounty.`],
 ]
 
 const GUARANTEES: { title: string; plain: string; detail: ReactNode }[] = [
@@ -50,8 +50,14 @@ const GUARANTEES: { title: string; plain: string; detail: ReactNode }[] = [
     },
     {
         title: 'Wrong answers cost',
-        plain: `Each submission stakes a ${BOND_SOL} SOL bond. A correct scheme gets it back; a wrong one pays it into the bounty.`,
-        detail: <>A revealed attempt cannot withdraw before its check ends, so a solver who sees a failure coming cannot pull the bond.</>,
+        plain: `Each submission stakes a ${BOND_SOL} SOL bond. A correct scheme gets it back; a revealed one that fails pays it into the bounty.`,
+        detail: (
+            <>
+                A revealed attempt cannot withdraw before its check ends. The bond does not make a wrong scheme pass more often: the random point is public
+                once drawn, so a solver can see a failure coming and simply not reveal, and each new slot gives a wrong scheme at most a (n₁n₂ + n₂n₃ +
+                n₃n₁)/2⁶¹ chance. What keeps wrong answers out is that bound, not the bond.
+            </>
+        ),
     },
     {
         title: 'The statement is fixed',

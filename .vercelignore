@@ -7,7 +7,12 @@
 !/package.json
 !/package-lock.json
 /app/.next
-/app/.env.local
+/app/.env*
+!/app/.env.example
+/client/.env*
+**/*.tsbuildinfo
+/app/test-results
+/app/playwright-report
 /app/node_modules
 /client/node_modules
 /client/state/salts

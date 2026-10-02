@@ -1,0 +1,13 @@
+# Weekly update pull requests: the pinned GitHub Actions (their commit pins move only through
+# these), and npm dependencies. Security fixes come as soon as an advisory lands.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5

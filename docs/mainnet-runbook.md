@@ -10,7 +10,9 @@ export TOLL_RPC='https://mainnet.helius-rpc.com/?api-key=…'   # a paid RPC: a 
 ```
 
 `client/` reads its keypair from `.keys/mainnet.json` (the deploy payer, upgrade authority and
-launchpad admin) and keeps what it creates in `client/state/mainnet.json`.
+launchpad admin) and keeps what it creates in `client/state/mainnet.json`. That key is used for
+mainnet and nothing else: never in tests, a browser or on devnet. `preflight` refuses it when it is
+the devnet key. Keep an offline backup of the file.
 
 ## 0. Before spending anything
 
@@ -31,6 +33,7 @@ In the WSL distro:
 ```sh
 solana program deploy \
   --url "$TOLL_RPC" --use-rpc --with-compute-unit-price 50000 --max-sign-attempts 50 \
+  --keypair .keys/mainnet.json --upgrade-authority .keys/mainnet.json \
   --program-id programs/toll/toll-keypair.json \
   /home/dev/target-meteortoll/deploy/toll.so
 ```
@@ -72,6 +75,7 @@ and its `demoNote`), push, and check each problem page.
 - Keeper: set the repository variable `CLUSTER=mainnet`, give the keeper wallet a little mainnet
   SOL for fees (it pays about 0.00001 SOL per transaction), and give the workflow a mainnet
   `SOLANA_RPC_URL` secret.
-- Upgrade authority: hand it to a multisig, or revoke it, before any public bounty is large:
+- Upgrade authority: hand it to a multisig (a Squads vault) right after the deploy checks out, so
+  no single key can replace the program that holds the bounties, or revoke it:
   `solana program set-upgrade-authority 3YjxqTwQnqSs8xMZ8TGz5S3gEJcG7qmvP5a6Y1bNJ5ey --new-upgrade-authority <multisig vault>`.
   `preflight` shows the current authority.

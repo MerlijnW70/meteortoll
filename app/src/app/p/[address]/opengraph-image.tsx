@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og'
-import { fetchProblem, ForeignProblemError, totalBounty } from '@/lib/chain'
-import { serverConnection } from '@/lib/server'
+import { ForeignProblemError, totalBounty } from '@/lib/chain'
+import { serverProblem } from '@/lib/server'
 
 export const alt = 'A matrix multiplication problem on meteortoll'
 export const size = { width: 1200, height: 630 }
@@ -16,7 +16,7 @@ export default async function Image({ params }: { params: Promise<{ address: str
     let badgeColor = colors.accent
     let figure = ''
     try {
-        const problem = await fetchProblem(serverConnection(), address)
+        const problem = await serverProblem(address)
         const { n1, n2, n3, targetRank } = problem.account
         const best = problem.info.bestKnown?.rank
         const bounty = (Number(totalBounty(problem)) / 1e9).toLocaleString('en-US', { maximumFractionDigits: 4 })

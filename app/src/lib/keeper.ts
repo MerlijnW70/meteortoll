@@ -11,6 +11,7 @@ import { fetchProblems, type ProblemView } from './chain'
 import { estimatePrice } from './fees'
 import { sweepTxs, verifyTx } from './solve/build'
 import { prepare, sendAll } from './solve/send'
+import { simulateOrThrow } from './tx'
 
 /// Byte offset of an attempt's status: discriminator, problem, solver, commitment, committed slot,
 /// submission, seed slot.
@@ -30,7 +31,7 @@ export interface PendingCheck {
     submission: PublicKey
 }
 
-/// Revealed attempts on this site's problems, from raw accounts.
+/// Revealed attempts on the given problems (this site's, still checkable), from raw accounts.
 export function pendingChecks(rows: { pubkey: PublicKey; data: Uint8Array }[], problems: Set<string>): PendingCheck[] {
     const found: PendingCheck[] = []
     for (const { pubkey, data } of rows) {
@@ -43,9 +44,17 @@ export function pendingChecks(rows: { pubkey: PublicKey; data: Uint8Array }[], p
     return found
 }
 
+/// Problems whose attempts can still be checked. Once a solve is final the program refuses every
+/// verify, so cranking an attempt left revealed there would only burn fees, run after run.
+export function checkableProblems(problems: Pick<ProblemView, 'address' | 'phase'>[]): Set<string> {
+    return new Set(problems.filter((p) => p.phase !== 'solved').map((p) => p.address))
+}
+
+/// Simulates before signing: a transaction the program would refuse is never paid for.
 async function send(connection: Connection, keeper: Keypair, txs: Transaction[]) {
     if (txs.length === 0) return []
     await prepare(connection, txs, keeper.publicKey)
+    for (const tx of txs) await simulateOrThrow(connection, tx)
     for (const tx of txs) tx.sign(keeper)
     return sendAll(connection, txs, () => {})
 }
@@ -75,12 +84,12 @@ export async function runKeeper(connection: Connection, program: Program, keeper
         }
     }
 
-    const official = new Set(problems.map((p) => p.address))
+    const checkable = checkableProblems(problems)
     const accounts = await connection.getProgramAccounts(program.programId, {
         commitment: 'confirmed',
         filters: [{ memcmp: { offset: ATTEMPT_STATUS_OFFSET, bytes: utils.bytes.bs58.encode([REVEALED]) } }],
     })
-    for (const pending of pendingChecks(accounts.map((a) => ({ pubkey: a.pubkey, data: a.account.data })), official)) {
+    for (const pending of pendingChecks(accounts.map((a) => ({ pubkey: a.pubkey, data: a.account.data })), checkable)) {
         let calls = 0
         try {
             const price = await estimatePrice(connection, [])

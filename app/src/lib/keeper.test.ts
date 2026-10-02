@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { Keypair, type PublicKey } from '@solana/web3.js'
-import { ATTEMPT_STATUS_OFFSET, ATTEMPT_SUBMISSION_OFFSET, pendingChecks, REVEALED } from './keeper'
+import { Keypair, PublicKey } from '@solana/web3.js'
+import { ATTEMPT_STATUS_OFFSET, ATTEMPT_SUBMISSION_OFFSET, checkableProblems, pendingChecks, REVEALED } from './keeper'
 
 const key = () => Keypair.generate().publicKey
 
@@ -39,4 +39,16 @@ test("the offsets match the program's field order", () => {
     // discriminator 8, problem 32, solver 32, commitment 32, committed slot 8, submission 32, seed slot 8
     assert.equal(ATTEMPT_SUBMISSION_OFFSET, 112)
     assert.equal(ATTEMPT_STATUS_OFFSET, 152)
+})
+
+test('attempts on a problem whose solve is final are not checked: the program refuses every verify there', () => {
+    const [open, grace, solved] = [key(), key(), key()].map((k) => k.toBase58())
+    const checkable = checkableProblems([
+        { address: open, phase: 'open' },
+        { address: grace, phase: 'grace' },
+        { address: solved, phase: 'solved' },
+    ])
+    assert.deepEqual([...checkable].sort(), [open, grace].sort())
+    const stale = { pubkey: key(), data: attempt(new PublicKey(solved), key(), REVEALED) }
+    assert.deepEqual(pendingChecks([stale], checkable), [])
 })

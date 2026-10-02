@@ -415,6 +415,13 @@ async function preflight(args: string[]) {
     console.log(`RPC cluster: ${cluster}`)
     if (cluster !== CLUSTER) fail(`TOLL_CLUSTER is ${CLUSTER} but the RPC serves ${cluster}`)
 
+    // A mainnet key that also served on devnet has been in tests, browsers and scripts.
+    if (CLUSTER === 'mainnet') {
+        const devnetKey = resolve(ROOT, '.keys/devnet.json')
+        if (existsSync(devnetKey) && loadKeypair(devnetKey).publicKey.equals(wallet.publicKey)) fail('the mainnet wallet is the devnet key; use a key that never left this machine for anything else')
+        else console.log(`  ✓ the mainnet wallet ${wallet.publicKey.toBase58()} is not the devnet key`)
+    }
+
     const so = flag(args, 'so', '//wsl.localhost/meteortoll/home/dev/target-meteortoll/deploy/toll.so')
     const local = readFileSync(so)
     console.log(`local program: ${local.length} bytes, sha256 ${sha256(local)}`)
