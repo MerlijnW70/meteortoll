@@ -2,8 +2,18 @@
   "name": "meteortoll",
   "license": "MIT OR Apache-2.0",
   "private": true,
-  "workspaces": ["packages/core", "client", "app"],
+  "workspaces": [
+    "packages/core",
+    "client",
+    "app"
+  ],
+  "dependencies": {
+    "bigint-buffer": "file:packages/bigint-buffer"
+  },
   "overrides": {
-    "@solana/web3.js": "1.99.0"
+    "@solana/web3.js": "1.99.0",
+    "toml": "^4.2.0",
+    "jayson": "^5.0.0",
+    "bigint-buffer": "$bigint-buffer"
   }
 }

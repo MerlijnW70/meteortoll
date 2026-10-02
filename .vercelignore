@@ -1,4 +1,3 @@
-# Upload only what the web app builds from. Never upload keys or build output.
 /*
 !/app
 !/packages
