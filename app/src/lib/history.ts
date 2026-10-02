@@ -88,7 +88,10 @@ export async function allSignatures(connection: Connection, address: PublicKey, 
 
 export async function fetchTransactions(connection: Connection, address: PublicKey, limit = 200): Promise<VersionedTransactionResponse[]> {
     const signatures = await allSignatures(connection, address, limit)
-    const ok = signatures.filter((s) => !s.err).map((s) => s.signature)
+    return transactionsFor(connection, signatures.filter((s) => !s.err).map((s) => s.signature))
+}
+
+export async function transactionsFor(connection: Connection, ok: string[]): Promise<VersionedTransactionResponse[]> {
     const out: VersionedTransactionResponse[] = []
     for (let i = 0; i < ok.length; i += BATCH) {
         const page = await withRetry(() =>

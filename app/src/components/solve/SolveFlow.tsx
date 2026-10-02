@@ -96,6 +96,9 @@ export function SolveFlow({ problem, scheme }: { problem: ProblemView; scheme: U
                     </button>
                 )}
             </div>
+            {status === 'committed' && (
+                <p className="text-xs text-muted">Once uploaded, your scheme is public. Abandoning then lets a later committer take the bounty with it.</p>
+            )}
         </Panel>
     )
 }

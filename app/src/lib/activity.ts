@@ -1,6 +1,7 @@
 import type { Connection, PublicKey, VersionedTransactionResponse } from '@solana/web3.js'
+import { getAssociatedTokenAddressSync } from '@solana/spl-token'
 import type { ProblemView } from './chain'
-import { fetchTransactions, tollCalls, transferredOut } from './history'
+import { allSignatures, tollCalls, transactionsFor, transferredOut } from './history'
 import { tradesIn } from './trades'
 
 export type ActivityKind = 'buy' | 'sell' | 'launch' | 'commit' | 'claim' | 'close'
@@ -41,8 +42,13 @@ export function activityIn(tx: VersionedTransactionResponse, owner: string, prob
     return found
 }
 
+const PER_TOKEN = 200
+
 export async function fetchActivity(connection: Connection, owner: PublicKey, problems: ProblemView[], limit = 300): Promise<Activity[]> {
-    const txs = await fetchTransactions(connection, owner, limit)
+    const accounts = problems.map((p) => getAssociatedTokenAddressSync(p.account.baseMint, owner, true))
+    const lists = await Promise.all([allSignatures(connection, owner, limit), ...accounts.map((a) => allSignatures(connection, a, PER_TOKEN))])
+    const signatures = [...new Set(lists.flat().filter((s) => !s.err).map((s) => s.signature))]
+    const txs = await transactionsFor(connection, signatures)
     return txs.flatMap((tx) => activityIn(tx, owner.toBase58(), problems))
 }
 

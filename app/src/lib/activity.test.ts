@@ -1,11 +1,11 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { BorshCoder, type Idl, utils } from '@coral-xyz/anchor'
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
+import { getAssociatedTokenAddressSync, TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import { PublicKey, TransactionInstruction, TransactionMessage, type VersionedTransactionResponse } from '@solana/web3.js'
 import { TOLL, tollIdl } from '@meteortoll/core'
 import type { ProblemView } from './chain'
-import { activityIn, bountyFunded, costBasis } from './activity'
+import { activityIn, bountyFunded, costBasis, fetchActivity } from './activity'
 
 const buy = (lamports: bigint, tokens: bigint) => ({ kind: 'buy' as const, lamports, tokens })
 const sell = (lamports: bigint, tokens: bigint) => ({ kind: 'sell' as const, lamports, tokens })
@@ -93,4 +93,27 @@ test('toll calls', () => {
 
 test('foreign payer', () => {
     assert.deepEqual(activityIn(response(), key(2).toBase58(), problems), [])
+})
+
+test('token history', async () => {
+    const owner = PublicKey.unique()
+    const mint = PublicKey.unique()
+    const ata = getAssociatedTokenAddressSync(mint, owner, true)
+    const asked: string[] = []
+    const fetched: string[][] = []
+    const connection = {
+        getSignaturesForAddress: async (address: PublicKey) => {
+            asked.push(address.toBase58())
+            if (address.equals(owner)) return [{ signature: 'a', err: null }, { signature: 'b', err: null }]
+            return [{ signature: 'b', err: null }, { signature: 'c', err: null }, { signature: 'd', err: {} }]
+        },
+        getTransactions: async (signatures: string[]) => {
+            fetched.push(signatures)
+            return []
+        },
+    }
+    const list = [{ address: PublicKey.unique().toBase58(), account: { baseMint: mint } }] as unknown as ProblemView[]
+    assert.deepEqual(await fetchActivity(connection as never, owner, list), [])
+    assert.deepEqual(asked.sort(), [owner.toBase58(), ata.toBase58()].sort())
+    assert.deepEqual(fetched.flat().sort(), ['a', 'b', 'c'])
 })

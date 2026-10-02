@@ -1,10 +1,9 @@
 import { PublicKey } from '@solana/web3.js'
-import { ForeignProblemError, type ProblemView, tollReader } from '@/lib/chain'
-import { serverConnection, serverProblem } from '@/lib/server'
+import type { ProblemView } from '@/lib/chain'
+import { Budget } from '@/lib/rpcPolicy'
+import { serverProblems } from '@/lib/server'
 
-const BASE_MINT_OFFSET = 8 + 32 + 32
-
-type Accounts = Record<string, { all(filters?: unknown[]): Promise<{ publicKey: PublicKey }[]> }>
+const lookups = new Budget(60, 60_000)
 
 export async function GET(request: Request, context: RouteContext<'/api/metadata/[mint]'>) {
     const { mint } = await context.params
@@ -14,17 +13,16 @@ export async function GET(request: Request, context: RouteContext<'/api/metadata
     } catch {
         return Response.json({ error: 'not a mint address' }, { status: 400 })
     }
-    const connection = serverConnection()
-    let problem: ProblemView
+    const client = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+    if (lookups.over(client, 1)) return Response.json({ error: 'too many requests' }, { status: 429 })
+    let problem: ProblemView | undefined
     try {
-        const matches = await (tollReader(connection).account as never as Accounts).problem.all([{ memcmp: { offset: BASE_MINT_OFFSET, bytes: key.toBase58() } }])
-        if (matches.length === 0) return Response.json({ error: 'no problem uses this mint' }, { status: 404, headers: { 'cache-control': 'public, s-maxage=30' } })
-        problem = await serverProblem(matches[0].publicKey.toBase58())
+        problem = (await serverProblems()).find((p) => p.account.baseMint.equals(key))
     } catch (error) {
-        if (error instanceof ForeignProblemError) return Response.json({ error: 'not a meteortoll problem' }, { status: 404, headers: { 'cache-control': 'public, s-maxage=300' } })
         console.error('[metadata] lookup failed', error instanceof Error ? error.message : String(error))
         return Response.json({ error: 'metadata is temporarily unavailable' }, { status: 502, headers: { 'cache-control': 'no-store' } })
     }
+    if (!problem) return Response.json({ error: 'no problem uses this mint' }, { status: 404, headers: { 'cache-control': 'public, s-maxage=30' } })
     const { n1, n2, n3, targetRank } = problem.account
     const origin = new URL(request.url).origin
     const record = problem.info.bestKnown ? ` Best known rank ${problem.info.bestKnown.rank} (${problem.info.bestKnown.source}, ${problem.info.bestKnown.asOf}).` : ''

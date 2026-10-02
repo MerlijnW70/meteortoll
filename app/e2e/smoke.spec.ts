@@ -191,7 +191,7 @@ test('portfolio', async ({ page }) => {
     const lcheck = page.getByRole('row').filter({ hasText: 'LCHECK' })
     await expect(lcheck).toContainText('0.05 SOL', { timeout: 90_000 })
     await expect(lcheck).toContainText('%')
-    await expect(page.getByText('Launched').first()).toBeVisible()
+    await expect(page.getByText('Bought').first()).toBeVisible()
     await expect(lcheck.getByRole('link', { name: 'Sell' })).toHaveAttribute('href', /#sell$/)
     expect(errors).toEqual([])
 })
