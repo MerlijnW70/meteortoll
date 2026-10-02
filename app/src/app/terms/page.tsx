@@ -82,6 +82,10 @@ export default function Terms() {
                     <li>There are no accounts, cookies or tracking scripts.</li>
                     <li>Your browser stores the salt of each commitment you make, so you can reveal later. It never leaves your browser.</li>
                     <li>The site&apos;s RPC relay uses your IP address, in memory only, to limit how many requests one visitor can send. Our host, Vercel, keeps standard request logs.</li>
+                    <li>
+                        When something on the site breaks, your browser sends us the error message, the page and the site version, so we can fix it. Nothing that identifies you, and
+                        never anything resembling a key.
+                    </li>
                     <li>Everything you do on-chain, including your wallet address, is public and permanent. That is how Solana works.</li>
                 </ul>
             </Section>

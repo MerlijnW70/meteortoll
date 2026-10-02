@@ -3,11 +3,13 @@
 import Link from 'next/link'
 import { useEffect } from 'react'
 import { describeError } from '@/lib/errors'
+import { sendReport } from '@/lib/report'
 
 /// Catches a page that crashed while rendering, keeps the header and footer, and offers a retry.
 export default function RouteError({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
     useEffect(() => {
         console.error('[meteortoll] page error', error)
+        sendReport('render', error)
     }, [error])
     const friendly = describeError(error)
     return (

@@ -3,6 +3,7 @@
 import { toast } from 'sonner'
 import { explorer } from './config'
 import { describeError, type Friendly } from './errors'
+import { sendReport, worthReporting } from './report'
 
 function Detail({ friendly }: { friendly: Friendly }) {
     return (
@@ -23,6 +24,7 @@ function Detail({ friendly }: { friendly: Friendly }) {
 export function notifyError(error: unknown, toastId?: string | number): Friendly {
     const friendly = describeError(error)
     console.error('[meteortoll]', friendly.title, error)
+    if (worthReporting(friendly.kind)) sendReport('action', error)
     const options = { id: toastId, description: <Detail friendly={friendly} /> }
     if (friendly.kind === 'cancelled') toast.info(friendly.title, options)
     else if (friendly.kind === 'busy' || friendly.kind === 'expired') toast.warning(friendly.title, options)

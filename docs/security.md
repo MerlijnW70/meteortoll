@@ -15,6 +15,7 @@ rules are in `SCOPE.md`; this covers the website.
 | MIME sniffing, referrer leaks, device APIs | `nosniff`, `strict-origin-when-cross-origin`, `Permissions-Policy` disabling camera, microphone, location, payment | same |
 | A test key wallet reaching users | The dev wallet needs both the build flag `NEXT_PUBLIC_DEV_BURNER=1` and a `localhost` page; `.env.local` is never uploaded (`.vercelignore` is an allowlist) | `app/src/app/providers.tsx`, `.vercelignore` |
 | Freezing the tab with a huge file | Files over 5 MiB are refused before parsing; encodings over the program's 1 MiB limit are refused | `app/src/lib/checkFile.ts` |
+| Error reports leaking secrets or identities | Reports carry only message, stack, page and release; long base58 runs and 32+ number arrays are redacted on both sides; same-origin only, ≤ 8 KiB, a per-instance budget; the client address is never logged | `app/src/lib/report.ts`, `app/src/app/api/report/route.ts` |
 | Losing a commitment's salt | Kept in this browser's storage; if lost, the attempt can be abandoned and the bond refunded | `app/src/lib/solve/program.ts` |
 | Signing something unexpected | Every transaction is built from the toll and Meteora programs' IDLs and shown by the wallet before signing; swaps carry a 1% slippage limit | `app/src/lib/trade.ts`, `app/src/lib/solve/build.ts` |
 

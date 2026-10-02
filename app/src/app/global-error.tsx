@@ -1,8 +1,12 @@
 'use client'
 
+import { useEffect } from 'react'
+import { sendReport } from '@/lib/report'
+
 /// Last resort when the root layout itself fails. It renders its own document, so it carries its
 /// own minimal styling instead of the app's stylesheet.
 export default function GlobalError({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
+    useEffect(() => sendReport('render', error), [error])
     return (
         <html lang="en">
             <body style={{ margin: 0, minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#0a0b0e', color: '#e8eaee', fontFamily: 'system-ui, sans-serif' }}>

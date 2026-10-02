@@ -1,7 +1,7 @@
 'use client'
 
 import { Buffer } from 'buffer'
-import { type ReactNode, useMemo, useState } from 'react'
+import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react'
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui'
@@ -9,10 +9,31 @@ import { DevWalletAdapter } from '@/lib/devWallet'
 import { Toaster } from 'sonner'
 import { CLUSTER, rpcEndpoint, WS_ENDPOINT } from '@/lib/config'
 import { describeError } from '@/lib/errors'
+import { sendReport, worthReporting } from '@/lib/report'
 import { NetworkStatus } from '@/components/NetworkStatus'
 import '@solana/wallet-adapter-react-ui/styles.css'
 
 globalThis.Buffer ??= Buffer
+
+/// Reports errors nothing else caught: a crash in an event handler, a promise nobody awaited.
+function UncaughtErrors() {
+    useEffect(() => {
+        const onError = (event: ErrorEvent) => {
+            const error = event.error ?? event.message
+            if (worthReporting(describeError(error).kind)) sendReport('crash', error)
+        }
+        const onRejection = (event: PromiseRejectionEvent) => {
+            if (worthReporting(describeError(event.reason).kind)) sendReport('rejection', event.reason)
+        }
+        window.addEventListener('error', onError)
+        window.addEventListener('unhandledrejection', onRejection)
+        return () => {
+            window.removeEventListener('error', onError)
+            window.removeEventListener('unhandledrejection', onRejection)
+        }
+    }, [])
+    return null
+}
 
 export function Providers({ children }: { children: ReactNode }) {
     const [queries] = useState(
@@ -43,6 +64,7 @@ export function Providers({ children }: { children: ReactNode }) {
                 <WalletProvider wallets={wallets} autoConnect>
                     <WalletModalProvider>
                         <NetworkStatus />
+                        <UncaughtErrors />
                         {children}
                         <Toaster theme="dark" position="bottom-right" richColors />
                     </WalletModalProvider>

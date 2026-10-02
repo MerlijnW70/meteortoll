@@ -1,0 +1,52 @@
+# Hourly: is the site up, do the launchpad totals load, does the RPC relay reach the chain?
+# A failure opens one issue labelled `uptime` (never a second while one is open); the next healthy
+# run closes it.
+name: uptime
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      SITE: https://meteortoll.vercel.app
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Check the site
+        id: check
+        run: |
+          problems=()
+          home=$(curl -s -o /tmp/home -w '%{http_code}' --max-time 30 "$SITE/") || home=000
+          [ "$home" = 200 ] && grep -q meteortoll /tmp/home || problems+=("home page answered $home")
+          stats=$(curl -s -o /tmp/stats -w '%{http_code}' --max-time 60 "$SITE/api/stats") || stats=000
+          [ "$stats" = 200 ] && jq -e '.problems | numbers' /tmp/stats > /dev/null || problems+=("/api/stats answered $stats: $(head -c 200 /tmp/stats)")
+          rpc=$(curl -s -o /tmp/rpc -w '%{http_code}' --max-time 30 -H 'content-type: application/json' \
+            -d '{"jsonrpc":"2.0","id":1,"method":"getHealth"}' "$SITE/api/rpc") || rpc=000
+          [ "$rpc" = 200 ] && jq -e '.result == "ok"' /tmp/rpc > /dev/null || problems+=("/api/rpc getHealth answered $rpc: $(head -c 200 /tmp/rpc)")
+          if [ ${#problems[@]} -eq 0 ]; then echo "healthy=true" >> "$GITHUB_OUTPUT"; else
+            echo "healthy=false" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "${problems[@]}" | sed 's/^/- /' > /tmp/report
+            cat /tmp/report
+          fi
+
+      - name: Open an issue
+        if: steps.check.outputs.healthy == 'false'
+        run: |
+          gh label create uptime --color B60205 --description 'Raised by the hourly site check' 2>/dev/null || true
+          open=$(gh issue list --label uptime --state open --json number --jq '.[0].number')
+          body="$(printf 'The hourly check found:\n\n%s\n\nRun: %s/%s/actions/runs/%s' "$(cat /tmp/report)" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID")"
+          if [ -n "$open" ]; then gh issue comment "$open" --body "$body"; else gh issue create --label uptime --title 'Site check failing' --body "$body"; fi
+          exit 1
+
+      - name: Close a resolved issue
+        if: steps.check.outputs.healthy == 'true'
+        run: |
+          open=$(gh issue list --label uptime --state open --json number --jq '.[0].number')
+          [ -z "$open" ] || gh issue close "$open" --comment "Healthy again: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
