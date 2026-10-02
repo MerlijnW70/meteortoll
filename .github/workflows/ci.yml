@@ -82,7 +82,7 @@ jobs:
           key: solana-verify-0.5.2
       - run: '[ -x ~/.cargo/bin/solana-verify ] || cargo install solana-verify --version 0.5.2 --locked'
       - name: Build in the verifiable container
-        run: ~/.cargo/bin/solana-verify build --library-name toll
+        run: ~/.cargo/bin/solana-verify build --library-name toll --base-image solanafoundation/solana-verifiable-build:4.1.2
       - name: Program hash
         run: ~/.cargo/bin/solana-verify get-executable-hash target/deploy/toll.so | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
