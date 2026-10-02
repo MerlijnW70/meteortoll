@@ -23,6 +23,9 @@ const POOL_AUTHORITY: Pubkey = anchor_lang::pubkey!("FhVo3mqL8PW5pH5U2CN4XE33Dok
 const SHAPE: (u8, u8, u8) = (7, 7, 9);
 const RANK: u32 = 314;
 const ONE: u64 = 1_000_000_000;
+/// What a first buy of one quote token gets on the test config, and what it pays the creator.
+const FIRST_BUY_TOKENS: u64 = 91_734_610_085_185;
+const FIRST_BUY_FEE: u64 = 8_000_000;
 
 fn fixture_path(name: &str) -> String {
     format!("{}/tests/fixtures/{name}", env!("CARGO_MANIFEST_DIR"))
@@ -50,9 +53,17 @@ struct Market {
     trader: Keypair,
     trader_base: Pubkey,
     trader_quote: Pubkey,
+    /// Where the launcher's first buy landed, if it made one.
+    launcher_base: Pubkey,
 }
 
 fn market() -> Market {
+    market_with_first_buy(0)
+}
+
+/// A market whose launcher may buy first, in the transaction that creates the pool and before it
+/// hands the pool to the problem, as the site's launch does.
+fn market_with_first_buy(first_buy: u64) -> Market {
     let mut svm = LiteSVM::new();
     let program = include_bytes!(concat!(env!("CARGO_TARGET_TMPDIR"), "/../deploy/toll.so"));
     svm.add_program(toll::ID, program).unwrap();
@@ -137,8 +148,34 @@ fn market() -> Market {
             program: DBC,
         },
     );
-    send(&mut svm, &[compute_limit(400_000), create_pool, hand_over], &launcher, &[&base])
-        .unwrap_or_else(|f| panic!("create pool {:?}", f.meta.logs));
+    let mut create = vec![compute_limit(600_000), create_pool];
+    let (launcher_base, launcher_quote) = (Pubkey::new_unique(), Pubkey::new_unique());
+    if first_buy > 0 {
+        put(&mut svm, launcher_base, TOKEN, token_data(&base.pubkey(), &launcher.pubkey(), 0));
+        put(&mut svm, launcher_quote, TOKEN, token_data(&quote_mint, &launcher.pubkey(), first_buy));
+        create.push(dbc_ix(
+            dbc_args::Swap { params: SwapParameters { amount_in: first_buy, minimum_amount_out: 0 } },
+            dbc_accounts::Swap {
+                pool_authority: POOL_AUTHORITY,
+                config: config.pubkey(),
+                pool,
+                input_token_account: launcher_quote,
+                output_token_account: launcher_base,
+                base_vault: pool_base_vault,
+                quote_vault: pool_quote_vault,
+                base_mint: base.pubkey(),
+                quote_mint,
+                payer: launcher.pubkey(),
+                token_base_program: TOKEN,
+                token_quote_program: TOKEN,
+                referral_token_account: None,
+                event_authority,
+                program: DBC,
+            },
+        ));
+    }
+    create.push(hand_over);
+    send(&mut svm, &create, &launcher, &[&base]).unwrap_or_else(|f| panic!("create pool {:?}", f.meta.logs));
 
     let base_vault = pda(&[toll::VAULT_SEED, problem.as_ref(), base.pubkey().as_ref()]);
     let quote_vault = pda(&[toll::VAULT_SEED, problem.as_ref(), quote_mint.as_ref()]);
@@ -160,7 +197,7 @@ fn market() -> Market {
     let (trader_base, trader_quote) = (Pubkey::new_unique(), Pubkey::new_unique());
     put(&mut env.svm, trader_base, TOKEN, token_data(&env.base_mint, &trader.pubkey(), 0));
     put(&mut env.svm, trader_quote, TOKEN, token_data(&env.quote_mint, &trader.pubkey(), 1_000 * ONE));
-    Market { env, pool_base_vault, pool_quote_vault, trader, trader_base, trader_quote }
+    Market { env, pool_base_vault, pool_quote_vault, trader, trader_base, trader_quote, launcher_base }
 }
 
 fn buy(m: &mut Market, quote_in: u64) {
@@ -322,6 +359,23 @@ fn the_creator_surplus_reaches_the_bounty_once_the_curve_completes() {
     assert_eq!((swept[0].source, swept[0].base, swept[0].quote), (toll::state::SweepSource::Surplus, 0, owed));
     assert!(sweep_surplus(&mut m).is_err(), "surplus withdrawn twice");
     println!("dbc_surplus: reserve {} threshold {} owed {owed}", state.quote_reserve, config.migration_quote_threshold);
+}
+
+#[test]
+fn the_launchers_first_buy_before_the_hand_over_pays_its_fee_into_the_bounty() {
+    let mut m = market_with_first_buy(ONE);
+    let state = pool_state(&m).pool_state;
+    assert_eq!(state.creator, m.env.problem);
+    // The site prices a first buy before the pool exists (app/src/lib/firstBuy.ts); its test
+    // holds these same two numbers, on this config's account data saved as a fixture.
+    assert_eq!((token_amount(&m.env.svm, &m.launcher_base), state.creator_quote_fee), (FIRST_BUY_TOKENS, FIRST_BUY_FEE));
+    sweep_fees(&mut m).unwrap_or_else(|f| panic!("sweep {:?}", f.meta.logs));
+    assert_eq!(token_amount(&m.env.svm, &m.env.quote_vault), FIRST_BUY_FEE);
+    if std::env::var_os("SAVE_CONFIG_FIXTURE").is_some() {
+        let data = m.env.svm.get_account(&m.env.config).unwrap().data;
+        let hex: String = data.iter().map(|b| format!("{b:02x}")).collect();
+        std::fs::write(fixture_path("dbc_config_account_test.hex"), hex).unwrap();
+    }
 }
 
 #[test]

@@ -2,18 +2,20 @@
 
 import { toast } from 'sonner'
 
-export function Share({ text }: { text: string }) {
+/// Copy and post a link: the page's own, or `url` when it shares another page.
+export function Share({ text, url }: { text: string; url?: string }) {
+    const link = () => url ?? window.location.href
     const copy = async () => {
         try {
-            await navigator.clipboard.writeText(window.location.href)
+            await navigator.clipboard.writeText(link())
             toast.success('Link copied')
         } catch {
             toast.error('Could not copy; copy the address bar instead')
         }
     }
     const tweet = () => {
-        const url = `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`
-        window.open(url, '_blank', 'noopener,noreferrer')
+        const intent = `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(link())}`
+        window.open(intent, '_blank', 'noopener,noreferrer')
     }
     return (
         <div className="flex gap-2">

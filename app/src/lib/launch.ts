@@ -1,11 +1,14 @@
-// Launching a problem: a DBC pool on the launchpad's config, handed to the problem's address,
-// and the problem registered. Two transactions, signed together in one wallet approval.
+// Launching a problem: a DBC pool on the launchpad's config, with the launcher's optional first
+// buy in the same transaction, then the pool handed to the problem's address and the problem
+// registered. Two transactions, signed together in one wallet approval.
 
 import type { Program } from '@coral-xyz/anchor'
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
-import { type Connection, Keypair, type PublicKey, Transaction } from '@solana/web3.js'
-import { createDbcProgram, deriveDbcPoolAddress, DynamicBondingCurveClient } from '@meteora-ag/dynamic-bonding-curve-sdk'
+import type BN from 'bn.js'
+import { ACCOUNT_SIZE, TOKEN_PROGRAM_ID } from '@solana/spl-token'
+import { type Connection, Keypair, type PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js'
+import { createDbcProgram, deriveDbcPoolAddress, DynamicBondingCurveClient, type FirstBuyParams, getCurrentPoint, type PoolConfig } from '@meteora-ag/dynamic-bonding-curve-sdk'
 import { problemAddress, vaultAddress } from '@meteortoll/core'
+import { quoteFirstBuy } from './firstBuy'
 import { withRetry } from './rpc'
 import { methods } from './solve/program'
 
@@ -18,6 +21,8 @@ export interface LaunchRequest {
     target: number
     name: string
     symbol: string
+    /// Quote units (lamports for SOL) the launcher buys with in the creating transaction; 0 for none.
+    firstBuy: BN
 }
 
 /// Problems a statement can be: positive dimensions up to 16 and a target below the schoolbook rank.
@@ -35,6 +40,20 @@ interface Launchpad {
     dbcConfig: PublicKey
 }
 
+type Accounts = Record<string, { fetch(key: PublicKey): Promise<unknown>; size: number }>
+
+/// The launchpad's DBC config: every pool it launches shares its curve and fees.
+export async function launchTerms(connection: Connection, program: Program, launchpad: PublicKey): Promise<{ address: PublicKey; config: PoolConfig }> {
+    const { dbcConfig: address } = (await withRetry(() => (program.account as never as Accounts).launchpad.fetch(launchpad))) as Launchpad
+    const config = await withRetry(() => new DynamicBondingCurveClient(connection, 'confirmed').state.getPoolConfig(address))
+    if (!config) throw new Error('the launchpad config is missing on this network')
+    return { address, config }
+}
+
+/// A first buy accepts at most this much less than its quote. The pool is created in the same
+/// transaction, so no trade comes between; the margin only covers rounding.
+const FIRST_BUY_TOLERANCE_BPS = 50
+
 export interface PreparedLaunch {
     create: Transaction
     register: Transaction
@@ -51,28 +70,33 @@ export async function prepareLaunch(
     request: LaunchRequest,
     siteUrl: string
 ): Promise<PreparedLaunch> {
-    const accounts = program.account as never as Record<string, { fetch(key: PublicKey): Promise<unknown> }>
-    const { dbcConfig: config } = (await withRetry(() => accounts.launchpad.fetch(launchpad))) as Launchpad
+    const { address: config, config: poolConfig } = await launchTerms(connection, program, launchpad)
     const dbc = new DynamicBondingCurveClient(connection, 'confirmed')
-    const poolConfig = await withRetry(() => dbc.state.getPoolConfig(config))
-    if (!poolConfig) throw new Error('the launchpad config is missing on this network')
     const quoteMint = poolConfig.quoteMint
 
     const baseMint = Keypair.generate()
     const pool = deriveDbcPoolAddress(quoteMint, baseMint.publicKey, config)
     const problem = problemAddress(pool, request.n, request.target)
 
-    const create = await withRetry(() =>
-        dbc.creator.createPool({
-            name: request.name.trim(),
-            symbol: request.symbol,
-            uri: `${siteUrl}/api/metadata/${baseMint.publicKey.toBase58()}`,
-            payer: owner,
-            poolCreator: owner,
-            config,
-            baseMint: baseMint.publicKey,
-        })
-    )
+    const createPoolParam = {
+        name: request.name.trim(),
+        symbol: request.symbol,
+        uri: `${siteUrl}/api/metadata/${baseMint.publicKey.toBase58()}`,
+        payer: owner,
+        poolCreator: owner,
+        config,
+        baseMint: baseMint.publicKey,
+    }
+    let firstBuyParam: FirstBuyParams | undefined
+    if (request.firstBuy.gtn(0)) {
+        const point = await withRetry(() => getCurrentPoint(connection, poolConfig.activationType))
+        const { tokens } = quoteFirstBuy(poolConfig, request.firstBuy, point)
+        const minimumAmountOut = tokens.muln(10_000 - FIRST_BUY_TOLERANCE_BPS).divn(10_000)
+        firstBuyParam = { buyer: owner, buyAmount: request.firstBuy, minimumAmountOut, referralTokenAccount: null }
+    }
+    // The first buy's fee lands while the launcher is still the pool's creator; DBC keeps it on the
+    // pool, so it moves to the problem with the hand-over and reaches the bounty.
+    const create = await withRetry(() => dbc.creator.createPoolWithFirstBuy({ createPoolParam, firstBuyParam }))
 
     // The SDK's transferPoolCreator reads the pool first; this pool does not exist until the
     // first transaction lands, so the instruction is built from the program client directly.
@@ -97,4 +121,28 @@ export async function prepareLaunch(
         })
         .instruction()
     return { create, register: new Transaction().add(handOver, register), baseMint, pool, problem }
+}
+
+/// What the launch takes from the wallet, first buy included: the creating transaction's exact
+/// effect from a simulation, and the registering transaction's rent and fee, which cannot be
+/// simulated before the pool exists.
+export async function launchCost(connection: Connection, program: Program, prepared: PreparedLaunch, owner: PublicKey): Promise<bigint> {
+    const [before, simulated, fee, problemRent, vaultRent] = await Promise.all([
+        withRetry(() => connection.getBalance(owner, 'confirmed')),
+        withRetry(() =>
+            connection.simulateTransaction(new VersionedTransaction(prepared.create.compileMessage()), {
+                sigVerify: false,
+                replaceRecentBlockhash: true,
+                commitment: 'confirmed',
+                accounts: { encoding: 'base64', addresses: [owner.toBase58()] },
+            })
+        ),
+        withRetry(() => connection.getFeeForMessage(prepared.register.compileMessage(), 'confirmed')),
+        withRetry(() => connection.getMinimumBalanceForRentExemption((program.account as never as Accounts).problem.size)),
+        withRetry(() => connection.getMinimumBalanceForRentExemption(ACCOUNT_SIZE)),
+    ])
+    if (simulated.value.err) throw new Error(`the launch would fail: ${JSON.stringify(simulated.value.err)}`)
+    const after = simulated.value.accounts?.[0]?.lamports
+    if (after === undefined) throw new Error('the simulation returned no balance')
+    return BigInt(before - after) + BigInt(fee.value ?? 0) + BigInt(problemRent + 2 * vaultRent)
 }

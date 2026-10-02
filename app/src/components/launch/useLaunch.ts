@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { useAnchorWallet, useConnection, useWallet } from '@solana/wallet-adapter-react'
 import { useWalletModal } from '@solana/wallet-adapter-react-ui'
 import { useQueryClient } from '@tanstack/react-query'
@@ -13,6 +12,11 @@ import { type LaunchRequest, prepareLaunch } from '@/lib/launch'
 import { withRetry } from '@/lib/rpc'
 import { prepare, sendAll, tollWriter } from '@/lib/solve'
 
+export interface Launched {
+    problem: string
+    signature: string
+}
+
 /// Builds both launch transactions, asks the wallet once, adds the new mint's signature, then
 /// sends them in order: the pool must exist before it can be handed to the problem.
 export function useLaunch() {
@@ -21,12 +25,14 @@ export function useLaunch() {
     const { publicKey, signAllTransactions } = useWallet()
     const { setVisible } = useWalletModal()
     const queries = useQueryClient()
-    const router = useRouter()
     const [busy, setBusy] = useState(false)
     const [note, setNote] = useState('')
+    const [launched, setLaunched] = useState<Launched | null>(null)
 
-    const launch = async (request: LaunchRequest) => {
+    /// Without a wallet, opens the wallet picker; without a complete request, does nothing.
+    const launch = async (request: LaunchRequest | null) => {
         if (!publicKey || !wallet || !signAllTransactions) return setVisible(true)
+        if (!request) return
         setBusy(true)
         try {
             setNote('Preparing the launch…')
@@ -37,12 +43,13 @@ export function useLaunch() {
             setNote('Approve the launch in your wallet: two transactions, one approval.')
             const [create, register] = await signAllTransactions([prepared.create, prepared.register])
             create.partialSign(prepared.baseMint)
-            setNote('Creating the token and its bonding curve…')
-            await sendAll(connection, [create], () => setNote('Registering the problem…'))
+            setNote(request.firstBuy.gtn(0) ? 'Creating the token, its bonding curve and your first buy…' : 'Creating the token and its bonding curve…')
+            const [signature] = await sendAll(connection, [create], () => setNote('Registering the problem…'))
             await sendAll(connection, [register], () => {})
             await withRetry(() => queries.invalidateQueries({ queryKey: ['problems'] }))
             toast.success('Problem launched')
-            router.push(`/p/${prepared.problem.toBase58()}`)
+            setNote('')
+            setLaunched({ problem: prepared.problem.toBase58(), signature })
         } catch (error) {
             notifyError(error)
             setNote('')
@@ -51,5 +58,5 @@ export function useLaunch() {
         }
     }
 
-    return { publicKey, busy, note, launch }
+    return { publicKey, busy, note, launch, launched }
 }

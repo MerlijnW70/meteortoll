@@ -86,6 +86,23 @@
         "coefficients": "{-1, 0, 1}",
         "tool": "fmm"
       }
+    },
+    "BTu3MtcdJSbctkiLGR2ir6UKvkgWsonxPanpVybsW6dc": {
+      "mint": "2mFHUPqH7Nq3aQeKSFPtrgvPDNy8FLBzR2JoS4bHhBzh",
+      "name": "launch check",
+      "symbol": "LCHECK",
+      "kind": "demo",
+      "demoNote": "A devnet check of the launch with a first buy: the simulated cost matched what the wallet paid, and the first buy's fee reached the problem. Not a public bounty; rank 6 for 2x2x2 is impossible.",
+      "hidden": true,
+      "coefficients": "integers, |c| <= 128",
+      "naive": 8,
+      "bestKnown": {
+        "rank": 7,
+        "source": "Strassen, Gaussian elimination is not optimal (1969); rank 7 is optimal (Winograd 1971)",
+        "url": "https://doi.org/10.1007/BF02165411",
+        "asOf": "2026-10-02",
+        "ring": null
+      }
     }
   },
   "mainnet": {}
