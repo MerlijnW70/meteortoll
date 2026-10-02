@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import { type ProblemView, totalBounty } from '@/lib/chain'
+import { problemStanding, STANDING_LABEL } from '@/lib/classify'
+import { CLUSTER } from '@/lib/config'
 import { percentDown } from '@/lib/format'
 import { QuickBuy } from './QuickBuy'
 import { Panel, shape, sol } from './ui'
@@ -16,11 +18,13 @@ export function ProblemCard({ problem, showPhase = false }: { problem: ProblemVi
     const solved = problem.phase === 'solved'
     const progress = problem.graduated ? 1 : problem.curveProgress
     const [phaseLabel, phaseTone] = PHASE[problem.phase]
+    const standing = problemStanding(problem, CLUSTER === 'mainnet')
     return (
         <Panel className="group relative flex h-full flex-col p-4 transition hover:-translate-y-0.5 hover:border-accent/60 focus-within:border-accent">
             <div className="flex items-center justify-between gap-2 text-xs">
                 <span className="font-medium text-muted">{problem.info.symbol || 'unlisted'}</span>
                 <span className="flex gap-1.5">
+                    {standing && <span className="rounded-full bg-warn/15 px-2 py-0.5 font-medium text-warn">{STANDING_LABEL[standing]}</span>}
                     {problem.info.kind === 'demo' && <span className="rounded-full bg-warn/15 px-2 py-0.5 font-medium text-warn">Demo</span>}
                     {showPhase && <span className={`rounded-full px-2 py-0.5 font-medium ${phaseTone}`}>{phaseLabel}</span>}
                 </span>

@@ -3,10 +3,11 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import BN from 'bn.js'
 import type { Program } from '@coral-xyz/anchor'
-import { ACCOUNT_SIZE, NATIVE_MINT } from '@solana/spl-token'
+import { ACCOUNT_SIZE, NATIVE_MINT, TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import { Connection, Keypair, type PublicKey, SystemProgram, Transaction, TransactionInstruction } from '@solana/web3.js'
 import { createDbcProgram, DynamicBondingCurveClient, type FirstBuyParams, type PoolConfig } from '@meteora-ag/dynamic-bonding-curve-sdk'
 import { problemAddress } from '@meteortoll/core'
+import { applyBudget } from './fees'
 import { quoteFirstBuy } from './firstBuy'
 import {
     finishRegistration,
@@ -25,7 +26,7 @@ import {
 
 const ONE = new BN(1_000_000_000)
 const key = () => Keypair.generate().publicKey
-const valid: LaunchRequest = { n: [2, 2, 2], target: 7, name: 'Strassen', symbol: 'STR', firstBuy: new BN(0) }
+const valid: LaunchRequest = { n: [2, 12, 15], target: 277, name: 'Two by twelve', symbol: 'MM21215', firstBuy: new BN(0) }
 const problem = (change: Partial<LaunchRequest>) => statementProblem({ ...valid, ...change })
 const WINDOWED = { treasurySharePercent: 0, launchFeeSol: 0, launchWindow: { startingFeeBps: 5000, endingFeeBps: 100, numberOfPeriod: 24, totalDurationSlots: 360 } }
 
@@ -37,6 +38,7 @@ function testConfig(): PoolConfig {
     return config
 }
 
+const DBC_PROGRAM = createDbcProgram(new Connection('http://127.0.0.1:8899')).program.programId
 const dbcClient = () => new DynamicBondingCurveClient(new Connection('http://127.0.0.1:8899'), 'confirmed')
 const ix = new TransactionInstruction({ programId: SystemProgram.programId, keys: [], data: Buffer.alloc(0) })
 const fakeProgram = (dbcConfig: PublicKey) =>
@@ -44,8 +46,8 @@ const fakeProgram = (dbcConfig: PublicKey) =>
 
 test('valid statement', () => {
     assert.equal(problem({}), null)
-    assert.equal(problem({ n: [1, 2, 2], target: 1 }), null)
-    assert.equal(problem({ n: [MAX_DIMENSION, 1, 1], target: MAX_DIMENSION - 1 }), null)
+    assert.equal(problem({ n: [3, 3, 3], target: 9 }), null)
+    assert.equal(problem({ n: [MAX_DIMENSION, MAX_DIMENSION, MAX_DIMENSION], target: 256 }), null)
     assert.equal(problem({ name: 'x'.repeat(NAME_LIMIT), symbol: 'A'.repeat(SYMBOL_LIMIT) }), null)
 })
 
@@ -58,7 +60,28 @@ test('bad dimensions', () => {
 test('bad target', () => {
     assert.match(problem({ target: 0 }) ?? '', /at least 1/)
     assert.match(problem({ target: 1.5 }) ?? '', /at least 1/)
-    assert.match(problem({ target: 8 }) ?? '', /schoolbook rank 8/)
+    assert.match(problem({ target: 360 }) ?? '', /schoolbook rank 360/)
+})
+
+test('rank floor', () => {
+    assert.match(problem({ n: [3, 3, 3], target: 8 }) ?? '', /fewer than 9 multiplications/)
+    assert.match(problem({ n: [2, 12, 15], target: 179 }) ?? '', /fewer than 180/)
+    assert.match(problem({ n: [1, 2, 2], target: 3 }) ?? '', /exactly 4/)
+    assert.match(problem({ n: [2, 2, 2], target: 6 }) ?? '', /exactly 7 \(Winograd 1971\)/)
+    assert.match(problem({ n: [2, 5, 2], target: 17 }) ?? '', /exactly 18 \(Hopcroft and Kerr 1971\)/)
+})
+
+test('already answered', () => {
+    assert.match(problem({ n: [2, 2, 2], target: 7 }) ?? '', /already answered/)
+    assert.match(problem({ n: [2, 2, 5], target: 19 }) ?? '', /already answered/)
+    assert.match(problem({ target: 278 }) ?? '', /rank-278 .* already published/)
+    assert.match(problem({ n: [15, 2, 12], target: 300 }) ?? '', /already published/)
+    assert.equal(problem({ target: 180 }), null)
+})
+
+test('first buy cap', () => {
+    assert.equal(problem({ firstBuy: ONE }), null)
+    assert.match(problem({ firstBuy: ONE.addn(1) }) ?? '', /at most 1 SOL/)
 })
 
 test('bad name', () => {
@@ -85,12 +108,42 @@ test('first buy floor', async (t) => {
     const program = fakeProgram(pinned.config!)
     const connection = { getSlot: async () => 0, getBlockTime: async () => 0 } as never as Connection
     const owner = key()
-    await prepareLaunch(connection, program, key(), owner, { ...valid, firstBuy: ONE }, 'https://example.test', pinned)
+    const launched = await prepareLaunch(connection, program, key(), owner, { ...valid, firstBuy: ONE }, 'https://example.test', pinned)
     await prepareLaunch(connection, program, key(), owner, valid, 'https://example.test', pinned)
+    await assert.rejects(prepareLaunch(connection, program, key(), owner, { ...valid, firstBuy: ONE.muln(2) }, 'https://example.test', pinned), /at most 1 SOL/)
+    await assert.rejects(prepareLaunch(connection, program, key(), owner, { ...valid, target: 278 }, 'https://example.test', pinned), /already published/)
+    assert.equal(sent.length, 2)
+    const handOver = launched.create.instructions.at(-1)!
+    assert.ok(handOver.programId.equals(DBC_PROGRAM))
+    assert.deepEqual(
+        handOver.keys.slice(0, 4).map((k) => k.pubkey.toBase58()),
+        [launched.pool, pinned.config!, owner, launched.problem].map((k) => k.toBase58())
+    )
+    assert.equal(launched.register.instructions.length, 1)
+    assert.ok(launched.register.instructions[0] === ix)
     const tokens = quoteFirstBuy(config, ONE, new BN(0)).tokens
     assert.equal(sent[0]?.minimumAmountOut.toString(), tokens.muln(9_950).divn(10_000).toString())
     assert.ok(sent[0]?.buyAmount.eq(ONE))
     assert.equal(sent[1], undefined)
+})
+
+test('create fits', async (t) => {
+    const config = testConfig()
+    t.mock.method(Object.getPrototypeOf(dbcClient().state), 'getPoolConfig', async () => config)
+    const pinned: Pinned = { config: key(), economics: WINDOWED }
+    const owner = key()
+    const connection = {
+        getSlot: async () => 0,
+        getBlockTime: async () => 0,
+        getAccountInfo: async (address: PublicKey) => (address.equals(NATIVE_MINT) ? { owner: TOKEN_PROGRAM_ID, data: Buffer.alloc(82), lamports: 1, executable: false } : null),
+    } as never as Connection
+    const launched = await prepareLaunch(connection, fakeProgram(pinned.config!), key(), owner, { ...valid, firstBuy: ONE, name: 'x'.repeat(NAME_LIMIT), symbol: 'A'.repeat(SYMBOL_LIMIT) }, 'https://meteortoll.example.com', pinned)
+    assert.ok(launched.create.instructions.at(-1)!.programId.equals(DBC_PROGRAM))
+    applyBudget(launched.create, { units: 400_000, price: 1_000_000 })
+    launched.create.feePayer = owner
+    launched.create.recentBlockhash = key().toBase58()
+    const size = launched.create.serialize({ requireAllSignatures: false, verifySignatures: false }).length
+    assert.ok(size <= 1232, `create is ${size} bytes`)
 })
 
 test('config pinned', async (t) => {

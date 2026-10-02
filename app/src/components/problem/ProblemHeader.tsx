@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 import { useHistory } from '@/hooks/useHistory'
 import { type ProblemView, totalBounty } from '@/lib/chain'
+import { problemStanding, STANDING_LABEL, standingNote } from '@/lib/classify'
+import { CLUSTER } from '@/lib/config'
 import { paidOut } from '@/lib/history'
 import { Share } from '../Share'
 import { Panel, shape, sol, StatusBadge } from '../ui'
@@ -36,12 +38,16 @@ export function ProblemHeader({ problem }: { problem: ProblemView }) {
     const { label, target, naive } = shape(problem)
     const best = problem.info.bestKnown?.rank
     const { n1, n2, n3 } = problem.account
+    const standing = problemStanding(problem, CLUSTER === 'mainnet')
     const status = problem.phase === 'open' ? 'Open' : problem.phase === 'grace' ? 'Verifying' : 'Solved'
     return (
         <>
             <div>
                 <div className="flex flex-wrap items-start justify-between gap-3">
-                    <StatusBadge problem={problem} />
+                    <div className="flex flex-wrap gap-1.5">
+                        {standing && <span className="rounded-full border border-warn/30 bg-warn/15 px-2 py-0.5 text-xs font-medium text-warn">{STANDING_LABEL[standing]}</span>}
+                        <StatusBadge problem={problem} />
+                    </div>
                     <Share
                         text={
                             problem.phase === 'open'
@@ -57,6 +63,7 @@ export function ProblemHeader({ problem }: { problem: ProblemView }) {
                     {problem.info.name} · multiply a {n1}×{n2} by a {n2}×{n3} matrix in {target} multiplications
                 </p>
             </div>
+            {standing && <Panel className="border-warn/30 bg-warn/5 p-4 text-sm text-warn">{standingNote(standing, [n1, n2, n3], best)}</Panel>}
             {problem.info.kind === 'demo' && problem.info.demoNote && (
                 <Panel className="border-warn/30 bg-warn/5 p-4 text-sm text-warn">{problem.info.demoNote}</Panel>
             )}

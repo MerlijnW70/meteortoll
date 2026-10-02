@@ -1,4 +1,4 @@
-import type { KnownFormat } from './known'
+import { type KnownFormat, rankBound, targetStanding } from './known'
 import { NAME_LIMIT, SYMBOL_LIMIT } from './launch'
 
 export interface Draft {
@@ -21,7 +21,11 @@ export function withTarget(format: KnownFormat, draft: Draft, target: string): D
     return draft.named ? { ...draft, target } : { ...draft, target, name: tokenName(format.n, target) }
 }
 
-export function launchKind(format: KnownFormat, target: number): 'open' | 'demo' {
+export type LaunchKind = 'open' | 'demo' | 'answered' | 'impossible'
+
+export function launchKind(format: KnownFormat, target: number): LaunchKind {
+    const standing = targetStanding(format.n, target, format.bestKnown.rank)
+    if (standing !== 'open') return standing
     return format.team && target >= format.team.rank ? 'demo' : 'open'
 }
 
@@ -33,6 +37,10 @@ export interface TargetNote {
 export function targetNote(format: KnownFormat, target: number): TargetNote | null {
     const best = format.bestKnown.rank
     if (!Number.isInteger(target) || target < 1 || target >= format.naive) return null
+    const bound = rankBound(format.n)
+    if (target < bound.rank) {
+        return { tone: 'warn', text: `No scheme can meet ${target}: this format needs at least ${bound.rank} multiplications (${bound.source}). Use ${bound.rank} to ${best - 1}.` }
+    }
     if (target >= best) {
         return { tone: 'warn', text: `A rank-${best} scheme is already published, so anyone holding it could claim this bounty at once. Use ${best - 1} or lower for an open problem.` }
     }

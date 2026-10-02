@@ -10,7 +10,7 @@ import { useLaunch } from '@/components/launch/useLaunch'
 import { useLaunchCost, useLaunchTerms } from '@/components/launch/useLaunchTerms'
 import { PageIntro, Panel, sol } from '@/components/ui'
 import { useProblems } from '@/hooks/useProblems'
-import { FIRST_BUY_PRESETS, parseSol, quoteFirstBuy } from '@/lib/firstBuy'
+import { FIRST_BUY_CAP_SOL, FIRST_BUY_PRESETS, firstBuyProblem, parseSol, quoteFirstBuy } from '@/lib/firstBuy'
 import type { KnownFormat } from '@/lib/known'
 import { type LaunchRequest, statementProblem } from '@/lib/launch'
 import { type Draft, draftFor, launchKind, tokenProblem } from '@/lib/launchDraft'
@@ -93,9 +93,11 @@ export default function Launch() {
             ? null
             : !firstBuy
               ? 'Type an amount in SOL, such as 0.5.'
-              : quote && quote.curveShare >= 1
-                ? `That buy would complete the whole curve, which holds ${graduation} SOL; buy less.`
-                : null
+              : firstBuyProblem(firstBuy)
+                ? `The first buy can be at most ${FIRST_BUY_CAP_SOL} SOL.`
+                : quote && quote.curveShare >= 1
+                  ? `That buy would complete the whole curve, which holds ${graduation} SOL; buy less.`
+                  : null
     const presets = useMemo(
         () => FIRST_BUY_PRESETS.filter((amount) => amount === 0 || !config || !terms.data || quoteFirstBuy(config, parseSol(String(amount))!, terms.data.point).curveShare < 1),
         [config, terms.data]

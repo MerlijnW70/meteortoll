@@ -1,5 +1,7 @@
 import { ImageResponse } from 'next/og'
 import { ForeignProblemError, totalBounty } from '@/lib/chain'
+import { problemStanding, STANDING_LABEL } from '@/lib/classify'
+import { CLUSTER } from '@/lib/config'
 import { serverProblem } from '@/lib/server'
 
 export const alt = 'A matrix multiplication problem on meteortoll'
@@ -25,6 +27,11 @@ export default async function Image({ params }: { params: Promise<{ address: str
         badge = problem.phase === 'open' ? 'OPEN' : 'SOLVED'
         badgeColor = problem.phase === 'open' ? colors.accent : colors.good
         if (problem.info.kind === 'demo') badge = `DEMO · ${badge}`
+        const standing = problemStanding(problem, CLUSTER === 'mainnet')
+        if (standing) {
+            badge = STANDING_LABEL[standing].toUpperCase()
+            badgeColor = colors.warn
+        }
         figure = best ? `${best} → ${targetRank}` : `${n1 * n2 * n3} → ${targetRank}`
     } catch (error) {
         if (error instanceof ForeignProblemError) {

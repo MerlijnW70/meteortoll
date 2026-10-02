@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import type { KnownFormat } from '@/lib/known'
+import { type KnownFormat, rankBound } from '@/lib/known'
 import { NAME_LIMIT, SYMBOL_LIMIT } from '@/lib/launch'
 import { type Draft, targetNote, tokenProblem, withTarget } from '@/lib/launchDraft'
 
@@ -14,10 +14,11 @@ export function TargetStep({ format, draft, onChange, live }: { format: KnownFor
     const note = draft.target === '' ? null : targetNote(format, target)
     const set = (next: number | string) => onChange(withTarget(format, draft, String(next)))
     const record = format.bestKnown
+    const floor = rankBound(format.n).rank
     return (
         <div className="space-y-3">
             <div className="flex items-center gap-2">
-                <button type="button" aria-label="Lower the target" className={stepButton} disabled={!(target > 1)} onClick={() => set(target - 1)}>
+                <button type="button" aria-label="Lower the target" className={stepButton} disabled={!(target > floor)} onClick={() => set(target - 1)}>
                     −
                 </button>
                 <input
@@ -37,7 +38,7 @@ export function TargetStep({ format, draft, onChange, live }: { format: KnownFor
                         ({record.asOf})
                     </a>
                     <br />
-                    Schoolbook <span className="num text-text">{format.naive}</span>
+                    Schoolbook <span className="num text-text">{format.naive}</span> · floor <span className="num text-text">{floor}</span>
                 </p>
             </div>
             {note && (

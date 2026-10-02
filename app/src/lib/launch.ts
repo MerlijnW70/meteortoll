@@ -17,7 +17,8 @@ import {
 import { creatorTradingFeePercentage, type Economics, problemAddress, vaultAddress } from '@meteortoll/core'
 import { CLUSTER, DBC_CONFIG } from './config'
 import { ECONOMICS } from './economics'
-import { quoteFirstBuy } from './firstBuy'
+import { firstBuyProblem, quoteFirstBuy } from './firstBuy'
+import { targetProblem } from './known'
 import { withRetry } from './rpc'
 import { methods } from './solve/program'
 
@@ -33,11 +34,15 @@ export interface LaunchRequest {
     firstBuy: BN
 }
 
-export function statementProblem({ n, target, name, symbol }: LaunchRequest): string | null {
+export function statementProblem({ n, target, name, symbol, firstBuy }: LaunchRequest): string | null {
     if (n.some((d) => !Number.isInteger(d) || d < 1 || d > MAX_DIMENSION)) return `dimensions must be whole numbers from 1 to ${MAX_DIMENSION}`
     const naive = n[0] * n[1] * n[2]
     if (!Number.isInteger(target) || target < 1) return 'the target must be a whole number of at least 1'
     if (target >= naive) return `the target must be below the schoolbook rank ${naive}`
+    const known = targetProblem(n, target)
+    if (known) return known
+    const buy = firstBuyProblem(firstBuy)
+    if (buy) return buy
     if (!name.trim() || new TextEncoder().encode(name).length > NAME_LIMIT) return `the name needs 1 to ${NAME_LIMIT} bytes`
     if (!/^[A-Z0-9]+$/.test(symbol) || symbol.length > SYMBOL_LIMIT) return `the symbol needs 1 to ${SYMBOL_LIMIT} capital letters or digits`
     return null
@@ -119,6 +124,8 @@ export async function prepareLaunch(
     siteUrl: string,
     pinned: Pinned = PINNED
 ): Promise<PreparedLaunch> {
+    const refused = statementProblem(request)
+    if (refused) throw new Error(`The launch is refused: ${refused}.`)
     const { address: config, config: poolConfig } = await launchTerms(connection, program, launchpad, pinned)
     const dbc = new DynamicBondingCurveClient(connection, 'confirmed')
     const quoteMint = poolConfig.quoteMint
@@ -144,7 +151,8 @@ export async function prepareLaunch(
         firstBuyParam = { buyer: owner, buyAmount: request.firstBuy, minimumAmountOut, referralTokenAccount: null }
     }
     const create = await withRetry(() => dbc.creator.createPoolWithFirstBuy({ createPoolParam, firstBuyParam }))
-    const register = await registerTransaction(connection, program, { launchpad, config, pool, quoteMint, baseMint: baseMint.publicKey, owner }, request, true)
+    create.add(await handOverInstruction(connection, { pool, config, owner, problem }))
+    const register = await registerTransaction(connection, program, { launchpad, config, pool, quoteMint, baseMint: baseMint.publicKey, owner }, request, false)
     return { create, register, baseMint, pool, problem }
 }
 
@@ -157,6 +165,10 @@ interface RegisterAccounts {
     owner: PublicKey
 }
 
+export function handOverInstruction(connection: Connection, { pool, config, owner, problem }: { pool: PublicKey; config: PublicKey; owner: PublicKey; problem: PublicKey }) {
+    return createDbcProgram(connection).program.methods.transferPoolCreator().accountsPartial({ virtualPool: pool, config, creator: owner, newCreator: problem }).instruction()
+}
+
 async function registerTransaction(
     connection: Connection,
     program: Program,
@@ -166,14 +178,7 @@ async function registerTransaction(
 ): Promise<Transaction> {
     const problem = problemAddress(pool, n, target)
     const tx = new Transaction()
-    if (handOver) {
-        tx.add(
-            await createDbcProgram(connection)
-                .program.methods.transferPoolCreator()
-                .accountsPartial({ virtualPool: pool, config, creator: owner, newCreator: problem })
-                .instruction()
-        )
-    }
+    if (handOver) tx.add(await handOverInstruction(connection, { pool, config, owner, problem }))
     const register = await methods(program)
         .registerProblem(n[0], n[1], n[2], target)
         .accountsPartial({

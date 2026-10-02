@@ -9,6 +9,8 @@ import { StatsStrip } from '@/components/StatsStrip'
 import { Panel, shape, Skeleton, sol } from '@/components/ui'
 import { useProblems } from '@/hooks/useProblems'
 import { type ProblemView, totalBounty } from '@/lib/chain'
+import { problemStanding } from '@/lib/classify'
+import { CLUSTER } from '@/lib/config'
 
 type Filter = ProblemView['phase'] | 'all'
 
@@ -111,7 +113,9 @@ export default function Home() {
     const listed = data?.filter((p) => !p.info.hidden)
     const ranked = [...(listed ?? [])].sort((x, y) => Number(bounty(y) - bounty(x)))
     const flagship =
-        ranked.find((p) => p.phase === 'open' && p.info.kind !== 'demo') ?? ranked.find((p) => p.phase === 'open') ?? ranked[0]
+        ranked.find((p) => p.phase === 'open' && p.info.kind !== 'demo' && !problemStanding(p, CLUSTER === 'mainnet')) ??
+        ranked.find((p) => p.phase === 'open' && !problemStanding(p, CLUSTER === 'mainnet')) ??
+        ranked[0]
     return (
         <div className="space-y-10">
             <Hero problem={isLoading ? undefined : flagship} />

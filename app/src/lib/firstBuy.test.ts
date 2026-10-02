@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import BN from 'bn.js'
 import { Connection } from '@solana/web3.js'
 import { createDbcProgram, type PoolConfig } from '@meteora-ag/dynamic-bonding-curve-sdk'
-import { formatUnits, parseSol, parseUnits, portion, quoteFirstBuy } from './firstBuy'
+import { FIRST_BUY_CAP, firstBuyProblem, formatUnits, parseSol, parseUnits, portion, quoteFirstBuy } from './firstBuy'
 
 const FIRST_BUY_TOKENS = '91734376628999'
 const FIRST_BUY_FEE = '8002176'
@@ -67,4 +67,11 @@ test('sell all', () => {
     assert.equal(portion(1_000_000n, 25, 6), '0.25')
     assert.equal(formatUnits(2_000_000n, 6), '2')
     assert.equal(parseUnits('1.1234567', 6), null)
+})
+
+test('cap', () => {
+    assert.equal(firstBuyProblem(new BN(0)), null)
+    assert.equal(firstBuyProblem(ONE), null)
+    assert.ok(FIRST_BUY_CAP.eq(ONE))
+    assert.match(firstBuyProblem(parseSol('1.000000001')!) ?? '', /at most 1 SOL/)
 })

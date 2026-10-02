@@ -2,6 +2,12 @@ import BN from 'bn.js'
 import { type PoolConfig, swapQuotePartialFill, type VirtualPool } from '@meteora-ag/dynamic-bonding-curve-sdk'
 
 export const FIRST_BUY_PRESETS = [0, 0.1, 0.5, 1] as const
+export const FIRST_BUY_CAP_SOL = 1
+export const FIRST_BUY_CAP = new BN(FIRST_BUY_CAP_SOL * 1_000_000_000)
+
+export function firstBuyProblem(amount: BN): string | null {
+    return amount.gt(FIRST_BUY_CAP) ? `the first buy can be at most ${FIRST_BUY_CAP_SOL} SOL` : null
+}
 
 export interface FirstBuyQuote {
     tokens: BN

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import type BN from 'bn.js'
 import type { FirstBuyQuote } from '@/lib/firstBuy'
 import type { KnownFormat } from '@/lib/known'
+import type { LaunchKind } from '@/lib/launchDraft'
 import { explorer } from '@/lib/config'
 import { LAUNCH_FEE_SOL } from '@/lib/economics'
 import { percentDown } from '@/lib/format'
@@ -11,9 +12,15 @@ import { Meter, Panel, Skeleton, sol } from '../ui'
 import { Share } from '../Share'
 import type { Launched } from './useLaunch'
 
-const badge = { open: 'bg-accent/15 text-accent border-accent/30', demo: 'bg-warn/15 text-warn border-warn/30' }
+const warn = 'bg-warn/15 text-warn border-warn/30'
+const badge: Record<LaunchKind, [string, string]> = {
+    open: ['Open', 'bg-accent/15 text-accent border-accent/30'],
+    demo: ['Disclosed demo', warn],
+    answered: ['Answered', warn],
+    impossible: ['Impossible', warn],
+}
 
-export function Preview({ format, target, symbol, kind, quote }: { format: KnownFormat | null; target: string; symbol: string; kind: 'open' | 'demo'; quote: FirstBuyQuote | null }) {
+export function Preview({ format, target, symbol, kind, quote }: { format: KnownFormat | null; target: string; symbol: string; kind: LaunchKind; quote: FirstBuyQuote | null }) {
     if (!format) {
         return (
             <Panel className="grid min-h-44 place-items-center p-4 text-center text-sm text-faint">
@@ -24,7 +31,7 @@ export function Preview({ format, target, symbol, kind, quote }: { format: Known
     return (
         <Panel className="p-4" aria-label="Preview">
             <div className="mb-3 space-y-2">
-                <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${badge[kind]}`}>{kind === 'demo' ? 'Disclosed demo' : 'Open'}</span>
+                <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${badge[kind][1]}`}>{badge[kind][0]}</span>
                 <div className="flex items-baseline justify-between gap-2">
                     <span className="whitespace-nowrap font-mono text-lg">
                         ⟨{format.n.join('×')} : ≤{target || '?'}⟩
@@ -46,6 +53,11 @@ export function Preview({ format, target, symbol, kind, quote }: { format: Known
                     <div className="num text-muted">{format.naive}</div>
                 </div>
             </div>
+            {quote && (
+                <p className="num mb-3 text-xs text-muted">
+                    You hold <span className="text-text">{percentDown(quote.supplyShare, 2)}</span> of supply after the first buy
+                </p>
+            )}
             <Meter label="Curve to graduation" value={quote?.curveShare ?? 0} detail={percentDown(quote?.curveShare ?? 0, 1)} />
         </Panel>
     )

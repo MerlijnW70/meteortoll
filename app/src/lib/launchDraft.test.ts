@@ -42,6 +42,16 @@ test('target note', () => {
     assert.match(targetNote(open, 270)!.text, /^8 below the record/)
 })
 
+test('impossible target', () => {
+    const note = targetNote(open, 179)!
+    assert.equal(note.tone, 'warn')
+    assert.match(note.text, /at least 180/)
+    assert.equal(targetNote(open, 180)?.tone, 'good')
+    assert.equal(launchKind(open, 179), 'impossible')
+    assert.equal(launchKind(open, 278), 'answered')
+    assert.equal(launchKind(held, 315), 'answered')
+})
+
 test('invalid target', () => {
     for (const target of [0, -1, 1.5, Number.NaN, 360]) assert.equal(targetNote(open, target), null)
 })

@@ -2,14 +2,14 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { randomBytes } from 'node:crypto'
 import { resolve } from 'node:path'
 import BN from 'bn.js'
-import { Keypair, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js'
+import { Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction } from '@solana/web3.js'
 import {
     createAssociatedTokenAccountIdempotentInstruction,
     createCloseAccountInstruction,
     getAssociatedTokenAddressSync,
     NATIVE_MINT,
 } from '@solana/spl-token'
-import { deriveDbcPoolAddress, DynamicBondingCurveClient, U64_MAX } from '@meteora-ag/dynamic-bonding-curve-sdk'
+import { createDbcProgram, deriveDbcPoolAddress, DynamicBondingCurveClient, U64_MAX } from '@meteora-ag/dynamic-bonding-curve-sdk'
 import {
     CLUSTER,
     connection,
@@ -28,6 +28,7 @@ import type { Economics } from '@meteortoll/core'
 import { assertCluster, BPF_LOADER_UPGRADEABLE, clusterOf, deployCost, LAUNCH_LAMPORTS, programDataMatches, SETUP_LAMPORTS, sha256, upgradeAuthority } from './preflight.js'
 import { metadataUri, SITE_URL } from './site.js'
 import { buyTransaction, MAX_FEE_PERCENT, parseLimits, SLIPPAGE_BPS } from './trade.js'
+import { targetProblem } from '../../app/src/lib/known.js'
 import { commitment, encodeScheme, type FmmScheme, schemeHeader, VERIFY_BUDGET } from '@meteortoll/core'
 import {
     attemptAddress,
@@ -109,6 +110,10 @@ async function setup(args: string[]) {
 
 async function launch(args: string[]) {
     const [n1, n2, n3, target] = args.slice(0, 4).map(Number)
+    if (![n1, n2, n3, target].every((v) => Number.isInteger(v) && v >= 1)) throw new Error('usage: launch n1 n2 n3 target --name NAME --symbol SYMBOL')
+    if (target >= n1 * n2 * n3) throw new Error(`the target must be below the schoolbook rank ${n1 * n2 * n3}`)
+    const refused = targetProblem([n1, n2, n3], target)
+    if (refused) throw new Error(`launch refused: ${refused}`)
     const name = flag(args, 'name')
     const symbol = flag(args, 'symbol')
     const state = loadState()
@@ -122,6 +127,9 @@ async function launch(args: string[]) {
     if (resumePool && !pool.equals(new PublicKey(resumePool))) throw new Error('--pool does not match --base and the config')
     const problem = problemAddress(pool, [n1, n2, n3], target)
 
+    const handOver = () =>
+        createDbcProgram(connection).program.methods.transferPoolCreator().accountsPartial({ virtualPool: pool, config, creator: wallet.publicKey, newCreator: problem }).instruction()
+    let creator = problem
     if (base) {
         const create = await dbc.creator.createPool({
             name,
@@ -132,10 +140,17 @@ async function launch(args: string[]) {
             config,
             baseMint,
         })
-        console.log(`create pool ${pool.toBase58()} (base ${baseMint.toBase58()}): ${explorer(await sendTx(create, wallet, [base]))}`)
+        create.add(await handOver())
+        console.log(`create pool ${pool.toBase58()} (base ${baseMint.toBase58()}) owned by problem ${problem.toBase58()}: ${explorer(await sendTx(create, wallet, [base]))}`)
+    } else {
+        const found = await dbc.state.getPool(pool)
+        if (!found) throw new Error(`pool ${pool.toBase58()} not found`)
+        creator = found.poolState.creator
+        if (!creator.equals(problem) && !creator.equals(wallet.publicKey)) throw new Error(`pool ${pool.toBase58()} belongs to ${creator.toBase58()}`)
     }
 
-    const handOver = await dbc.creator.transferPoolCreator({ pool, creator: wallet.publicKey, newCreator: problem })
+    const tx = new Transaction()
+    if (!creator.equals(problem)) tx.add(await handOver())
     const register = await methods
         .registerProblem(n1, n2, n3, target)
         .accountsPartial({
@@ -152,8 +167,8 @@ async function launch(args: string[]) {
             quoteTokenProgram: TOKEN_PROGRAM_ID,
         })
         .instruction()
-    handOver.add(register)
-    console.log(`hand pool to problem ${problem.toBase58()} and register: ${explorer(await sendTx(handOver, wallet))}`)
+    tx.add(register)
+    console.log(`${tx.instructions.length > 1 ? 'hand pool to problem and register' : 'register'} ${problem.toBase58()}: ${explorer(await sendTx(tx, wallet))}`)
 
     const statementKey = `${n1}x${n2}x${n3}r${target}`
     const key = state.problems[statementKey] && state.problems[statementKey].problem !== problem.toBase58() ? `${statementKey}-${symbol}` : statementKey
@@ -303,7 +318,7 @@ async function solve(args: string[]) {
             .reveal([...salt])
             .accountsPartial({ solver: wallet.publicKey, problem, attempt, submission, slotHashes: SLOT_HASHES })
             .instruction()
-        console.log(`reveal: ${explorer(await send([reveal], wallet, [], 400_000))}`)
+        console.log(`reveal: ${explorer(await send([reveal], wallet, [], Math.min(1_400_000, 60_000 + Math.ceil(scheme.length / 2))))}`)
         current = await fetchAttempt(toll, attempt)
     }
 
@@ -381,7 +396,7 @@ async function status(args: string[]) {
         const pool = await dbc.state.getPool(new PublicKey(found.pool))
         const poolState = pool?.poolState ?? (pool as never)
         const owed = poolState ? BigInt(poolState.creatorQuoteFee.toString()) : 0n
-        const final = account.solver !== null && slot >= account.solvedAtSlot.toNumber() + account.graceSlots.toNumber()
+        const final = account.solver !== null && Number(account.pending ?? 0) === 0 && slot >= account.solvedAtSlot.toNumber() + account.graceSlots.toNumber()
         console.log(
             `${key} ${found.symbol}: bounty ${SOL(await tokenBalance(account.quoteVault))} SOL, unswept ${SOL(owed)} SOL, ` +
                 `attempts ${account.attempts}, solver ${account.solver?.toBase58() ?? 'none'}${account.solver ? (final ? ' (final)' : ' (in grace)') : ''}`
