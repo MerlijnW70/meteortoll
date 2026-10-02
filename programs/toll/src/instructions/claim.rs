@@ -66,11 +66,10 @@ pub fn handle_claim(ctx: Context<Claim>) -> Result<()> {
 
     let info = ctx.accounts.problem.to_account_info();
     let rent = Rent::get()?.minimum_balance(info.data_len());
+    // Forfeited bonds: everything above rent. Moving zero lamports is fine and changes nothing.
     let spare = info.lamports().saturating_sub(rent);
-    if spare > 0 {
-        ctx.accounts.problem.sub_lamports(spare)?;
-        ctx.accounts.solver.add_lamports(spare)?;
-    }
+    ctx.accounts.problem.sub_lamports(spare)?;
+    ctx.accounts.solver.add_lamports(spare)?;
     emit!(Claimed { problem: ctx.accounts.problem.key(), solver: ctx.accounts.solver.key(), base: paid.0, quote: paid.1, bonds: spare });
     Ok(())
 }
