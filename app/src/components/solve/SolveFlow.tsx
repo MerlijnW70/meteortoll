@@ -9,7 +9,7 @@ import { count } from '@/lib/format'
 import { useSolveActions } from './useSolveActions'
 
 export function SolveFlow({ problem, scheme }: { problem: ProblemView; scheme: Uint8Array }) {
-    const { publicKey, attempt, busy, note, links, work, won, final, run, abandon } = useSolveActions(problem, scheme)
+    const { publicKey, attempt, busy, note, links, work, won, final, run, abandon, heldSalt, saveReceiptAgain, restoreReceipt } = useSolveActions(problem, scheme)
     const status = attempt ? statusName(attempt.status) : null
     const current = currentStep(status, won, final)
     const failed = status === 'fails'
@@ -47,6 +47,32 @@ export function SolveFlow({ problem, scheme }: { problem: ProblemView; scheme: U
                     {won ? 'You solved this problem. Claim new fees from the problem page as they arrive.' : 'This problem already has a verified scheme; new commitments are closed.'}
                 </p>
             )}
+            {status === 'committed' &&
+                (heldSalt ? (
+                    <p className="text-sm text-muted">
+                        Keep your commitment receipt until the reveal; with it you can reveal from any browser.{' '}
+                        <button onClick={saveReceiptAgain} className="text-accent hover:underline">
+                            Download it again
+                        </button>
+                    </p>
+                ) : (
+                    <div className="space-y-2 rounded-lg bg-warn/10 p-3 text-sm text-warn" role="alert">
+                        <p>This browser does not hold this commitment&apos;s salt. Restore it from the receipt you saved when committing, then upload and reveal.</p>
+                        <label className="inline-block cursor-pointer rounded-md border border-warn/50 px-3 py-1.5 hover:bg-warn/10">
+                            Choose receipt file
+                            <input
+                                type="file"
+                                accept=".json,application/json"
+                                className="sr-only"
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0]
+                                    if (file) restoreReceipt(file)
+                                    e.target.value = ''
+                                }}
+                            />
+                        </label>
+                    </div>
+                ))}
             {failed && <p className="rounded-lg bg-bad/10 p-3 text-sm text-bad">The scheme did not hold at the random point. The bond went to the bounty.</p>}
             {lost && (
                 <p className="rounded-lg bg-warn/10 p-3 text-sm text-warn">Your scheme holds, but an earlier commitment took the solve. Close the attempt to get your bond back.</p>

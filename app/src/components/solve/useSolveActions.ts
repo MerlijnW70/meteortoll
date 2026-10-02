@@ -11,7 +11,9 @@ import { type Program } from '@coral-xyz/anchor'
 import { type Connection, PublicKey, type Transaction } from '@solana/web3.js'
 import { type AttemptAccount, attemptAddress, commitment, schemeWork, statusName } from '@meteortoll/core'
 import { toast } from 'sonner'
+import { CLUSTER } from '@/lib/config'
 import { notifyError } from '@/lib/notify'
+import { downloadReceipt, makeReceipt, parseReceipt, saltFrom } from '@/lib/receipt'
 import { sendWithWallet, simulateOrThrow } from '@/lib/tx'
 import type { ProblemView } from '@/lib/chain'
 import {
@@ -76,7 +78,11 @@ export function useSolveActions(problem: ProblemView, scheme: Uint8Array) {
     const commitStep = async (solver: PublicKey, program: Program): Promise<AttemptAccount> => {
         setNote('Approve the commitment in your wallet.')
         const { tx, buffer, salt, attempt: attemptKey } = await commitAndOpen(connection, program, problemKey, solver, scheme)
+        // The salt goes to storage and to a file before the commitment exists, so no crash between
+        // the two can leave a commitment nobody can reveal.
         saveSalt(attemptKey, salt)
+        downloadReceipt(makeReceipt({ cluster: CLUSTER, problem: problemKey, attempt: attemptKey, solver, salt, scheme }))
+        setNote('Your commitment receipt was saved: keep it until the reveal. Approve the commitment in your wallet.')
         link('commit', await sendOne(tx, { signers: [buffer] }))
         const state = await fetchAttempt(program, problemKey, solver)
         if (!state) throw new Error('the attempt did not appear after committing')
@@ -88,7 +94,7 @@ export function useSolveActions(problem: ProblemView, scheme: Uint8Array) {
         const salt = loadSalt(attemptKey)
         if (!salt || !Buffer.from(commitment(problemKey, solver, salt, scheme)).equals(Buffer.from(state.commitment))) {
             throw new Error(
-                'This browser does not hold the salt for this commitment, or the file differs from the one committed. Abandon the attempt to get the bond back, then start again.'
+                'This browser does not hold the salt for this commitment, or the file differs from the one committed. Restore it from your commitment receipt, or abandon the attempt to get the bond back.'
             )
         }
         setNote('Waiting one slot after the commitment before uploading…')
@@ -169,5 +175,34 @@ export function useSolveActions(problem: ProblemView, scheme: Uint8Array) {
         }
     }
 
-    return { publicKey, attempt, busy, note, links, work, won, final, run, abandon }
+    // The salt this browser holds for a committed attempt, if it is the right one for this file.
+    const [saltVersion, setSaltVersion] = useState(0)
+    const heldSalt = useMemo(() => {
+        if (!publicKey || !attempt || statusName(attempt.status) !== 'committed') return null
+        const salt = loadSalt(attemptAddress(problemKey, publicKey))
+        return salt && Buffer.from(commitment(problemKey, publicKey, salt, scheme)).equals(Buffer.from(attempt.commitment)) ? salt : null
+        // saltVersion re-reads storage after a restore.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [publicKey, attempt, problemKey, scheme, saltVersion])
+
+    const saveReceiptAgain = () => {
+        if (!publicKey || !heldSalt) return
+        downloadReceipt(makeReceipt({ cluster: CLUSTER, problem: problemKey, attempt: attemptAddress(problemKey, publicKey), solver: publicKey, salt: heldSalt, scheme }))
+    }
+
+    /// Restores the salt from a receipt file, after checking it reproduces the on-chain commitment.
+    const restoreReceipt = async (file: File) => {
+        if (!publicKey || !attempt) return
+        try {
+            const attemptKey = attemptAddress(problemKey, publicKey)
+            const salt = saltFrom(parseReceipt(await file.text()), { problem: problemKey, solver: publicKey, attempt: attemptKey, commitment: attempt.commitment, scheme })
+            saveSalt(attemptKey, salt)
+            setSaltVersion((v) => v + 1)
+            toast.success('Commitment restored: you can upload and reveal')
+        } catch (error) {
+            notifyError(error)
+        }
+    }
+
+    return { publicKey, attempt, busy, note, links, work, won, final, run, abandon, heldSalt, saveReceiptAgain, restoreReceipt }
 }
