@@ -85,11 +85,17 @@ export async function revealAndVerifyTxs(
     // One spare crank: a call's budget may stop just short of the last product.
     const cranks = verifyCalls(work, VERIFY_BUDGET) + 1
     for (let i = 0; i < cranks; i++) {
-        const verify = await methods(program).verify(VERIFY_BUDGET).accountsPartial({ cranker: solver, problem, attempt, submission }).instruction()
         // A distinct compute price keeps otherwise identical crank transactions from sharing a signature.
-        txs.push(new Transaction().add(ComputeBudgetProgram.setComputeUnitLimit({ units: VERIFY_UNITS }), ComputeBudgetProgram.setComputeUnitPrice({ microLamports: i + 1 }), verify))
+        txs.push(await verifyTx(program, { cranker: solver, problem, attempt, submission }, i + 1))
     }
     return txs
+}
+
+/// One verify crank at the program's budget, with the compute limit a full call needs. Anyone may
+/// send it.
+export async function verifyTx(program: Program, accounts: { cranker: PublicKey; problem: PublicKey; attempt: PublicKey; submission: PublicKey }, microLamports: number) {
+    const verify = await methods(program).verify(VERIFY_BUDGET).accountsPartial(accounts).instruction()
+    return new Transaction().add(ComputeBudgetProgram.setComputeUnitLimit({ units: VERIFY_UNITS }), ComputeBudgetProgram.setComputeUnitPrice({ microLamports }), verify)
 }
 
 /// The sweeps that move every owed fee into the vaults, one instruction group each, so a claim

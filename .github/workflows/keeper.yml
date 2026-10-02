@@ -1,0 +1,41 @@
+# Every 30 minutes: sweep every problem's fees into its vaults and finish any check left
+# revealed (app/src/lib/keeper.ts). The keeper wallet only pays transaction fees.
+name: keeper
+
+on:
+  schedule:
+    - cron: '7,37 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: keeper
+  cancel-in-progress: false
+
+jobs:
+  keep:
+    runs-on: ubuntu-latest
+    env:
+      KEEPER_SECRET_KEY: ${{ secrets.KEEPER_SECRET_KEY }}
+      SOLANA_RPC_URL: ${{ secrets.SOLANA_RPC_URL }}
+      NEXT_PUBLIC_CLUSTER: ${{ vars.CLUSTER || 'devnet' }}
+    steps:
+      - name: Need a keeper key
+        id: key
+        run: |
+          if [ -z "$KEEPER_SECRET_KEY" ]; then
+            echo "::notice::Keeper skipped: add a KEEPER_SECRET_KEY repository secret (a funded wallet's secret key as a JSON array)."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.key.outputs.ready == 'true'
+        uses: actions/checkout@v7
+      - if: steps.key.outputs.ready == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - if: steps.key.outputs.ready == 'true'
+        run: npm ci
+      - if: steps.key.outputs.ready == 'true'
+        run: node node_modules/tsx/dist/cli.mjs --tsconfig app/tsconfig.json app/scripts/keeper.mts
