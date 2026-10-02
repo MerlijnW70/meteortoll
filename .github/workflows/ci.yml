@@ -70,6 +70,27 @@ jobs:
           sha256sum target/deploy/toll.so | tee -a "$GITHUB_STEP_SUMMARY"
           ls -l target/deploy/toll.so | tee -a "$GITHUB_STEP_SUMMARY"
 
+  verifiable:
+    runs-on: ubuntu-latest
+    needs: program
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d # stable
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cargo/bin/solana-verify
+          key: solana-verify-0.5.2
+      - run: '[ -x ~/.cargo/bin/solana-verify ] || cargo install solana-verify --version 0.5.2 --locked'
+      - name: Build in the verifiable container
+        run: ~/.cargo/bin/solana-verify build --library-name toll
+      - name: Program hash
+        run: ~/.cargo/bin/solana-verify get-executable-hash target/deploy/toll.so | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: toll-verifiable
+          path: target/deploy/toll.so
+          retention-days: 90
+
   e2e:
     runs-on: ubuntu-latest
     env:
