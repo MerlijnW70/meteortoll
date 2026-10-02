@@ -18,6 +18,17 @@ const links = [
     ['/trust', 'How it works'],
 ] as const
 
+/// The meteortoll mark: a 3×3 matrix on the accent colour, the same drawing as the site icon.
+function Mark() {
+    const cells = [14, 27.5, 41]
+    return (
+        <svg aria-hidden viewBox="0 0 64 64" className="h-6 w-6">
+            <rect width="64" height="64" rx="14" fill="var(--accent)" />
+            {cells.flatMap((y, r) => cells.map((x, c) => <rect key={`${r}${c}`} x={x} y={y} width="9" height="9" rx="2" fill="var(--bg)" opacity={(r + c) % 2 ? 0.55 : 1} />))}
+        </svg>
+    )
+}
+
 function NavLinks({ className }: { className: string }) {
     const path = usePathname()
     return (
@@ -39,9 +50,7 @@ export function Header() {
         <header className="sticky top-0 z-20 border-b border-border bg-bg/85 backdrop-blur">
             <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4">
                 <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
-                    <span aria-hidden className="grid h-6 w-6 place-items-center rounded-md bg-accent text-xs text-bg">
-                        ⊗
-                    </span>
+                    <Mark />
                     meteortoll
                 </Link>
                 <NavLinks className="hidden gap-5 text-sm sm:flex" />
