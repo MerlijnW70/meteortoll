@@ -6,7 +6,7 @@ import { ProblemCard } from '@/components/ProblemCard'
 import { StatsStrip } from '@/components/StatsStrip'
 import { Panel, shape, Skeleton, sol } from '@/components/ui'
 import { useProblems } from '@/hooks/useProblems'
-import type { ProblemView } from '@/lib/chain'
+import { type ProblemView, totalBounty } from '@/lib/chain'
 
 const columns: [ProblemView['phase'], string, string][] = [
     ['open', 'Open', 'Unsolved. Trading fees grow the bounty.'],
@@ -20,7 +20,7 @@ const STEPS: [string, string][] = [
     ['A verified answer claims it', 'Anyone can submit a scheme. A Solana program checks it, with no committee, and pays the first valid one.'],
 ]
 
-const bounty = (p: ProblemView) => p.bountyLamports + p.unsweptLamports
+const bounty = totalBounty
 
 function Hero({ problem }: { problem: ProblemView | undefined }) {
     if (!problem) return <Skeleton className="h-56" />

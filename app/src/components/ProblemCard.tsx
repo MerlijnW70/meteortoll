@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import type { ProblemView } from '@/lib/chain'
+import { type ProblemView, totalBounty } from '@/lib/chain'
 import { percentDown } from '@/lib/format'
 import { QuickBuy } from './QuickBuy'
 import { Meter, Panel, shape, sol, StatusBadge } from './ui'
@@ -26,7 +26,7 @@ export function ProblemCard({ problem }: { problem: ProblemView }) {
             <div className="mb-4 grid grid-cols-3 gap-2 text-sm">
                 <div>
                     <div className="text-xs text-muted">{problem.phase === 'solved' ? 'Unclaimed' : 'Bounty'}</div>
-                    <div className="num font-medium">{sol(problem.bountyLamports + problem.unsweptLamports)} SOL</div>
+                    <div className="num font-medium">{sol(totalBounty(problem))} SOL</div>
                 </div>
                 <div>
                     <div className="text-xs text-muted">Best known</div>

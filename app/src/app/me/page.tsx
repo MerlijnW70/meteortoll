@@ -10,6 +10,7 @@ import { ClaimPanel } from '@/components/problem/ClaimPanel'
 import { PageIntro, Panel, shape, Skeleton, sol } from '@/components/ui'
 import { useProblems } from '@/hooks/useProblems'
 import { tokens } from '@/lib/format'
+import { totalBounty } from '@/lib/chain'
 import { fetchPortfolio } from '@/lib/portfolio'
 
 const solNumber = (value: number) => value.toLocaleString('en-US', { maximumFractionDigits: 4 })
@@ -130,7 +131,7 @@ export default function Me() {
                                                 </td>
                                                 <td className="num p-3 text-right">{tokens(atoms)}</td>
                                                 <td className="num p-3 text-right">{valueSol === null ? 'graduated' : `${solNumber(valueSol)} SOL`}</td>
-                                                <td className="num p-3 text-right text-muted">{sol(problem.bountyLamports + problem.unsweptLamports)} SOL</td>
+                                                <td className="num p-3 text-right text-muted">{sol(totalBounty(problem))} SOL</td>
                                             </tr>
                                         ))}
                                     </tbody>

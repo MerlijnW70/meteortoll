@@ -7,8 +7,8 @@ import { allSignatures, type HistoryEvent } from './history'
 import { type Activity, fromJson, summarize, toJson } from './stats'
 import type { Trade } from './trades'
 
-const problem = (address: string, phase: ProblemView['phase'], bounty: bigint, unswept: bigint, hidden = false) =>
-    ({ address, phase, bountyLamports: bounty, unsweptLamports: unswept, info: { hidden } }) as unknown as ProblemView
+const problem = (address: string, phase: ProblemView['phase'], bounty: bigint, unswept: bigint, hidden = false, bonds = 0n) =>
+    ({ address, phase, vaultLamports: bounty, unsweptLamports: unswept, bondsLamports: bonds, info: { hidden } }) as unknown as ProblemView
 const trade = (trader: string, quoteLamports: bigint) => ({ trader, quoteLamports }) as Trade
 const claim = (lamports: bigint) => ({ kind: 'claim', lamports }) as HistoryEvent
 
@@ -29,6 +29,11 @@ test('totals count listed problems only, bounties only while open', () => {
         trades: 3,
         traders: 2,
     })
+})
+
+test('forfeited bonds count toward an open bounty', () => {
+    const s = summarize([problem('a', 'open', 100n, 5n, false, 50_000_000n)], new Map())
+    assert.equal(s.bountyLamports, 50_000_105n)
 })
 
 test('a problem without activity still counts as a problem', () => {

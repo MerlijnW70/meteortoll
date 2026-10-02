@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og'
-import { fetchProblem, ForeignProblemError } from '@/lib/chain'
+import { fetchProblem, ForeignProblemError, totalBounty } from '@/lib/chain'
 import { serverConnection } from '@/lib/server'
 
 export const alt = 'A matrix multiplication problem on meteortoll'
@@ -19,7 +19,7 @@ export default async function Image({ params }: { params: Promise<{ address: str
         const problem = await fetchProblem(serverConnection(), address)
         const { n1, n2, n3, targetRank } = problem.account
         const best = problem.info.bestKnown?.rank
-        const bounty = (Number(problem.bountyLamports + problem.unsweptLamports) / 1e9).toLocaleString('en-US', { maximumFractionDigits: 4 })
+        const bounty = (Number(totalBounty(problem)) / 1e9).toLocaleString('en-US', { maximumFractionDigits: 4 })
         title = `${n1}×${n2}×${n3} · rank ≤ ${targetRank}`
         line = problem.phase === 'open' ? `Bounty ${bounty} SOL · verified on-chain, no committee` : `Solved with rank ${problem.account.solvedRank} · verified on-chain`
         badge = problem.phase === 'open' ? 'OPEN' : 'SOLVED'

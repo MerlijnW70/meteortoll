@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useAnchorWallet, useConnection, useWallet } from '@solana/wallet-adapter-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { PublicKey } from '@solana/web3.js'
-import type { ProblemView } from '@/lib/chain'
+import { type ProblemView, totalBounty } from '@/lib/chain'
 import { notifyError, notifySuccess } from '@/lib/notify'
 import { claimTxs, fetchAttempt, tollWriter } from '@/lib/solve'
 import { sendWithWallet } from '@/lib/tx'
@@ -44,7 +44,7 @@ export function ClaimPanel({ problem }: { problem: ProblemView }) {
         }
     }
 
-    const owed = problem.bountyLamports + problem.unsweptLamports
+    const owed = totalBounty(problem)
     const nothing = owed === 0n && !attempt.data
     return (
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-good/30 bg-good/5 p-3 text-sm">

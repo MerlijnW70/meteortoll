@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { ProblemPage } from '@/components/ProblemPage'
-import { fetchProblem, ForeignProblemError } from '@/lib/chain'
+import { fetchProblem, ForeignProblemError, totalBounty } from '@/lib/chain'
 import { serverConnection } from '@/lib/server'
 
 export async function generateMetadata(props: PageProps<'/p/[address]'>): Promise<Metadata> {
@@ -8,7 +8,7 @@ export async function generateMetadata(props: PageProps<'/p/[address]'>): Promis
     try {
         const problem = await fetchProblem(serverConnection(), address)
         const { n1, n2, n3, targetRank } = problem.account
-        const bounty = Number(problem.bountyLamports + problem.unsweptLamports) / 1e9
+        const bounty = Number(totalBounty(problem)) / 1e9
         const title = `⟨${n1}×${n2}×${n3} : ≤${targetRank}⟩ · ${problem.phase === 'open' ? `${bounty.toLocaleString('en-US', { maximumFractionDigits: 4 })} SOL bounty` : 'solved'}`
         const description =
             problem.phase === 'open'

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useHistory } from '@/hooks/useHistory'
-import type { ProblemView } from '@/lib/chain'
+import { type ProblemView, totalBounty } from '@/lib/chain'
 import { paidOut } from '@/lib/history'
 import { Share } from '../Share'
 import { Panel, shape, sol, StatusBadge } from '../ui'
@@ -16,18 +16,21 @@ function Stat({ label, value, sub }: { label: string; value: ReactNode; sub?: Re
 }
 
 function BountyStat({ problem }: { problem: ProblemView }) {
-    const total = problem.bountyLamports + problem.unsweptLamports
-    const sub =
-        problem.unsweptLamports > 0n ? `${sol(problem.unsweptLamports)} SOL not yet swept` : total === 0n ? 'grows with every trade' : 'all fees swept'
+    const total = totalBounty(problem)
+    const parts = [
+        problem.unsweptLamports > 0n && `${sol(problem.unsweptLamports)} SOL not yet swept`,
+        problem.bondsLamports > 0n && `${sol(problem.bondsLamports)} SOL from forfeited bonds`,
+    ].filter(Boolean)
+    const sub = parts.length > 0 ? parts.join(' · ') : total === 0n ? 'grows with every trade' : 'all fees swept'
     return <Stat label="Bounty" value={`${sol(total)} SOL`} sub={sub} />
 }
 
 /// What the solver has been paid, from the claim transactions, and what waits for their next claim.
 function PaidStat({ problem }: { problem: ProblemView }) {
     const history = useHistory(problem.address)
-    const waiting = problem.bountyLamports + problem.unsweptLamports
+    const waiting = totalBounty(problem)
     const value = history.data ? `${sol(paidOut(history.data))} SOL` : history.error ? '—' : '…'
-    return <Stat label="Paid to the solver" value={value} sub={`${sol(waiting)} SOL in fees waiting for the next claim`} />
+    return <Stat label="Paid to the solver" value={value} sub={`${sol(waiting)} SOL waiting for the next claim`} />
 }
 
 /// Title, status, share actions, demo disclosure and the three headline numbers.
@@ -44,7 +47,7 @@ export function ProblemHeader({ problem }: { problem: ProblemView }) {
                     <Share
                         text={
                             problem.phase === 'open'
-                                ? `Multiply a ${n1}×${n2} by a ${n2}×${n3} matrix with ${target} multiplications and claim the ${sol(problem.bountyLamports + problem.unsweptLamports)} SOL bounty. Checked on-chain, no committee.`
+                                ? `Multiply a ${n1}×${n2} by a ${n2}×${n3} matrix with ${target} multiplications and claim the ${sol(totalBounty(problem))} SOL bounty. Checked on-chain, no committee.`
                                 : `⟨${label} : ≤${target}⟩ was solved and verified on-chain. Check the scheme yourself:`
                         }
                     />

@@ -1,7 +1,7 @@
 'use client'
 
 import { statusName } from '@meteortoll/core'
-import type { ProblemView } from '@/lib/chain'
+import { type ProblemView, totalBounty } from '@/lib/chain'
 import { Panel, shape, sol } from '../ui'
 import { StepList } from './StepList'
 import { BOND_SOL, currentStep, isClaimed } from './steps'
@@ -27,7 +27,7 @@ export function SolveFlow({ problem, scheme }: { problem: ProblemView; scheme: U
             : status === 'revealed'
               ? 'Finish verification'
               : won && final
-                ? `Claim ${sol(problem.bountyLamports + problem.unsweptLamports)} SOL`
+                ? `Claim ${sol(totalBounty(problem))} SOL`
                 : null
     const canClose = !!attempt && (status === 'committed' || failed || lost)
 

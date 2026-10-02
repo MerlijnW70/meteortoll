@@ -48,8 +48,13 @@ export interface ProblemView {
     info: ProblemInfo
     phase: ProblemPhase
     slot: number
-    bountyLamports: bigint
+    /// Quote held in the bounty vault.
+    vaultLamports: bigint
+    /// Creator fees still in the curve, until someone sweeps them.
     unsweptLamports: bigint
+    /// Bonds forfeited by failing schemes: lamports the problem account holds above its rent,
+    /// paid to the solver at claim.
+    bondsLamports: bigint
     curveProgress: number
     graduated: boolean
     /// SOL per whole token on the curve; null once graduated, when the price lives in DAMM v2.
@@ -122,15 +127,29 @@ function tokenAmount(info: AccountInfo<Buffer> | null): bigint {
     return new DataView(info.data.buffer, info.data.byteOffset, info.data.byteLength).getBigUint64(64, true)
 }
 
-/// Everything the app shows for a set of problems in two batched reads: pools, vaults and token
-/// metadata together, then the (usually single) launch config for curve progress.
+/// Everything the solver can collect: the vault, fees still in the curve, and forfeited bonds.
+export const totalBounty = (p: Pick<ProblemView, 'vaultLamports' | 'unsweptLamports' | 'bondsLamports'>) => p.vaultLamports + p.unsweptLamports + p.bondsLamports
+
+/// Lamports an account holds above what rent exemption needs: what the program can pay out of it.
+export function spareLamports(info: Pick<AccountInfo<Buffer>, 'lamports' | 'data'> | null, rentExempt: bigint): bigint {
+    if (!info) return 0n
+    const spare = BigInt(info.lamports) - rentExempt
+    return spare > 0n ? spare : 0n
+}
+
+/// Everything the app shows for a set of problems in two batched reads: pools, vaults, the problem
+/// accounts themselves and token metadata together, then the (usually single) launch config.
 async function views(connection: Connection, rows: { publicKey: PublicKey; account: ProblemAccount }[], slot: number): Promise<ProblemView[]> {
     const n = rows.length
     const infos = await fetchMany(connection, [
         ...rows.map((r) => r.account.pool),
         ...rows.map((r) => r.account.quoteVault),
         ...rows.map((r) => metadataAddress(r.account.baseMint)),
+        ...rows.map((r) => r.publicKey),
     ])
+    // Every problem account has the same size, so one rent figure serves them all.
+    const problemSize = infos[3 * n]?.data.length
+    const rentExempt = problemSize ? BigInt(await connection.getMinimumBalanceForRentExemption(problemSize)) : 0n
     const pools = infos.slice(0, n).map(decodePoolState)
     const configKeys = [...new Map(pools.filter((p) => p !== null).map((p) => [p.config.toBase58(), p.config])).values()]
     const configInfos = configKeys.length ? await fetchMany(connection, configKeys) : []
@@ -148,7 +167,8 @@ async function views(connection: Connection, rows: { publicKey: PublicKey; accou
             info: describe(publicKey.toBase58(), account, token),
             phase: problemPhase(account, slot),
             slot,
-            bountyLamports: tokenAmount(infos[n + i]),
+            vaultLamports: tokenAmount(infos[n + i]),
+            bondsLamports: spareLamports(infos[3 * n + i], rentExempt),
             unsweptLamports: pool ? BigInt(pool.creator_quote_fee.toString()) : 0n,
             curveProgress: Math.min(1, Math.max(0, progress)),
             graduated: pool ? pool.is_migrated !== 0 : false,

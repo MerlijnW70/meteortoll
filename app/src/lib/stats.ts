@@ -3,7 +3,7 @@
 // duplicate demos) are left out, so the totals count only what the site shows.
 
 import { type Connection, PublicKey } from '@solana/web3.js'
-import { fetchProblems, type ProblemView } from './chain'
+import { fetchProblems, type ProblemView, totalBounty } from './chain'
 import { fetchHistory, fetchTransactions, type HistoryEvent, paidOut } from './history'
 import { type Trade, tradesIn } from './trades'
 
@@ -11,7 +11,7 @@ export interface Stats {
     problems: number
     open: number
     solved: number
-    /// Held for open problems: swept into their vaults plus fees still in the curve.
+    /// Held for open problems: their vaults, fees still in the curve, and forfeited bonds.
     bountyLamports: bigint
     paidLamports: bigint
     volumeLamports: bigint
@@ -44,7 +44,7 @@ export function summarize(problems: ProblemView[], activity: Map<string, Activit
         problems: listed.length,
         open: listed.filter((p) => p.phase === 'open').length,
         solved: listed.filter((p) => p.phase === 'solved').length,
-        bountyLamports: listed.filter((p) => p.phase === 'open').reduce((sum, p) => sum + p.bountyLamports + p.unsweptLamports, 0n),
+        bountyLamports: listed.filter((p) => p.phase === 'open').reduce((sum, p) => sum + totalBounty(p), 0n),
         paidLamports,
         volumeLamports,
         trades,
