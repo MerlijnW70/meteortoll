@@ -4,12 +4,25 @@ import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { usePathname } from 'next/navigation'
 import { CLUSTER } from '@/lib/config'
+import { useWalletModal } from '@solana/wallet-adapter-react-ui'
 import { ThemeSwitch } from './ThemeSwitch'
+import { useWalletLoaded } from './wallet/WalletLayer'
 
-const WalletButton = dynamic(() => import('@solana/wallet-adapter-react-ui').then((m) => m.WalletMultiButton), {
+const MultiButton = dynamic(() => import('@solana/wallet-adapter-react-ui').then((m) => m.WalletMultiButton), {
     ssr: false,
     loading: () => <div className="skeleton h-9 w-36" />,
 })
+
+function WalletButton() {
+    const loaded = useWalletLoaded()
+    const { setVisible } = useWalletModal()
+    if (loaded) return <MultiButton />
+    return (
+        <button type="button" onClick={() => setVisible(true)} className="wallet-adapter-button wallet-adapter-button-trigger">
+            Select Wallet
+        </button>
+    )
+}
 
 const links = [
     ['/', 'Problems'],

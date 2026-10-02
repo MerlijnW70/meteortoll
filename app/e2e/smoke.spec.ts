@@ -245,3 +245,13 @@ test('problem filters', async ({ page }) => {
     await fitsTheScreen(page)
     expect(errors).toEqual([])
 })
+
+test('wallet modal', async ({ page }) => {
+    const errors = watch(page)
+    await page.goto('/terms')
+    await page.getByRole('button', { name: 'Select Wallet' }).click()
+    await expect(page.locator('.wallet-adapter-modal-title')).toBeVisible({ timeout: 15_000 })
+    await page.keyboard.press('Escape')
+    await expect(page.locator('.wallet-adapter-modal-title')).toBeHidden()
+    expect(errors).toEqual([])
+})

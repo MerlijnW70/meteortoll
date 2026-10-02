@@ -1,20 +1,20 @@
 'use client'
 
 import { Buffer } from 'buffer'
-import { type ReactNode, useEffect, useMemo, useState } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react'
-import { WalletModalProvider } from '@solana/wallet-adapter-react-ui'
-import { DevWalletAdapter } from '@/lib/devWallet'
+import { ConnectionProvider } from '@solana/wallet-adapter-react'
 import { Toaster } from 'sonner'
-import { CLUSTER, rpcEndpoint, WS_ENDPOINT } from '@/lib/config'
+import { rpcEndpoint, WS_ENDPOINT } from '@/lib/config'
 import { describeError } from '@/lib/errors'
 import { sendReport, worthReporting } from '@/lib/report'
 import { NetworkStatus } from '@/components/NetworkStatus'
-import { onWalletError, WalletHelp } from '@/components/WalletHelp'
+import { WalletLayer } from '@/components/wallet/WalletLayer'
 import '@/styles/wallet-adapter.css'
 
 globalThis.Buffer ??= Buffer
+
+const DEV_BURNER = process.env.NEXT_PUBLIC_DEV_BURNER === '1'
 
 function UncaughtErrors() {
     useEffect(() => {
@@ -49,23 +49,16 @@ export function Providers({ children }: { children: ReactNode }) {
                 },
             })
     )
-    const wallets = useMemo(() => {
-        const local = typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname)
-        return process.env.NEXT_PUBLIC_DEV_BURNER === '1' && local && CLUSTER !== 'mainnet' ? [new DevWalletAdapter()] : []
-    }, [])
     const [endpoint] = useState(rpcEndpoint)
     return (
         <QueryClientProvider client={queries}>
             <ConnectionProvider endpoint={endpoint} config={{ commitment: 'confirmed', wsEndpoint: WS_ENDPOINT }}>
-                <WalletProvider wallets={wallets} autoConnect onError={onWalletError}>
-                    <WalletModalProvider>
-                        <NetworkStatus />
-                        <WalletHelp />
-                        <UncaughtErrors />
-                        {children}
-                        <Toaster theme="dark" position="bottom-right" richColors />
-                    </WalletModalProvider>
-                </WalletProvider>
+                <WalletLayer eager={DEV_BURNER}>
+                    <NetworkStatus />
+                    <UncaughtErrors />
+                    {children}
+                    <Toaster theme="dark" position="bottom-right" richColors />
+                </WalletLayer>
             </ConnectionProvider>
         </QueryClientProvider>
     )
