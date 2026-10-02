@@ -34,6 +34,42 @@ jobs:
       - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d # stable
       - run: cargo test -p meteortoll --quiet
 
+  program:
+    runs-on: ubuntu-latest
+    env:
+      SOLANA_VERSION: v4.1.2
+      ANCHOR_VERSION: 1.2.0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d # stable
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.local/share/solana
+            ~/.cache/solana
+            ~/.cargo/registry
+            target
+          key: program-${{ env.SOLANA_VERSION }}-${{ hashFiles('Cargo.lock') }}
+      - name: Solana toolchain
+        run: |
+          [ -x "$HOME/.local/share/solana/install/active_release/bin/solana" ] || sh -c "$(curl -sSfL "https://release.anza.xyz/$SOLANA_VERSION/install")"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
+      - name: Meteora and Metaplex programs from mainnet
+        run: |
+          mkdir -p programs/toll/tests/fixtures
+          solana program dump -u mainnet-beta dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN programs/toll/tests/fixtures/dbc.so
+          solana program dump -u mainnet-beta cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG programs/toll/tests/fixtures/damm_v2.so
+          solana program dump -u mainnet-beta metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s programs/toll/tests/fixtures/mpl_token_metadata.so
+      - name: Build
+        run: npx --yes "@anchor-lang/cli@$ANCHOR_VERSION" build --arch v0
+      - name: The checked-in IDL matches the build
+        run: diff <(jq -S . target/idl/toll.json) <(jq -S . packages/core/src/idl/toll.json)
+      - run: cargo test -p toll --quiet
+      - name: Program hash
+        run: |
+          sha256sum target/deploy/toll.so | tee -a "$GITHUB_STEP_SUMMARY"
+          ls -l target/deploy/toll.so | tee -a "$GITHUB_STEP_SUMMARY"
+
   e2e:
     runs-on: ubuntu-latest
     env:
