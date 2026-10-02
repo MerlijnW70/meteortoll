@@ -25,6 +25,19 @@
       ],
       "name": "DEMO #2 7x7x9 rank<=314",
       "symbol": "D779B"
+    },
+    "2x2x2r7": {
+      "problem": "ALERKdwRHw6rdqYSUMNe6qaywWxngHU3dzoxYcySvspg",
+      "pool": "F68fPUVHjHDA3j9buq1gtYubVK37R3jWjM6fVBnmbWdG",
+      "baseMint": "5QivfBRE2FHQrzzHit1oReE6CL5pyEBY6em7dxa4sa9D",
+      "statement": [
+        2,
+        2,
+        2,
+        7
+      ],
+      "name": "TEST 2x2x2 rank<=7",
+      "symbol": "T227"
     }
   },
   "config": "Z4PT2dz65c2AW7jVYCoArmRvDSuLqZhQ7AnqFA2y1wT",

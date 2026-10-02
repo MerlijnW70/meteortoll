@@ -103,6 +103,23 @@
         "asOf": "2026-10-02",
         "ring": null
       }
+    },
+    "ALERKdwRHw6rdqYSUMNe6qaywWxngHU3dzoxYcySvspg": {
+      "mint": "5QivfBRE2FHQrzzHit1oReE6CL5pyEBY6em7dxa4sa9D",
+      "name": "one-prompt solve check",
+      "symbol": "T227",
+      "kind": "demo",
+      "demoNote": "A devnet check that commit, upload, reveal and verification go through in one wallet prompt, solved with Strassen's scheme. Not a public bounty.",
+      "hidden": true,
+      "coefficients": "integers, |c| <= 128",
+      "naive": 8,
+      "bestKnown": {
+        "rank": 7,
+        "source": "Strassen, Gaussian elimination is not optimal (1969); rank 7 is optimal (Winograd 1971)",
+        "url": "https://doi.org/10.1007/BF02165411",
+        "asOf": "2026-10-02",
+        "ring": null
+      }
     }
   },
   "mainnet": {}

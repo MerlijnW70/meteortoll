@@ -72,16 +72,32 @@ export function useSolveActions(problem: ProblemView, scheme: Uint8Array) {
 
     const sendOne = (tx: Transaction, extra?: Parameters<typeof sendTransaction>[2]) => sendWithWallet(connection, tx, publicKey!, sendTransaction, extra)
 
-    const commitStep = async (solver: PublicKey, program: Program): Promise<AttemptAccount> => {
-        setNote('Approve the commitment in your wallet.')
+    const deliver = async (state: AttemptAccount, uploads: Transaction[], steps: Transaction[]) => {
+        if (uploads.length > 0) await sendAll(connection, uploads, (done) => setNote(`Uploaded ${done} of ${uploads.length} chunks…`))
+        setNote('Waiting for a new slot before the reveal…')
+        await waitForSlot(connection, state.committedSlot.toNumber() + 2)
+        const [reveal] = await sendAll(connection, steps.slice(0, 1), () => setNote('Revealed. Verifying on-chain…'))
+        link('reveal', reveal)
+        const verified = await verifyUntilDone(connection, program!, problemKey, state.solver, steps.slice(1), (done) => setNote(`Verification transaction ${done} confirmed…`))
+        link('verify', verified.at(-1))
+    }
+
+    const commitAll = async (solver: PublicKey, program: Program, sign: Sign) => {
         const { tx, buffer, salt, attempt: attemptKey } = await commitAndOpen(connection, program, problemKey, solver, scheme)
         saveSalt(attemptKey, salt)
         downloadReceipt(makeReceipt({ cluster: CLUSTER, problem: problemKey, attempt: attemptKey, solver, salt, scheme }))
-        setNote('Your commitment receipt was saved: keep it until the reveal. Approve the commitment in your wallet.')
-        link('commit', await sendOne(tx, { signers: [buffer] }))
+        const uploads = await uploadTxs(connection, program, solver, attemptKey, buffer.publicKey, scheme)
+        const steps = await revealAndVerifyTxs(program, problemKey, solver, attemptKey, buffer.publicKey, salt, work, false)
+        await prepare(connection, [tx, ...uploads, ...steps], solver)
+        await simulateOrThrow(connection, tx)
+        tx.partialSign(buffer)
+        setNote('Your commitment receipt was saved. Approve the commitment, upload, reveal and verification in one prompt.')
+        const [committed, ...rest] = await sign([tx, ...uploads, ...steps])
+        const [signature] = await sendAll(connection, [committed], () => setNote('Committed. Uploading…'))
+        link('commit', signature)
         const state = await fetchAttempt(program, problemKey, solver)
         if (!state) throw new Error('the attempt did not appear after committing')
-        return state
+        await deliver(state, rest.slice(0, uploads.length), rest.slice(uploads.length))
     }
 
     const uploadAndVerify = async (solver: PublicKey, program: Program, state: AttemptAccount, sign: Sign) => {
@@ -92,26 +108,15 @@ export function useSolveActions(problem: ProblemView, scheme: Uint8Array) {
                 'This browser does not hold the salt for this commitment, or the file differs from the one committed. Restore it from your commitment receipt, or abandon the attempt to get the bond back.'
             )
         }
-        setNote('Waiting one slot after the commitment before uploading…')
-        await waitForSlot(connection, state.committedSlot.toNumber() + 1)
-        const uploads = await uploadTxs(connection, program, solver, attemptKey, state.submission, scheme)
-        if (uploads.length > 0) {
-            await prepare(connection, uploads, solver)
-            await simulateOrThrow(connection, uploads[0])
-            setNote(`Approve ${uploads.length} upload transactions in one prompt.`)
-            const signed = await sign(uploads)
-            await sendAll(connection, signed, (done) => setNote(`Uploaded ${done} of ${signed.length} chunks…`))
-        }
+        setNote('Waiting for a slot after the commitment…')
         await waitForSlot(connection, state.committedSlot.toNumber() + 2)
+        const uploads = await uploadTxs(connection, program, solver, attemptKey, state.submission, scheme)
         const steps = await revealAndVerifyTxs(program, problemKey, solver, attemptKey, state.submission, salt, work, false)
-        await prepare(connection, steps, solver)
-        await simulateOrThrow(connection, steps[0])
-        setNote('Approve the reveal and the verification in one prompt.')
-        const signed = await sign(steps)
-        const [reveal] = await sendAll(connection, signed.slice(0, 1), () => setNote('Revealed. Verifying on-chain…'))
-        link('reveal', reveal)
-        const verified = await verifyUntilDone(connection, program, problemKey, solver, signed.slice(1), (done) => setNote(`Verification transaction ${done} confirmed…`))
-        link('verify', verified.at(-1))
+        await prepare(connection, [...uploads, ...steps], solver)
+        await simulateOrThrow(connection, uploads[0] ?? steps[0])
+        setNote('Approve the upload, reveal and verification in one prompt.')
+        const signed = await sign([...uploads, ...steps])
+        await deliver(state, signed.slice(0, uploads.length), signed.slice(uploads.length))
     }
 
     const finishVerify = async (solver: PublicKey, program: Program, state: AttemptAccount, sign: Sign) => {
@@ -138,9 +143,10 @@ export function useSolveActions(problem: ProblemView, scheme: Uint8Array) {
         if (!publicKey || !program || !signAllTransactions) return setVisible(true)
         setBusy(true)
         try {
-            const state = attempt ?? (await commitStep(publicKey, program))
-            const status = statusName(state.status)
-            if (status === 'committed') await uploadAndVerify(publicKey, program, state, signAllTransactions)
+            const state = attempt
+            const status = state ? statusName(state.status) : null
+            if (!state) await commitAll(publicKey, program, signAllTransactions)
+            else if (status === 'committed') await uploadAndVerify(publicKey, program, state, signAllTransactions)
             else if (status === 'revealed') await finishVerify(publicKey, program, state, signAllTransactions)
             else if (status === 'holds' && won && final) {
                 setNote('Approve the claim.')
