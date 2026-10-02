@@ -1,31 +1,9 @@
 {
   "devnet": {
-    "7NAPrQ2zssoL4vcgrVJ9kHG4dqrrs5iBvmMzds2MwbZj": {
-      "mint": "2J1TTJhnLEWLdLHfLYgBjzJ6f5pnLttvsNtSUBucKvpx",
+    "A4HmjT3afPKHhfdKHfPExczeWQof6hrP8Q1up1AGRV6W": {
+      "mint": "821eZL9FEuPhPRjk516GF29e6FMGUSS3HuouitUUCFDH",
       "name": "DEMO 7x7x9 rank<=314",
       "symbol": "D779",
-      "kind": "demo",
-      "demoNote": "Funded and solved by the team: fmm already holds a rank-314 scheme. It shows the mechanism; it is not a public bounty.",
-      "coefficients": "integers, |c| <= 128",
-      "naive": 441,
-      "bestKnown": {
-        "rank": 315,
-        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
-        "url": "https://fmm.univ-lille.fr/",
-        "asOf": "2026-09-30",
-        "ring": null
-      },
-      "ourRecord": {
-        "rank": 314,
-        "coefficients": "{-1, 0, 1}",
-        "tool": "fmm"
-      },
-      "hidden": true
-    },
-    "Ftb374Yr6VUhLUaNJrjyhmVpMz4n4qCDT2D7GQPKWEUc": {
-      "mint": "BYc724Dx9n5duSZpZPYHLMXen5D5FVbSZB6dvNHi7np9",
-      "name": "DEMO #2 7x7x9 rank<=314",
-      "symbol": "D779B",
       "kind": "demo",
       "demoNote": "Disclosed demo: funded and solved by the team with fmm's rank-314 scheme, which beats the published 315. It shows the whole mechanism end to end; it is not a public bounty.",
       "coefficients": "integers, |c| <= 128",
@@ -43,80 +21,19 @@
         "tool": "fmm"
       }
     },
-    "F3PEAEXPHqH8qvzenhM53QM5GZKrMsSjKN1bkTBZQLWS": {
-      "mint": "EQy9HCL6mKja9u34xpN7JWrdV2JuUEV5KWMdgxMigtgJ",
-      "name": "E2E 7x7x9 rank<=314",
-      "symbol": "E2E779",
-      "kind": "demo",
-      "demoNote": "End-to-end test of the web app on devnet: launched, traded, solved and claimed through the site with a test wallet. Not a public bounty.",
-      "hidden": true,
-      "coefficients": "integers, |c| <= 128",
-      "naive": 441,
-      "bestKnown": {
-        "rank": 315,
-        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
-        "url": "https://fmm.univ-lille.fr/",
-        "asOf": "2026-09-30",
-        "ring": null
-      },
-      "ourRecord": {
-        "rank": 314,
-        "coefficients": "{-1, 0, 1}",
-        "tool": "fmm"
-      }
-    },
-    "2aoqDgsanEUKaK3RKSddzK6amnbp81W3kNUbiWBNZQ9D": {
-      "mint": "9rXfaBS2v3fXTFp3SUfik5guXwdFAisFvC9GWPoE69qD",
-      "name": "E2E2 7x7x9 rank<=314",
-      "symbol": "E2EB",
-      "kind": "demo",
-      "demoNote": "End-to-end test of the second verifier on devnet: launched, traded, solved and claimed through the site with a test wallet. Not a public bounty.",
-      "hidden": true,
-      "coefficients": "integers, |c| <= 128",
-      "naive": 441,
-      "bestKnown": {
-        "rank": 315,
-        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
-        "url": "https://fmm.univ-lille.fr/",
-        "asOf": "2026-09-30",
-        "ring": null
-      },
-      "ourRecord": {
-        "rank": 314,
-        "coefficients": "{-1, 0, 1}",
-        "tool": "fmm"
-      }
-    },
-    "BTu3MtcdJSbctkiLGR2ir6UKvkgWsonxPanpVybsW6dc": {
-      "mint": "2mFHUPqH7Nq3aQeKSFPtrgvPDNy8FLBzR2JoS4bHhBzh",
+    "P4qpVD4WtvjLW4q6rNrpLQmzcmU3JHXFUNEiLPTtH68": {
+      "mint": "2sAZuUGTVbhjdHtc4urdPbTfmg3eDPKtH9YKAc6SAGu8",
       "name": "launch check",
       "symbol": "LCHECK",
       "kind": "demo",
-      "demoNote": "A devnet check of the launch with a first buy: the simulated cost matched what the wallet paid, and the first buy's fee reached the problem. Not a public bounty; rank 6 for 2x2x2 is impossible.",
+      "demoNote": "A devnet check of launching, buying and the portfolio. Not a public bounty.",
       "hidden": true,
       "coefficients": "integers, |c| <= 128",
-      "naive": 8,
+      "naive": 27,
       "bestKnown": {
-        "rank": 7,
-        "source": "Strassen, Gaussian elimination is not optimal (1969); rank 7 is optimal (Winograd 1971)",
-        "url": "https://doi.org/10.1007/BF02165411",
-        "asOf": "2026-10-02",
-        "ring": null
-      }
-    },
-    "ALERKdwRHw6rdqYSUMNe6qaywWxngHU3dzoxYcySvspg": {
-      "mint": "5QivfBRE2FHQrzzHit1oReE6CL5pyEBY6em7dxa4sa9D",
-      "name": "one-prompt solve check",
-      "symbol": "T227",
-      "kind": "demo",
-      "demoNote": "A devnet check that commit, upload, reveal and verification go through in one wallet prompt, solved with Strassen's scheme. Not a public bounty.",
-      "hidden": true,
-      "coefficients": "integers, |c| <= 128",
-      "naive": 8,
-      "bestKnown": {
-        "rank": 7,
-        "source": "Strassen, Gaussian elimination is not optimal (1969); rank 7 is optimal (Winograd 1971)",
-        "url": "https://doi.org/10.1007/BF02165411",
+        "rank": 23,
+        "source": "Laderman, A noncommutative algorithm for multiplying 3×3 matrices using 23 multiplications (1976)",
+        "url": "https://doi.org/10.1090/S0002-9904-1976-13988-2",
         "asOf": "2026-10-02",
         "ring": null
       }

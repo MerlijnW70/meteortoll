@@ -1,9 +1,9 @@
 {
   "problems": {
     "7x7x9r314": {
-      "problem": "7NAPrQ2zssoL4vcgrVJ9kHG4dqrrs5iBvmMzds2MwbZj",
-      "pool": "35Hwh87QHrFE8DCGqbeLWZbmUwFptp1QGcHcAEwG2esR",
-      "baseMint": "2J1TTJhnLEWLdLHfLYgBjzJ6f5pnLttvsNtSUBucKvpx",
+      "problem": "A4HmjT3afPKHhfdKHfPExczeWQof6hrP8Q1up1AGRV6W",
+      "pool": "Hm9aFejR8iGSsPNnTyg3KTzawm6LGJFLrwnPXYNQ88Rz",
+      "baseMint": "821eZL9FEuPhPRjk516GF29e6FMGUSS3HuouitUUCFDH",
       "statement": [
         7,
         7,
@@ -13,31 +13,18 @@
       "name": "DEMO 7x7x9 rank<=314",
       "symbol": "D779"
     },
-    "7x7x9r314-D779B": {
-      "problem": "Ftb374Yr6VUhLUaNJrjyhmVpMz4n4qCDT2D7GQPKWEUc",
-      "pool": "7zSv5YQqsdvxAtKpkBiA6WcbivNp4bjKoArLzqc1RpBL",
-      "baseMint": "BYc724Dx9n5duSZpZPYHLMXen5D5FVbSZB6dvNHi7np9",
+    "3x3x3r22": {
+      "problem": "P4qpVD4WtvjLW4q6rNrpLQmzcmU3JHXFUNEiLPTtH68",
+      "pool": "4JWanSpbVfW5oYdDrAqKMUAZfGB9RvrBowiV53yKCPvb",
+      "baseMint": "2sAZuUGTVbhjdHtc4urdPbTfmg3eDPKtH9YKAc6SAGu8",
       "statement": [
-        7,
-        7,
-        9,
-        314
+        3,
+        3,
+        3,
+        22
       ],
-      "name": "DEMO #2 7x7x9 rank<=314",
-      "symbol": "D779B"
-    },
-    "2x2x2r7": {
-      "problem": "ALERKdwRHw6rdqYSUMNe6qaywWxngHU3dzoxYcySvspg",
-      "pool": "F68fPUVHjHDA3j9buq1gtYubVK37R3jWjM6fVBnmbWdG",
-      "baseMint": "5QivfBRE2FHQrzzHit1oReE6CL5pyEBY6em7dxa4sa9D",
-      "statement": [
-        2,
-        2,
-        2,
-        7
-      ],
-      "name": "TEST 2x2x2 rank<=7",
-      "symbol": "T227"
+      "name": "launch check",
+      "symbol": "LCHECK"
     }
   },
   "config": "Z4PT2dz65c2AW7jVYCoArmRvDSuLqZhQ7AnqFA2y1wT",
