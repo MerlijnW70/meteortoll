@@ -1,5 +1,5 @@
 // Forwards the browser's Solana JSON-RPC calls to a dedicated RPC whose URL (and API key) stays
-// on the server. It is deliberately narrow:
+// on the server, moving to the next provider when one fails (lib/upstream.ts). It is deliberately narrow:
 // - only the methods this app uses, and getProgramAccounts only for the toll program;
 // - only same-origin browser calls (another site cannot spend this RPC through its visitors);
 // - small bodies and small batches;
@@ -8,6 +8,7 @@
 
 import { TOLL } from '@meteortoll/core'
 import { MAX_BATCH, MAX_BODY_BYTES } from '@/lib/proxyLimits'
+import { postWithFailover, rpcUpstreams } from '@/lib/upstream'
 
 const ALLOWED = new Set([
     'getAccountInfo',
@@ -69,8 +70,6 @@ function refusal(call: RpcCall): string | null {
 const deny = (status: number, error: string) => Response.json({ error }, { status })
 
 export async function POST(request: Request) {
-    const upstream = process.env.SOLANA_RPC_URL
-    if (!upstream) return deny(500, 'RPC is not configured')
 
     const origin = request.headers.get('origin')
     if (origin && new URL(origin).host !== new URL(request.url).host) return deny(403, 'cross-origin use is not allowed')
@@ -95,16 +94,10 @@ export async function POST(request: Request) {
 
     let response: Response
     try {
-        response = await fetch(upstream, {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: text,
-            signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
-        })
+        response = await postWithFailover(rpcUpstreams(), text, UPSTREAM_TIMEOUT_MS)
     } catch (error) {
         const timedOut = error instanceof Error && error.name === 'TimeoutError'
-        console.error('[rpc] upstream failed', timedOut ? 'timeout' : error)
-        return deny(timedOut ? 504 : 502, timedOut ? 'the RPC did not answer in time' : 'the RPC could not be reached')
+        return deny(timedOut ? 504 : 502, timedOut ? 'no RPC answered in time' : 'no RPC could be reached')
     }
     return new Response(response.body, {
         status: response.status,

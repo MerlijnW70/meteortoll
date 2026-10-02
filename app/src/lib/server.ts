@@ -1,9 +1,11 @@
 import { Connection } from '@solana/web3.js'
-import { PUBLIC_RPC } from './config'
+import { failoverFetch, rpcUpstreams } from './upstream'
 
-/// Server-side reads use the dedicated RPC directly; the key never leaves the server.
+/// Server-side reads use the dedicated RPC directly, falling over to the next provider when it
+/// fails; the keys never leave the server.
 export function serverConnection(): Connection {
-    return new Connection(process.env.SOLANA_RPC_URL || PUBLIC_RPC, 'confirmed')
+    const urls = rpcUpstreams()
+    return new Connection(urls[0], { commitment: 'confirmed', fetch: failoverFetch(urls) })
 }
 
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://meteortoll.vercel.app'
