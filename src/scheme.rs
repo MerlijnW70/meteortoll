@@ -20,6 +20,8 @@ pub enum Error {
     IndexNotIncreasing,
     ZeroCoefficient,
     TrailingBytes,
+    /// A product stores more coefficients than one call can fold in (`check::MAX_PRODUCT_COST`).
+    ProductTooLarge,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

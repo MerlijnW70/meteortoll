@@ -1,56 +1,90 @@
 //! Resumable randomized check that an encoded scheme computes the matrix product.
 //!
-//! With `A`, `B` and `G` drawn from the seed, a correct scheme satisfies
-//! `sum_r (u_r . A)(v_r . B)(w_r . G) == sum_{i,j,k} A[i][j] B[j][k] G[k][i]` in the field.
-//! Coefficients are bounded by the `i8` encoding, so for any rank that fits a `u32` every
-//! coefficient of the exact difference polynomial is smaller than the modulus. A wrong
-//! scheme therefore leaves a nonzero polynomial of degree three, which vanishes at the
-//! drawn point with probability at most `3 / P` (Schwartz-Zippel). The seed must not be
+//! The seed fixes three field elements `r1`, `r2`, `r3`, and every matrix entry gets a power of
+//! one of them as its value: `A[x] = r1^x`, `B[y] = r2^y`, `G[z] = r3^z`, with `x`, `y`, `z`
+//! the entry indices of the encoding. A scheme is correct iff, as a polynomial identity in the
+//! entries, `sum_r (u_r . A)(v_r . B)(w_r . G) == sum_{i,j,k} A[i][j] B[j][k] G[k][i]`.
+//!
+//! The substitution sends distinct monomials `A[x] B[y] G[z]` to distinct monomials
+//! `r1^x r2^y r3^z`, so a wrong scheme leaves a nonzero polynomial in `r1, r2, r3`. Its integer
+//! coefficients are sums of at most `rank` products of three `i8` coefficients, below
+//! `2^32 * 2^21 < P / 2` in size, so it stays nonzero modulo `P`. Its degree is below
+//! `n1*n2 + n2*n3 + n3*n1`, so by Schwartz-Zippel it vanishes at a uniformly random point with
+//! probability at most `(n1*n2 + n2*n3 + n3*n1) / P` ([`error_bound`]). The seed must not be
 //! knowable when the scheme is fixed.
+//!
+//! The direct side factors into three geometric sums, so it costs `n1 + n2 + n3` steps, not
+//! `n1 * n2 * n3`.
 
-use crate::field::Fp;
+use crate::field::{Fp, P};
 use crate::scheme::{Error, Factor, HEADER_LEN, Header};
 
-pub const STATE_LEN: usize = 47;
+pub const STATE_LEN: usize = 60;
 
-pub const TAG_A: u64 = 1;
-pub const TAG_B: u64 = 2;
-pub const TAG_G: u64 = 3;
+/// Most coefficients one product may store. The check folds in whole products, so a product
+/// must fit one call; the densest product of any scheme in the known records stores fewer than
+/// a thousand. A heavier product is refused as malformed.
+pub const MAX_PRODUCT_COST: u32 = 12_288;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Seed(pub [u8; 32]);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-struct Draw {
-    key: u64,
-}
-
-impl Draw {
-    fn new(seed: &Seed) -> Self {
-        let mut key = 0u64;
-        for word in seed.0.as_chunks::<8>().0 {
-            key = mix(key ^ u64::from_le_bytes(*word));
-        }
-        Self { key }
-    }
-
-    fn at(self, tag: u64, index: u32) -> Fp {
-        Fp::new(mix(self.key ^ (tag << 32 | u64::from(index))))
-    }
-}
-
-/// The coordinate the check uses for entry `index` of `A` (`TAG_A`), `B` (`TAG_B`) or `G`
-/// (`TAG_G`), so a client can reproduce the point a seed selects.
+/// The random point: `r1`, `r2`, `r3` from the first 24 bytes of the seed.
 #[must_use]
-pub fn draw(seed: &Seed, tag: u64, index: u32) -> Fp {
-    Draw::new(seed).at(tag, index)
+pub fn point(seed: &Seed) -> [Fp; 3] {
+    let word = |at: usize| {
+        let mut eight = [0u8; 8];
+        eight.copy_from_slice(&seed.0[at..at + 8]);
+        Fp::new(u64::from_le_bytes(eight))
+    };
+    [word(0), word(8), word(16)]
 }
 
-const fn mix(value: u64) -> u64 {
-    let mut z = value.wrapping_add(0x9e37_79b9_7f4a_7c15);
-    z = (z ^ (z >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
-    z = (z ^ (z >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
-    z ^ (z >> 31)
+/// The value the check gives entry `index` of `A` (`which` 0), `B` (1) or `G` (2), so a client
+/// can reproduce the point a seed selects.
+#[must_use]
+pub fn coordinate(seed: &Seed, which: usize, index: u16) -> Fp {
+    Powers::new(point(seed)[which]).pow(index)
+}
+
+/// Bound on a wrong scheme passing for a shape, as a numerator over `P`: the degree bound
+/// `n1*n2 + n2*n3 + n3*n1`.
+#[must_use]
+pub fn error_bound(header: &Header) -> u64 {
+    u64::from(header.len_u()) + u64::from(header.len_v()) + u64::from(header.len_w())
+}
+
+/// Powers of one coordinate, `r^(d * 16^k)` for each 4-bit digit `d` at position `k` of a
+/// 16-bit exponent: three products give any power.
+struct Powers([[Fp; 16]; 4]);
+
+impl Powers {
+    fn new(r: Fp) -> Self {
+        let mut table = [[Fp::ONE; 16]; 4];
+        let mut base = r;
+        for row in &mut table {
+            for digit in 1..16 {
+                row[digit] = row[digit - 1].mul(base);
+            }
+            base = row[15].mul(base);
+        }
+        Self(table)
+    }
+
+    fn pow(&self, exponent: u16) -> Fp {
+        let e = usize::from(exponent);
+        self.0[0][e & 15].mul(self.0[1][(e >> 4) & 15]).mul(self.0[2][(e >> 8) & 15]).mul(self.0[3][e >> 12])
+    }
+}
+
+/// `sum_{e < n} t^e`.
+fn geometric(t: Fp, n: u32) -> Fp {
+    let (mut sum, mut term) = (Fp::ZERO, Fp::ONE);
+    for _ in 0..n {
+        sum = sum.add(term);
+        term = term.mul(t);
+    }
+    sum
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -65,24 +99,24 @@ pub enum Verdict {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Check {
     header: Header,
-    draw: Draw,
+    point: [Fp; 3],
     offset: usize,
     products: u32,
-    triples: u32,
     lhs: Fp,
     rhs: Fp,
+    direct: bool,
 }
 
 impl Check {
     pub fn start(encoded: &[u8], seed: &Seed) -> Result<Self, Error> {
         Ok(Self {
             header: Header::parse(encoded)?,
-            draw: Draw::new(seed),
+            point: point(seed),
             offset: HEADER_LEN,
             products: 0,
-            triples: 0,
             lhs: Fp::ZERO,
             rhs: Fp::ZERO,
+            direct: false,
         })
     }
 
@@ -97,10 +131,10 @@ impl Check {
         self.products
     }
 
-    /// Triples of the direct product folded in so far.
+    /// Whether the direct side has been computed.
     #[must_use]
-    pub const fn triples(&self) -> u32 {
-        self.triples
+    pub const fn direct(&self) -> bool {
+        self.direct
     }
 
     /// The scheme side of the identity, as far as it has run.
@@ -109,13 +143,15 @@ impl Check {
         self.lhs
     }
 
-    /// The direct-product side of the identity, as far as it has run.
+    /// The direct-product side of the identity, once computed.
     #[must_use]
     pub const fn rhs(&self) -> Fp {
         self.rhs
     }
 
-    /// Fixed-width little-endian form, for keeping the state in an account.
+    /// Fixed-width little-endian form, for keeping the state in an account:
+    /// header 0..7, `r1 r2 r3` 7..31, byte offset 31..39, products 39..43, lhs 43..51,
+    /// rhs 51..59, direct side done 59.
     #[must_use]
     pub fn save(&self) -> [u8; STATE_LEN] {
         let mut out = [0u8; STATE_LEN];
@@ -123,12 +159,14 @@ impl Check {
         out[1] = self.header.n2;
         out[2] = self.header.n3;
         out[3..7].copy_from_slice(&self.header.rank.to_le_bytes());
-        out[7..15].copy_from_slice(&self.draw.key.to_le_bytes());
-        out[15..23].copy_from_slice(&(self.offset as u64).to_le_bytes());
-        out[23..27].copy_from_slice(&self.products.to_le_bytes());
-        out[27..31].copy_from_slice(&self.triples.to_le_bytes());
-        out[31..39].copy_from_slice(&self.lhs.value().to_le_bytes());
-        out[39..47].copy_from_slice(&self.rhs.value().to_le_bytes());
+        for (index, r) in self.point.iter().enumerate() {
+            out[7 + 8 * index..15 + 8 * index].copy_from_slice(&r.value().to_le_bytes());
+        }
+        out[31..39].copy_from_slice(&(self.offset as u64).to_le_bytes());
+        out[39..43].copy_from_slice(&self.products.to_le_bytes());
+        out[43..51].copy_from_slice(&self.lhs.value().to_le_bytes());
+        out[51..59].copy_from_slice(&self.rhs.value().to_le_bytes());
+        out[59] = u8::from(self.direct);
         out
     }
 
@@ -138,22 +176,31 @@ impl Check {
             eight.copy_from_slice(&saved[at..at + 8]);
             u64::from_le_bytes(eight)
         };
-        let half = |at: usize| u32::from_le_bytes([saved[at], saved[at + 1], saved[at + 2], saved[at + 3]]);
+        // Field elements are kept reduced; anything else is not a state this code saved.
+        let element = |at: usize| {
+            let value = word(at);
+            if value < P { Ok(Fp::new(value)) } else { Err(Error::Truncated) }
+        };
         Ok(Self {
             header: Header::parse(&saved[..HEADER_LEN])?,
-            draw: Draw { key: word(7) },
-            offset: usize::try_from(word(15)).map_err(|_| Error::Truncated)?,
-            products: half(23),
-            triples: half(27),
-            lhs: Fp::new(word(31)),
-            rhs: Fp::new(word(39)),
+            point: [element(7)?, element(15)?, element(23)?],
+            offset: usize::try_from(word(31)).map_err(|_| Error::Truncated)?,
+            products: u32::from_le_bytes([saved[39], saved[40], saved[41], saved[42]]),
+            lhs: element(43)?,
+            rhs: element(51)?,
+            direct: match saved[59] {
+                0 => false,
+                1 => true,
+                _ => return Err(Error::Truncated),
+            },
         })
     }
 
-    /// Advances by about `budget` units of work, where one unit is one stored coefficient
-    /// or one `(i, j, k)` triple of the direct product. Every call makes progress: it
-    /// finishes at least one product, or one triple once the products are done.
+    /// Advances by about `budget` units of work, one unit per stored coefficient. Every call
+    /// makes progress: it folds in at least one product, or finishes with the direct side,
+    /// which costs `n1 + n2 + n3` steps and runs in the call that folds in the last product.
     pub fn run(&mut self, encoded: &[u8], budget: u32) -> Result<Verdict, Error> {
+        let powers = [Powers::new(self.point[0]), Powers::new(self.point[1]), Powers::new(self.point[2])];
         let mut left = budget.max(1);
         let first = self.products;
         while self.products < self.header.rank {
@@ -161,14 +208,14 @@ impl Check {
             let (v, after_v) = Factor::read(encoded, after_u, self.header.len_v())?;
             let (w, after_w) = Factor::read(encoded, after_v, self.header.len_w())?;
             let cost = (u.count() + v.count() + w.count()).max(1) as u32;
+            if cost > MAX_PRODUCT_COST {
+                return Err(Error::ProductTooLarge);
+            }
             if self.products > first && cost > left {
                 return Ok(Verdict::Running);
             }
             left = left.saturating_sub(cost);
-            let product = self
-                .dot(u, TAG_A)
-                .mul(self.dot(v, TAG_B))
-                .mul(self.dot(w, TAG_G));
+            let product = dot(u, &powers[0]).mul(dot(v, &powers[1])).mul(dot(w, &powers[2]));
             self.lhs = self.lhs.add(product);
             self.offset = after_w;
             self.products += 1;
@@ -176,34 +223,26 @@ impl Check {
         if self.offset != encoded.len() {
             return Err(Error::TrailingBytes);
         }
-        let (n1, n2, n3) = (
-            u32::from(self.header.n1),
-            u32::from(self.header.n2),
-            u32::from(self.header.n3),
-        );
-        while self.triples < self.header.triples() {
-            if left == 0 {
-                return Ok(Verdict::Running);
-            }
-            left -= 1;
-            let t = self.triples;
-            let (i, j, k) = (t / (n2 * n3), t / n3 % n2, t % n3);
-            let term = self
-                .draw
-                .at(TAG_A, i * n2 + j)
-                .mul(self.draw.at(TAG_B, j * n3 + k))
-                .mul(self.draw.at(TAG_G, k * n1 + i));
-            self.rhs = self.rhs.add(term);
-            self.triples += 1;
-        }
+        // Cheap and idempotent: n1 + n2 + n3 steps, the same value however often it runs.
+        self.rhs = self.direct_side(&powers);
+        self.direct = true;
         Ok(if self.lhs == self.rhs { Verdict::Holds } else { Verdict::Fails })
     }
 
-    fn dot(&self, factor: Factor<'_>, tag: u64) -> Fp {
-        factor.iter().fold(Fp::ZERO, |sum, (index, coef)| {
-            sum.add(Fp::from_i64(i64::from(coef)).mul(self.draw.at(tag, u32::from(index))))
-        })
+    /// `sum_{i,j,k} r1^(i n2 + j) r2^(j n3 + k) r3^(k n1 + i)`, which factors as
+    /// `(sum_i x^i)(sum_j y^j)(sum_k z^k)` with `x = r1^n2 r3`, `y = r1 r2^n3`, `z = r2 r3^n1`.
+    fn direct_side(&self, powers: &[Powers; 3]) -> Fp {
+        let (n1, n2, n3) = (self.header.n1, self.header.n2, self.header.n3);
+        let [r1, r2, r3] = self.point;
+        let x = powers[0].pow(u16::from(n2)).mul(r3);
+        let y = r1.mul(powers[1].pow(u16::from(n3)));
+        let z = r2.mul(powers[2].pow(u16::from(n1)));
+        geometric(x, u32::from(n1)).mul(geometric(y, u32::from(n2))).mul(geometric(z, u32::from(n3)))
     }
+}
+
+fn dot(factor: Factor<'_>, powers: &Powers) -> Fp {
+    factor.iter().fold(Fp::ZERO, |sum, (index, coef)| sum.add(Fp::from_i64(i64::from(coef)).mul(powers.pow(index))))
 }
 
 /// Runs a whole check in one call.
