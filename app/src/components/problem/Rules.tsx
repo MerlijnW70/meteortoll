@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { TOLL } from '@meteortoll/core'
 import type { ProblemView } from '@/lib/chain'
+import { errorBoundText } from '@/lib/bound'
 import { Panel, shape, short } from '../ui'
 
 const SLOT_SECONDS = 0.4
@@ -37,7 +38,10 @@ export function Rules({ problem }: { problem: ProblemView }) {
                         A solver commits a hash of the scheme with a bond, uploads it, then reveals. The random test point comes from a slot hash newer than the
                         commitment.
                     </li>
-                    <li>The program checks the scheme as a polynomial identity at that point. A wrong scheme passes with probability at most 3/2⁶¹.</li>
+                    <li>
+                        The program checks the scheme as a polynomial identity at that point. A wrong scheme passes with probability at most{' '}
+                        {errorBoundText(problem.account.n1, problem.account.n2, problem.account.n3)}.
+                    </li>
                     <li>A failing or malformed scheme forfeits its bond to the bounty.</li>
                     <li>Earliest commitment wins: anyone copying an upload necessarily commits later, so the copy cannot take the bounty.</li>
                     <li>Trading fees keep arriving after a solve, and the solver can claim again.</li>

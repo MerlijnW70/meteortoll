@@ -36,12 +36,15 @@ identity at one random point over the field of integers mod 2^61 - 1 (Schwartzâ€
 2. Solver uploads the scheme into a buffer account in chunks, then **reveals** the salt.
    The program checks the hash, the dimensions and `rank <= target`.
 3. The random point comes from the newest slot hash, which must be newer than the commit,
-   so it did not exist when the scheme was fixed.
+   so it did not exist when the scheme was fixed. Three field elements `r1, r2, r3` from it give
+   each entry a power: `A[x] = r1^x`, `B[y] = r2^y`, `G[z] = r3^z`.
 4. **Verify** (anyone can crank it) checks
-   `sum_r (u_r . A)(v_r . B)(w_r . G) == sum A[i][j] B[j][k] G[k][i]`. Coefficients are
-   bounded integers, so every exact Brent coefficient is below the modulus and a wrong
-   scheme passes with probability at most 3/p. The check is resumable; its state is a few
-   dozen bytes in the attempt account.
+   `sum_r (u_r . A)(v_r . B)(w_r . G) == sum A[i][j] B[j][k] G[k][i]`. The substitution keeps
+   distinct monomials distinct and the bounded integer coefficients stay below the modulus, so a
+   wrong scheme leaves a nonzero polynomial of degree below `n1 n2 + n2 n3 + n3 n1` and passes
+   with probability at most that over `p`. The direct side factors into three geometric sums. The
+   check is resumable; its state is a few dozen bytes in the attempt account, and a product too
+   heavy for one transaction is refused.
 5. Holds: the problem is solved. Fails or malformed: the bond goes to the bounty.
 
 **Ordering, not correctness, uses a grace window.** Uploaded chunks are public before the

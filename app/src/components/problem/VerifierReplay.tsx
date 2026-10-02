@@ -11,6 +11,7 @@ import { explorer } from '@/lib/config'
 import { recoverScheme } from '@/lib/history'
 import { type Progress, sharedVerifier } from '@/lib/verifier'
 import { count } from '@/lib/format'
+import { errorBoundText } from '@/lib/bound'
 import { Panel, short, Skeleton } from '../ui'
 
 const FRAMES = 90
@@ -57,8 +58,7 @@ export function VerifierReplay({ problem }: { problem: ProblemView }) {
         const seed = crypto.getRandomValues(new Uint8Array(32))
         if (!verifier.start(scheme, seed)) return setState(verifier.progress('malformed'))
         const products = scheme[0] ? new DataView(scheme.buffer, scheme.byteOffset).getUint32(3, true) : 0
-        const triples = scheme[0] * scheme[1] * scheme[2]
-        const perFrame = Math.max(1, Math.ceil(((products * 30 + triples) / FRAMES) | 0))
+        const perFrame = Math.max(1, Math.ceil(((products * 30) / FRAMES) | 0))
         const tick = () => {
             const next = verifier.step(perFrame)
             setState(next)
@@ -71,7 +71,7 @@ export function VerifierReplay({ problem }: { problem: ProblemView }) {
     const done = state && state.verdict !== 'running'
     const running = !!state && state.verdict === 'running'
     const productShare = state ? state.productsDone / Math.max(1, state.rank) : 0
-    const tripleShare = state ? state.triplesDone / Math.max(1, state.triplesTotal) : 0
+    const tripleShare = state?.directDone ? 1 : 0
 
     return (
         <Panel className="space-y-4 p-5">
@@ -120,8 +120,8 @@ export function VerifierReplay({ problem }: { problem: ProblemView }) {
                         </div>
                         <div>
                             <div className="mb-1 flex justify-between text-xs text-muted">
-                                <span>Direct side: Σ A·B·G over {state?.triplesTotal ?? '…'} triples</span>
-                                <span className="num">{state ? `${state.triplesDone}/${state.triplesTotal}` : ''}</span>
+                                <span>Direct side: Σ A·B·G over {state ? count(state.triplesTotal) : '…'} triples, as three geometric sums</span>
+                                <span className="num">{state ? (state.directDone ? 'done' : 'after the products') : ''}</span>
                             </div>
                             <div className="h-1.5 rounded-full bg-bg">
                                 <div className="h-full rounded-full bg-accent-2" style={{ width: `${tripleShare * 100}%` }} />
@@ -153,7 +153,7 @@ export function VerifierReplay({ problem }: { problem: ProblemView }) {
                     </div>
                     <p className="text-xs text-faint">
                         Each run draws a fresh random point; the program drew its own from a slot hash after the commitment. A wrong scheme passes a run with
-                        probability at most 3/2⁶¹.
+                        probability at most {errorBoundText(problem.account.n1, problem.account.n2, problem.account.n3)}.
                     </p>
                 </>
             )}

@@ -35,10 +35,12 @@ flowchart LR
 - **Solve.** A solver commits a hash of their scheme with a bond, uploads it, and reveals. The test
   point comes from a slot hash newer than the commitment.
 - **Verify.** The program checks Σᵣ (uᵣ·A)(vᵣ·B)(wᵣ·G) = Σ A·B·G at that random point, in the field
-  of integers modulo the Mersenne prime 2⁶¹−1 (`P` in `src/field.rs`). Coefficients are bounded
-  integers, so every exact coefficient is below `P`, and by Schwartz–Zippel a wrong scheme passes with
-  probability at most 3/2⁶¹; `tests/facts.rs` asserts both. The check is resumable across
-  transactions. A failing scheme forfeits its bond to the bounty.
+  of integers modulo the Mersenne prime 2⁶¹−1 (`P` in `src/field.rs`). Three field elements from the
+  seed give every entry a power as its value, so distinct terms of the identity stay distinct;
+  coefficients are bounded integers, so every exact coefficient is below `P`. By Schwartz–Zippel a
+  wrong scheme passes with probability at most (n₁n₂ + n₂n₃ + n₃n₁)/2⁶¹, which is 175/2⁶¹ for
+  the shape (7, 7, 9); `tests/facts.rs` asserts these. The check is resumable across transactions, and a product
+  too heavy for one transaction is refused. A failing scheme forfeits its bond to the bounty.
 - **Claim.** The earliest commitment that holds wins: anyone copying an upload necessarily commits
   later. After a grace window the solver claims the vault, and can claim again as fees arrive.
 

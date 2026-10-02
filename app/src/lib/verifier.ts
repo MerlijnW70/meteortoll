@@ -5,14 +5,20 @@ export const HOLDS = 1
 export const FAILS = 2
 export const MALFORMED = -1
 
-/// Layout of the saved check state (verifier core `Check::save`): header 0..7, point key 7..15,
-/// byte offset 15..23, products 23..27, triples 27..31, lhs 31..39, rhs 39..47.
-export const STATE_LEN = 47
+/// Layout of the saved check state (verifier core `Check::save`): header 0..7, the point
+/// `r1 r2 r3` 7..31, byte offset 31..39, products 39..43, lhs 43..51, rhs 51..59, direct side
+/// done 59.
+export const STATE_LEN = 60
+const POINT_END = 31
+const OFFSET_AT = 31
+/// Where the first product starts: right after the 7-byte header.
+const FIRST_PRODUCT = 7n
 
+/// The same header and point with all progress cleared, to replay a check from its start.
 export function rewind(saved: Uint8Array): Uint8Array {
     const state = new Uint8Array(STATE_LEN)
-    state.set(saved.subarray(0, 15))
-    new DataView(state.buffer).setBigUint64(15, 7n, true)
+    state.set(saved.subarray(0, POINT_END))
+    new DataView(state.buffer).setBigUint64(OFFSET_AT, FIRST_PRODUCT, true)
     return state
 }
 
@@ -30,7 +36,7 @@ interface Exports {
     rank(): number
     triples_total(): number
     products_done(): number
-    triples_done(): number
+    direct_done(): number
     lhs(): bigint
     rhs(): bigint
 }
@@ -40,7 +46,8 @@ export interface Progress {
     rank: number
     productsDone: number
     triplesTotal: number
-    triplesDone: number
+    /// The direct side, a sum over every triple, is computed in one step once the products are in.
+    directDone: boolean
     lhs: bigint
     rhs: bigint
 }
@@ -94,7 +101,7 @@ export class Verifier {
             rank: this.wasm.rank(),
             productsDone: this.wasm.products_done(),
             triplesTotal: this.wasm.triples_total(),
-            triplesDone: this.wasm.triples_done(),
+            directDone: this.wasm.direct_done() === 1,
             lhs: BigInt.asUintN(64, this.wasm.lhs()),
             rhs: BigInt.asUintN(64, this.wasm.rhs()),
         }

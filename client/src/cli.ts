@@ -38,7 +38,7 @@ import {
     waitForSlot,
 } from './env.js'
 import { launchParams, type Profile } from './params.js'
-import { commitment, encodeScheme, type FmmScheme, schemeHeader } from '@meteortoll/core'
+import { commitment, encodeScheme, type FmmScheme, schemeHeader, VERIFY_BUDGET } from '@meteortoll/core'
 import {
     attemptAddress,
     dbcEventAuthority,
@@ -247,7 +247,7 @@ async function solve(args: string[]) {
     const found = record(args[0])
     const problem = new PublicKey(found.problem)
     const scheme = encodeScheme(JSON.parse(readFileSync(args[1], 'utf8')) as FmmScheme)
-    const budget = Number(flag(args, 'budget', '10000'))
+    const budget = Number(flag(args, 'budget', String(VERIFY_BUDGET)))
     const header = schemeHeader(scheme)
     const [n1, n2, n3, target] = found.statement
     if (header.n1 !== n1 || header.n2 !== n2 || header.n3 !== n3 || header.rank > target) {

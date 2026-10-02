@@ -39,7 +39,7 @@ export function CheckResult({
                 </div>
                 <div>
                     <dt className="text-xs text-muted">Triples</dt>
-                    <dd>{result.triplesDone}</dd>
+                    <dd>{result.directDone ? count(result.triplesTotal) : '…'}</dd>
                 </div>
                 <div>
                     <dt className="text-xs text-muted">Scheme side</dt>

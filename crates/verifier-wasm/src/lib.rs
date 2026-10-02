@@ -109,9 +109,10 @@ pub extern "C" fn products_done() -> u32 {
     read(Check::products, 0)
 }
 
+/// 1 once the direct side (the sum over every triple, computed as three geometric sums) is done.
 #[unsafe(no_mangle)]
-pub extern "C" fn triples_done() -> u32 {
-    read(Check::triples, 0)
+pub extern "C" fn direct_done() -> u32 {
+    read(|check| u32::from(check.direct()), 0)
 }
 
 #[unsafe(no_mangle)]

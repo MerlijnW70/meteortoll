@@ -1,14 +1,14 @@
 // Reads a dropped scheme file and runs the browser verifier on it, refusing files the program
 // would refuse anyway before spending any time parsing them.
 
-import { encodeScheme, type FmmScheme, schemeHeader } from '@meteortoll/core'
+import { encodeScheme, type FmmScheme, MAX_SCHEME_LEN, schemeHeader } from '@meteortoll/core'
 import { count } from './format'
 import { type Progress, sharedVerifier } from './verifier'
 
 /// fmm JSON is far larger than its encoding; this bounds parsing work in the browser.
 export const MAX_FILE_BYTES = 5 * 1024 * 1024
-/// The toll program's `MAX_SCHEME_LEN`.
-export const MAX_SCHEME_BYTES = 1 << 20
+/// The toll program's `MAX_SCHEME_LEN`, from its IDL.
+export const MAX_SCHEME_BYTES = MAX_SCHEME_LEN
 
 export interface Checked {
     scheme: Uint8Array

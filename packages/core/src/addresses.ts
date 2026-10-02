@@ -6,7 +6,20 @@ export const TOLL = new PublicKey(idl.address)
 export const DBC = new PublicKey('dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN')
 export const DAMM_V2 = new PublicKey('cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG')
 export const SUBMISSION_HEADER = 44
-export const BOND_LAMPORTS = 50_000_000
+
+/// A program constant, read from the IDL the program exports, so no client can drift from it.
+function constant(name: string): number {
+    const found = (idl as { constants?: { name: string; value: string }[] }).constants?.find((c) => c.name === name)
+    if (!found) throw new Error(`the toll IDL has no constant ${name}; rebuild the program and copy its IDL`)
+    return Number(found.value)
+}
+
+/// Lamports a solver stakes on an attempt.
+export const BOND_LAMPORTS = constant('BOND_LAMPORTS')
+/// Largest encoded scheme a submission may hold.
+export const MAX_SCHEME_LEN = constant('MAX_SCHEME_LEN')
+/// Work units to ask of one `verify` call: every known record stays under the compute limit.
+export const VERIFY_BUDGET = constant('VERIFY_BUDGET')
 
 const seed = (text: string) => Buffer.from(text)
 const pda = (seeds: Uint8Array[], program = TOLL) => PublicKey.findProgramAddressSync(seeds, program)[0]

@@ -1,6 +1,6 @@
 'use client'
 
-import { statusName } from '@meteortoll/core'
+import { statusName, VERIFY_BUDGET, verifyCalls } from '@meteortoll/core'
 import { type ProblemView, totalBounty } from '@/lib/chain'
 import { Panel, shape, sol } from '../ui'
 import { StepList } from './StepList'
@@ -14,6 +14,7 @@ export function SolveFlow({ problem, scheme }: { problem: ProblemView; scheme: U
     const current = currentStep(status, won, final)
     const failed = status === 'fails'
     const lost = status === 'holds' && !won
+    const calls = verifyCalls(work, VERIFY_BUDGET)
     const graceLeft = problem.graceEndsAtSlot ? Math.max(0, problem.graceEndsAtSlot - problem.slot) : 0
 
     const action = !publicKey
@@ -38,7 +39,7 @@ export function SolveFlow({ problem, scheme }: { problem: ProblemView; scheme: U
                     Submit to <span className="font-mono">⟨{shape(problem).label} : ≤{problem.account.targetRank}⟩</span>
                 </h3>
                 <p className="text-xs text-muted">
-                    {count(work)} units of on-chain work · about {Math.ceil(work / 10_000)} verification transaction{work > 10_000 ? 's' : ''}
+                    {count(work)} units of on-chain work · about {calls} verification transaction{calls === 1 ? '' : 's'}
                 </p>
             </div>
             <StepList current={current} failed={failed} claimed={isClaimed(status, won, !!links.claim)} links={links} graceMinutes={Math.ceil((graceLeft * 0.4) / 60)} />

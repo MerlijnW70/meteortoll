@@ -12,13 +12,12 @@ import {
     SYSVAR_SLOT_HASHES_PUBKEY,
     Transaction,
 } from '@solana/web3.js'
-import { attemptAddress, commitment, type ProblemAccount, SUBMISSION_HEADER, TOLL } from '@meteortoll/core'
+import { attemptAddress, commitment, type ProblemAccount, SUBMISSION_HEADER, TOLL, VERIFY_BUDGET, verifyCalls } from '@meteortoll/core'
 import { withRetry } from '../rpc'
 import { pack, productive, sweepInstructions, sweepPlan } from '../sweeps'
 import { methods } from './program'
 
 export const CHUNK = 900
-export const VERIFY_BUDGET = 10_000
 const VERIFY_UNITS = 1_400_000
 
 /// One transaction: stake the bond with the commitment, create the buffer account and open it.
@@ -83,7 +82,8 @@ export async function revealAndVerifyTxs(
             )
         )
     }
-    const cranks = Math.ceil(work / VERIFY_BUDGET) + 1
+    // One spare crank: a call's budget may stop just short of the last product.
+    const cranks = verifyCalls(work, VERIFY_BUDGET) + 1
     for (let i = 0; i < cranks; i++) {
         const verify = await methods(program).verify(VERIFY_BUDGET).accountsPartial({ cranker: solver, problem, attempt, submission }).instruction()
         // A distinct compute price keeps otherwise identical crank transactions from sharing a signature.

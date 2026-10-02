@@ -9,7 +9,7 @@ const steps: [string, string][] = [
     ['Trade', 'Every trade pays a 1% fee. Everything the protocol leaves goes to the problem’s bounty vault: curve fees, the creator’s surplus share, and after graduation the fees of a permanently locked DAMM v2 position.'],
     ['Commit', 'A solver posts the hash of their scheme and a bond. Nobody can see the scheme yet.'],
     ['Upload and reveal', 'The scheme is uploaded in chunks and revealed. The program checks the hash, the shape and that the rank is at most the target.'],
-    ['Verify', 'Anyone can crank the check. The program evaluates the scheme as a polynomial identity at a random point drawn from a slot hash newer than the commitment. A wrong scheme passes with probability at most 3/2⁶¹; a failing one loses its bond to the bounty.'],
+    ['Verify', 'Anyone can crank the check. The program evaluates the scheme as a polynomial identity at a random point drawn from a slot hash newer than the commitment. Three random numbers from that hash give every matrix entry its value, which makes the chance a wrong scheme passes provably tiny: at most (n₁n₂ + n₂n₃ + n₃n₁)/2⁶¹, below one in 10¹⁵ for every format here. A failing scheme loses its bond to the bounty.'],
     ['Grace and claim', 'The earliest commitment that holds wins, so copying someone’s upload cannot take the bounty. After the grace window the solver claims the vault, and keeps claiming as fees arrive.'],
 ]
 

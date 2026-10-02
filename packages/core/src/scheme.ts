@@ -68,17 +68,27 @@ export function commitment(problem: PublicKey, solver: PublicKey, salt: Uint8Arr
     return Buffer.from(hash.digest())
 }
 
-/// Work units the on-chain check spends on a scheme: one per stored coefficient plus one per
-/// (i, j, k) triple, the unit of `verify`'s budget.
+/// Work units the on-chain check spends on a scheme, the unit of `verify`'s budget: each product
+/// costs its stored coefficients, at least one. The direct side runs with the last product.
 export function schemeWork(encoded: Uint8Array): number {
     const view = new DataView(encoded.buffer, encoded.byteOffset, encoded.byteLength)
-    const { n1, n2, n3, rank } = { n1: encoded[0], n2: encoded[1], n3: encoded[2], rank: view.getUint32(3, true) }
+    const rank = view.getUint32(3, true)
     let at = 7
-    let coefficients = 0
-    for (let factor = 0; factor < rank * 3; factor++) {
-        const count = view.getUint16(at, true)
-        coefficients += count
-        at += 2 + count * 3
+    let work = 0
+    for (let product = 0; product < rank; product++) {
+        let cost = 0
+        for (let factor = 0; factor < 3; factor++) {
+            const count = view.getUint16(at, true)
+            cost += count
+            at += 2 + count * 3
+        }
+        work += Math.max(1, cost)
     }
-    return coefficients + n1 * n2 * n3
+    return work
+}
+
+/// Verify calls a scheme needs at the program's budget: a call folds in products up to its budget,
+/// and always at least one.
+export function verifyCalls(work: number, budget: number): number {
+    return Math.max(1, Math.ceil(work / budget))
 }
