@@ -11,7 +11,7 @@ import { CLUSTER, rpcEndpoint, WS_ENDPOINT } from '@/lib/config'
 import { describeError } from '@/lib/errors'
 import { sendReport, worthReporting } from '@/lib/report'
 import { NetworkStatus } from '@/components/NetworkStatus'
-import '@solana/wallet-adapter-react-ui/styles.css'
+import '@/styles/wallet-adapter.css'
 
 globalThis.Buffer ??= Buffer
 

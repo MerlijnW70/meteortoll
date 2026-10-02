@@ -14,3 +14,7 @@ node_modules/
 app/.next/
 
 .vercel
+
+# browser test output
+app/test-results/
+app/playwright-report/

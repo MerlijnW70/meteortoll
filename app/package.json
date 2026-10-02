@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test src/lib/*.test.ts"
+    "test": "tsx --test src/lib/*.test.ts",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.31.1",
@@ -31,6 +32,7 @@
     "sonner": "^2.0.8"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@types/bn.js": "^5.2.0",
     "@types/node": "^20",

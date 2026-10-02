@@ -37,7 +37,8 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
                         </Link>
                     </footer>
                 </Providers>
-                <Analytics />
+                {/* Vercel serves the analytics script; elsewhere (local runs, CI) there is none to load. */}
+                {process.env.VERCEL === '1' && <Analytics />}
             </body>
         </html>
     )

@@ -32,3 +32,41 @@ jobs:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo test -p meteortoll --quiet
+
+  e2e:
+    runs-on: ubuntu-latest
+    env:
+      # A dedicated devnet RPC: the public endpoint rate-limits the history reads the pages need.
+      SOLANA_RPC_URL: ${{ secrets.SOLANA_RPC_URL }}
+    steps:
+      - name: Need a dedicated RPC
+        id: rpc
+        run: |
+          if [ -z "$SOLANA_RPC_URL" ]; then
+            echo "::notice::Browser tests skipped: add a SOLANA_RPC_URL repository secret (a devnet RPC URL) to run them."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.rpc.outputs.ready == 'true'
+        uses: actions/checkout@v7
+      - if: steps.rpc.outputs.ready == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - if: steps.rpc.outputs.ready == 'true'
+        run: npm ci
+      - if: steps.rpc.outputs.ready == 'true'
+        run: npx playwright install --with-deps chromium
+        working-directory: app
+      - if: steps.rpc.outputs.ready == 'true'
+        run: npm run build -w app
+      - if: steps.rpc.outputs.ready == 'true'
+        run: npm run e2e -w app
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-traces
+          path: app/test-results
+          retention-days: 7
