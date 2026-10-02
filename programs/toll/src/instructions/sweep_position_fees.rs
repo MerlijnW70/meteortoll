@@ -3,7 +3,7 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 use crate::constants::PROBLEM_SEED;
 use crate::cp_amm::{self, program::CpAmm};
-use crate::state::Problem;
+use crate::state::{Problem, SweepSource, Swept};
 
 /// Permissionless: after graduation DBC hands the creator's DAMM v2 position to the pool's
 /// creator, which is this problem. This claims that position's trading fees into the vaults.
@@ -63,6 +63,16 @@ pub fn handle_sweep_position_fees(ctx: Context<SweepPositionFees>) -> Result<()>
         program: ctx.accounts.damm_program.to_account_info(),
     };
     let signer = &[seeds];
+    let before = (ctx.accounts.base_vault.amount, ctx.accounts.quote_vault.amount);
     let cpi = CpiContext::new_with_signer(ctx.accounts.damm_program.key(), accounts, signer);
-    cp_amm::cpi::claim_position_fee(cpi)
+    cp_amm::cpi::claim_position_fee(cpi)?;
+    ctx.accounts.base_vault.reload()?;
+    ctx.accounts.quote_vault.reload()?;
+    emit!(Swept {
+        problem: ctx.accounts.problem.key(),
+        source: SweepSource::PositionFees,
+        base: ctx.accounts.base_vault.amount.saturating_sub(before.0),
+        quote: ctx.accounts.quote_vault.amount.saturating_sub(before.1),
+    });
+    Ok(())
 }

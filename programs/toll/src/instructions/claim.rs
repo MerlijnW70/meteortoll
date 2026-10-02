@@ -3,7 +3,7 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface, TransferCh
 
 use crate::constants::PROBLEM_SEED;
 use crate::error::TollError;
-use crate::state::Problem;
+use crate::state::{Claimed, Problem};
 
 /// The solver takes everything the vaults hold, plus forfeited bonds. Fees keep arriving
 /// after a solve, so this can be called again later.
@@ -43,6 +43,7 @@ pub fn handle_claim(ctx: Context<Claim>) -> Result<()> {
     let signer = &[seeds];
 
     let a = &ctx.accounts;
+    let paid = (a.base_vault.amount, a.quote_vault.amount);
     for (vault, to, mint, program) in [
         (&a.base_vault, &a.solver_base, &a.base_mint, &a.base_token_program),
         (&a.quote_vault, &a.solver_quote, &a.quote_mint, &a.quote_token_program),
@@ -70,5 +71,6 @@ pub fn handle_claim(ctx: Context<Claim>) -> Result<()> {
         ctx.accounts.problem.sub_lamports(spare)?;
         ctx.accounts.solver.add_lamports(spare)?;
     }
+    emit!(Claimed { problem: ctx.accounts.problem.key(), solver: ctx.accounts.solver.key(), base: paid.0, quote: paid.1, bonds: spare });
     Ok(())
 }

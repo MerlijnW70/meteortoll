@@ -347,3 +347,31 @@ pub fn error_in(sent: &Sent, name: &str) -> bool {
         Err(failed) => failed.meta.logs.iter().any(|line| line.contains(name)),
     }
 }
+
+/// Events of type `T` a transaction emitted, decoded from its `Program data:` log lines.
+pub fn events<T: anchor_lang::Event + anchor_lang::Discriminator + anchor_lang::AnchorDeserialize>(sent: &TransactionMetadata) -> Vec<T> {
+    sent.logs
+        .iter()
+        .filter_map(|line| line.strip_prefix("Program data: "))
+        .filter_map(base64)
+        .filter(|bytes| bytes.starts_with(T::DISCRIMINATOR))
+        .map(|bytes| T::deserialize(&mut &bytes[T::DISCRIMINATOR.len()..]).expect("event decodes"))
+        .collect()
+}
+
+/// Standard base64, enough for log lines; a dependency for this alone would be overkill.
+fn base64(text: &str) -> Option<Vec<u8>> {
+    const ALPHABET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut out = Vec::with_capacity(text.len() * 3 / 4);
+    let (mut buffer, mut bits) = (0u32, 0);
+    for byte in text.bytes().filter(|b| *b != b'=') {
+        let value = ALPHABET.iter().position(|a| *a == byte)? as u32;
+        buffer = buffer << 6 | value;
+        bits += 6;
+        if bits >= 8 {
+            bits -= 8;
+            out.push((buffer >> bits) as u8);
+        }
+    }
+    Some(out)
+}

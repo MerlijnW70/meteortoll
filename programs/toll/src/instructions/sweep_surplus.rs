@@ -3,7 +3,7 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 use crate::constants::PROBLEM_SEED;
 use crate::dynamic_bonding_curve::{self, program::DynamicBondingCurve};
-use crate::state::Problem;
+use crate::state::{Problem, SweepSource, Swept};
 
 /// Permissionless: once the curve is complete, moves the creator's share of the surplus
 /// quote into the problem's quote vault. DBC allows it once per pool.
@@ -48,6 +48,15 @@ pub fn handle_sweep_surplus(ctx: Context<SweepSurplus>) -> Result<()> {
         program: ctx.accounts.dbc_program.to_account_info(),
     };
     let signer = &[seeds];
+    let before = ctx.accounts.quote_vault.amount;
     let cpi = CpiContext::new_with_signer(ctx.accounts.dbc_program.key(), accounts, signer);
-    dynamic_bonding_curve::cpi::creator_withdraw_surplus(cpi)
+    dynamic_bonding_curve::cpi::creator_withdraw_surplus(cpi)?;
+    ctx.accounts.quote_vault.reload()?;
+    emit!(Swept {
+        problem: ctx.accounts.problem.key(),
+        source: SweepSource::Surplus,
+        base: 0,
+        quote: ctx.accounts.quote_vault.amount.saturating_sub(before),
+    });
+    Ok(())
 }

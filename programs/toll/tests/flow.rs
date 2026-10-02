@@ -188,10 +188,15 @@ fn forfeited_bonds_are_paid_to_the_solver_on_claim() {
     assert!(spare >= toll::BOND_LAMPORTS);
     let (solver_base, solver_quote) = wallets(&mut env, &run.solver.pubkey());
     let before = env.svm.get_balance(&run.solver.pubkey()).unwrap();
+    let vaults = (token_amount(&env.svm, &env.base_vault), token_amount(&env.svm, &env.quote_vault));
     let claim = claim_ix(&env, &run.solver.pubkey(), solver_base, solver_quote);
-    send(&mut env.svm, &[claim], &run.solver, &[]).unwrap();
+    let sent = send(&mut env.svm, &[claim], &run.solver, &[]).unwrap();
     assert_eq!(env.svm.get_balance(&env.problem).unwrap(), rent);
     assert_eq!(env.svm.get_balance(&run.solver.pubkey()).unwrap() + 5_000, before + spare);
+    let claimed = events::<toll::state::Claimed>(&sent);
+    assert_eq!(claimed.len(), 1);
+    let c = &claimed[0];
+    assert_eq!((c.problem, c.solver, c.base, c.quote, c.bonds), (env.problem, run.solver.pubkey(), vaults.0, vaults.1, spare));
 }
 
 #[test]

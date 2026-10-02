@@ -3,7 +3,7 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 use crate::constants::PROBLEM_SEED;
 use crate::dynamic_bonding_curve::{self, program::DynamicBondingCurve};
-use crate::state::Problem;
+use crate::state::{Problem, SweepSource, Swept};
 
 /// Permissionless: moves the creator's share of DBC trading fees into the problem's vaults.
 #[derive(Accounts)]
@@ -55,6 +55,16 @@ pub fn handle_sweep_trading_fees(ctx: Context<SweepTradingFees>) -> Result<()> {
         program: ctx.accounts.dbc_program.to_account_info(),
     };
     let signer = &[seeds];
+    let before = (ctx.accounts.base_vault.amount, ctx.accounts.quote_vault.amount);
     let cpi = CpiContext::new_with_signer(ctx.accounts.dbc_program.key(), accounts, signer);
-    dynamic_bonding_curve::cpi::claim_creator_trading_fee(cpi, u64::MAX, u64::MAX)
+    dynamic_bonding_curve::cpi::claim_creator_trading_fee(cpi, u64::MAX, u64::MAX)?;
+    ctx.accounts.base_vault.reload()?;
+    ctx.accounts.quote_vault.reload()?;
+    emit!(Swept {
+        problem: ctx.accounts.problem.key(),
+        source: SweepSource::TradingFees,
+        base: ctx.accounts.base_vault.amount.saturating_sub(before.0),
+        quote: ctx.accounts.quote_vault.amount.saturating_sub(before.1),
+    });
+    Ok(())
 }

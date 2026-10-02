@@ -284,8 +284,11 @@ fn trading_fees_from_real_swaps_reach_the_bounty_vault() {
     assert!(owed > 0, "the creator earned nothing");
     assert_eq!(pool_state(&m).pool_state.partner_quote_fee, 0);
 
-    sweep_fees(&mut m).unwrap_or_else(|f| panic!("sweep {:?}", f.meta.logs));
+    let sent = sweep_fees(&mut m).unwrap_or_else(|f| panic!("sweep {:?}", f.meta.logs));
     assert_eq!(token_amount(&m.env.svm, &m.env.quote_vault), owed);
+    let swept = events::<toll::state::Swept>(&sent);
+    assert_eq!(swept.len(), 1);
+    assert_eq!((swept[0].problem, swept[0].source, swept[0].base, swept[0].quote), (m.env.problem, toll::state::SweepSource::TradingFees, 0, owed));
     assert_eq!(pool_state(&m).pool_state.creator_quote_fee, 0);
 
     buy(&mut m, ONE);
@@ -312,8 +315,11 @@ fn the_creator_surplus_reaches_the_bounty_once_the_curve_completes() {
     let owed = total * 80 / 100 * u64::from(config.creator_trading_fee_percentage) / 100;
 
     let before = token_amount(&m.env.svm, &m.env.quote_vault);
-    sweep_surplus(&mut m).unwrap_or_else(|f| panic!("surplus {:?}", f.meta.logs));
+    let sent = sweep_surplus(&mut m).unwrap_or_else(|f| panic!("surplus {:?}", f.meta.logs));
     assert_eq!(token_amount(&m.env.svm, &m.env.quote_vault) - before, owed);
+    let swept = events::<toll::state::Swept>(&sent);
+    assert_eq!(swept.len(), 1);
+    assert_eq!((swept[0].source, swept[0].base, swept[0].quote), (toll::state::SweepSource::Surplus, 0, owed));
     assert!(sweep_surplus(&mut m).is_err(), "surplus withdrawn twice");
     println!("dbc_surplus: reserve {} threshold {} owed {owed}", state.quote_reserve, config.migration_quote_threshold);
 }
@@ -482,9 +488,12 @@ fn after_graduation_the_problem_owns_the_locked_position_and_its_fees_reach_the_
     let before = (token_amount(&m.env.svm, &m.env.base_vault), token_amount(&m.env.svm, &m.env.quote_vault));
     damm_buy(&mut m, &g, 2 * ONE);
     damm_buy(&mut m, &g, 2 * ONE);
-    sweep_position(&mut m, &g).unwrap_or_else(|f| panic!("sweep position {:?}", f.meta.logs));
+    let sent = sweep_position(&mut m, &g).unwrap_or_else(|f| panic!("sweep position {:?}", f.meta.logs));
     let after = (token_amount(&m.env.svm, &m.env.base_vault), token_amount(&m.env.svm, &m.env.quote_vault));
     assert!(after.0 + after.1 > before.0 + before.1, "no DAMM v2 fees reached the vaults");
+    let swept = events::<toll::state::Swept>(&sent);
+    assert_eq!(swept.len(), 1);
+    assert_eq!((swept[0].source, swept[0].base, swept[0].quote), (toll::state::SweepSource::PositionFees, after.0 - before.0, after.1 - before.1));
     println!("damm_fees: base {} quote {}", after.0 - before.0, after.1 - before.1);
 }
 

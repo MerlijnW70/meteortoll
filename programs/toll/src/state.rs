@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use meteortoll::check::STATE_LEN;
 
 #[account]
 #[derive(InitSpace)]
@@ -65,12 +66,12 @@ pub struct Attempt {
     pub submission: Pubkey,
     pub seed_slot: u64,
     pub status: AttemptStatus,
-    pub check: [u8; 47],
+    pub check: [u8; STATE_LEN],
     pub bond: u64,
     pub bump: u8,
 }
 
-const _: () = assert!(meteortoll::check::STATE_LEN == 47);
+
 
 #[event]
 pub struct Solved {
@@ -84,4 +85,30 @@ pub struct Solved {
 pub struct Failed {
     pub problem: Pubkey,
     pub solver: Pubkey,
+}
+
+/// What a claim paid the solver: both vaults and the forfeited bonds the problem held.
+#[event]
+pub struct Claimed {
+    pub problem: Pubkey,
+    pub solver: Pubkey,
+    pub base: u64,
+    pub quote: u64,
+    pub bonds: u64,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, Debug)]
+pub enum SweepSource {
+    TradingFees,
+    Surplus,
+    PositionFees,
+}
+
+/// What a sweep moved into the problem's vaults, measured on the vaults themselves.
+#[event]
+pub struct Swept {
+    pub problem: Pubkey,
+    pub source: SweepSource,
+    pub base: u64,
+    pub quote: u64,
 }
