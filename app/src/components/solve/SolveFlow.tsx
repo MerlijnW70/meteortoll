@@ -4,6 +4,7 @@ import { statusName, VERIFY_BUDGET, verifyCalls } from '@meteortoll/core'
 import { type ProblemView, totalBounty } from '@/lib/chain'
 import { Panel, shape, sol } from '../ui'
 import { StepList } from './StepList'
+import { SubmitCost } from './SubmitCost'
 import { BOND_SOL, currentStep, isClaimed } from './steps'
 import { count } from '@/lib/format'
 import { useSolveActions } from './useSolveActions'
@@ -33,15 +34,17 @@ export function SolveFlow({ problem, scheme }: { problem: ProblemView; scheme: U
     const canClose = !!attempt && (status === 'committed' || failed || lost)
 
     return (
-        <Panel className="space-y-4 p-5">
+        <Panel className="space-y-4 p-5" id="submit">
             <div>
                 <h3 className="font-medium">
-                    Submit to <span className="font-mono">⟨{shape(problem).label} : ≤{problem.account.targetRank}⟩</span>
+                    Submitting to <span className="font-mono">⟨{shape(problem).label} : ≤{problem.account.targetRank}⟩</span> · bounty{' '}
+                    <span className="num">{sol(totalBounty(problem))} SOL</span>
                 </h3>
                 <p className="text-xs text-muted">
                     {count(work)} units of on-chain work · about {calls} verification transaction{calls === 1 ? '' : 's'}
                 </p>
             </div>
+            {!attempt && problem.phase === 'open' && <SubmitCost schemeLength={scheme.length} verifyCalls={calls + 1} />}
             <StepList current={current} failed={failed} claimed={isClaimed(status, won, !!links.claim)} links={links} graceMinutes={Math.ceil((graceLeft * 0.4) / 60)} />
             {!attempt && problem.phase !== 'open' && publicKey && (
                 <p className="rounded-lg bg-panel-2 p-3 text-sm text-muted">

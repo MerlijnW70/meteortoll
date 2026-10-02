@@ -26,8 +26,11 @@ export function Dropzone({ onFile }: { onFile: (file: File) => void }) {
                 dragging ? 'border-accent bg-accent/5' : 'border-border hover:border-accent/50'
             }`}
         >
-            <span className="block font-medium">Drop an fmm scheme (.json) or an encoded scheme (.bin)</span>
-            <span className="mt-1 block text-sm text-muted">or click to choose a file · up to 5 MB</span>
+            <span aria-hidden className="mx-auto mb-3 grid size-10 place-items-center rounded-full bg-accent/15 text-lg text-accent">
+                ↑
+            </span>
+            <span className="block font-medium">Drop your scheme file here</span>
+            <span className="mt-1 block text-sm text-muted">or click to choose one · .json or .bin, up to 5 MB · it stays in your browser</span>
             <input
                 id={id}
                 type="file"
