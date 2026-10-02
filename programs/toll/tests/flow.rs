@@ -19,7 +19,7 @@ fn broken(scheme: &[u8]) -> Vec<u8> {
 }
 
 #[test]
-fn register() {
+fn registers() {
     let env = setup(SHAPE, RANK);
     let problem = problem(&env);
     assert_eq!((problem.n1, problem.n2, problem.n3, problem.target_rank), (7, 7, 9, RANK));

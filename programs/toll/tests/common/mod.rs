@@ -226,13 +226,10 @@ pub fn upload(env: &mut Env, scheme: &[u8], salt: [u8; 32]) -> Run {
     let (sent, attempt) = commit(env, &solver, digest);
     sent.unwrap();
 
-    let submission = Pubkey::new_unique();
+    let buffer = Keypair::new();
+    let submission = buffer.pubkey();
     put(&mut env.svm, submission, toll::ID, vec![0u8; toll::submission::HEADER_LEN + scheme.len()]);
-    let open = ix(
-        toll::instruction::OpenSubmission { len: scheme.len() as u32 },
-        toll::accounts::OpenSubmission { solver: solver.pubkey(), attempt, submission },
-    );
-    send(&mut env.svm, &[open], &solver, &[]).unwrap();
+    send(&mut env.svm, &[open_ix(&solver.pubkey(), &attempt, &submission, scheme.len())], &solver, &[&buffer]).unwrap();
 
     for (index, chunk) in scheme.chunks(900).enumerate() {
         let write = ix(
@@ -242,6 +239,13 @@ pub fn upload(env: &mut Env, scheme: &[u8], salt: [u8; 32]) -> Run {
         send(&mut env.svm, &[write], &solver, &[]).unwrap();
     }
     Run { solver, attempt, submission, salt }
+}
+
+pub fn open_ix(solver: &Pubkey, attempt: &Pubkey, submission: &Pubkey, len: usize) -> Instruction {
+    ix(
+        toll::instruction::OpenSubmission { len: len as u32 },
+        toll::accounts::OpenSubmission { solver: *solver, attempt: *attempt, submission: *submission },
+    )
 }
 
 pub fn reveal_ix(env: &Env, run: &Run, salt: [u8; 32]) -> Instruction {

@@ -263,10 +263,8 @@
         },
         {
           "name": "submission",
-          "docs": [
-            "requires its header to be all zero."
-          ],
-          "writable": true
+          "writable": true,
+          "signer": true
         }
       ],
       "args": [
@@ -1040,9 +1038,6 @@
     },
     {
       "name": "Claimed",
-      "docs": [
-        "What a claim paid the solver: both vaults and the forfeited bonds the problem held."
-      ],
       "type": {
         "kind": "struct",
         "fields": [
@@ -1848,9 +1843,6 @@
     },
     {
       "name": "Swept",
-      "docs": [
-        "What a sweep moved into the problem's vaults, measured on the vaults themselves."
-      ],
       "type": {
         "kind": "struct",
         "fields": [
@@ -1938,27 +1930,16 @@
   "constants": [
     {
       "name": "BOND_LAMPORTS",
-      "docs": [
-        "Lamports a solver stakes on an attempt; kept by the problem if the scheme fails."
-      ],
       "type": "u64",
       "value": "50000000"
     },
     {
       "name": "MAX_SCHEME_LEN",
-      "docs": [
-        "Largest scheme a submission buffer may hold."
-      ],
       "type": "u32",
       "value": "1048576"
     },
     {
       "name": "VERIFY_BUDGET",
-      "docs": [
-        "Work units a client asks one `verify` call to do (one unit per stored coefficient). Every",
-        "known record stays well under Solana's 1.4M compute units per call at this budget; the cost",
-        "test asserts it. Exported in the IDL, so clients read it rather than copy it."
-      ],
       "type": "u32",
       "value": "5000"
     }

@@ -14,9 +14,8 @@ pub struct OpenSubmission<'info> {
         constraint = attempt.submission == Pubkey::default() @ TollError::BadSubmission,
     )]
     pub attempt: Box<Account<'info, Attempt>>,
-    /// CHECK: a fresh account the client created with this program as owner; `submission::open`
     #[account(mut, owner = crate::ID @ TollError::BadSubmission)]
-    pub submission: UncheckedAccount<'info>,
+    pub submission: Signer<'info>,
 }
 
 pub fn handle_open_submission(ctx: Context<OpenSubmission>, len: u32) -> Result<()> {
