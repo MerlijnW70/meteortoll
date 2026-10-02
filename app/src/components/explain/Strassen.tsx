@@ -41,7 +41,7 @@ export function Strassen() {
     return (
         <section className="space-y-4 rounded-xl border border-border bg-panel p-5" aria-labelledby="strassen-title">
             <div>
-                <h2 id="strassen-title" className="font-medium">
+                <h2 id="strassen-title" className="text-xl font-semibold">
                     Why one multiplication matters
                 </h2>
                 <p className="mt-1 text-sm text-muted">

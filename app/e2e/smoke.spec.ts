@@ -108,3 +108,17 @@ test('launching walks from a format to a priced first buy and a live preview', a
     await fitsTheScreen(page)
     expect(errors).toEqual([])
 })
+
+test('how it works switches between roles and opens answers', async ({ page }) => {
+    const errors = watch(page)
+    await page.goto('/trust')
+    await expect(page.getByRole('link', { name: 'Browse problems' })).toBeVisible()
+    await page.getByRole('tab', { name: 'Solve' }).click()
+    await expect(page.getByRole('link', { name: 'Open the solver' })).toBeVisible()
+    await page.getByRole('tab', { name: 'Launch' }).click()
+    await expect(page.getByRole('link', { name: 'Launch a problem' })).toBeVisible()
+    await page.getByText('What if nobody solves it?').click()
+    await expect(page.getByText('There is no deadline.')).toBeVisible()
+    await fitsTheScreen(page)
+    expect(errors).toEqual([])
+})
