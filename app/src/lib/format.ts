@@ -1,4 +1,4 @@
-export const LOCALE = 'en-US'
+const LOCALE = 'en-US'
 
 export const count = (n: number) => n.toLocaleString(LOCALE)
 

@@ -7,7 +7,6 @@ import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import type { ProblemView } from '@/lib/chain'
 import { notifyError, notifySuccess } from '@/lib/notify'
-import { executeSwap, lamports } from '@/lib/trade'
 
 const QUICK_MAX_FEE_PERCENT = 1.5
 
@@ -24,6 +23,7 @@ export function QuickBuy({ problem, sol = 0.1 }: { problem: ProblemView; sol?: n
         setBusy(true)
         const pending = toast.loading(`Buying ${sol} SOL of ${problem.info.symbol || 'this problem'}…`)
         try {
+            const { executeSwap, lamports } = await import('@/lib/trade')
             const signature = await executeSwap(connection, publicKey, sendTransaction, problem.account.pool, 'buy', lamports(sol), undefined, QUICK_MAX_FEE_PERCENT)
             notifySuccess(`Bought ${problem.info.symbol}`.trim(), signature, pending)
             await Promise.all(['problems', 'problem', 'trades', 'balances', 'portfolio'].map((key) => queries.invalidateQueries({ queryKey: [key] })))

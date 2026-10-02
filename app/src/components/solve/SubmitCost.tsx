@@ -9,7 +9,7 @@ import { sol } from '../ui'
 
 type Sized = Record<string, { size: number }>
 
-export function useSubmitCost(schemeLength: number) {
+function useSubmitCost(schemeLength: number) {
     const { connection } = useConnection()
     const { publicKey } = useWallet()
     return useQuery({
@@ -27,7 +27,7 @@ export function useSubmitCost(schemeLength: number) {
     })
 }
 
-export const APPROVALS = 4
+const APPROVALS = 4
 
 export function SubmitCost({ schemeLength, verifyCalls }: { schemeLength: number; verifyCalls: number }) {
     const cost = useSubmitCost(schemeLength)

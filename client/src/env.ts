@@ -17,7 +17,7 @@ export const ROOT = resolve(here, '../..')
 
 export const CLUSTER = process.env.TOLL_CLUSTER ?? 'devnet'
 const RPC = process.env.TOLL_RPC ?? (CLUSTER === 'mainnet' ? 'https://api.mainnet-beta.solana.com' : 'https://api.devnet.solana.com')
-export const COMMITMENT: Commitment = 'confirmed'
+const COMMITMENT: Commitment = 'confirmed'
 export const connection = new Connection(RPC, COMMITMENT)
 
 export function loadKeypair(path = process.env.TOLL_KEYPAIR ?? resolve(ROOT, `.keys/${CLUSTER}.json`)): Keypair {
@@ -50,7 +50,7 @@ export function saveState(state: State) {
     writeFileSync(statePath, JSON.stringify(state, null, 2) + '\n')
 }
 
-export async function withRetry<T>(run: () => Promise<T>, attempts = 8): Promise<T> {
+async function withRetry<T>(run: () => Promise<T>, attempts = 8): Promise<T> {
     for (let attempt = 1; ; attempt++) {
         try {
             return await run()

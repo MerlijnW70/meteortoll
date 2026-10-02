@@ -23,7 +23,7 @@ export type Profile = keyof typeof PROFILES
 
 const NONE: Economics = { treasurySharePercent: 0, launchFeeSol: 0 }
 
-export function launchFee(window: LaunchWindow | null): BaseFeeParams {
+function launchFee(window: LaunchWindow | null): BaseFeeParams {
     if (!window) {
         return { baseFeeMode: BaseFeeMode.FeeSchedulerLinear as const, feeSchedulerParam: { startingFeeBps: 100, endingFeeBps: 100, numberOfPeriod: 0, totalDuration: 0 } }
     }

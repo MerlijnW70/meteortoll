@@ -32,7 +32,7 @@ export function makeReceipt(fields: { cluster: string; problem: PublicKey; attem
     }
 }
 
-export function receiptFileName(receipt: Receipt) {
+function receiptFileName(receipt: Receipt) {
     return `meteortoll-receipt-${receipt.attempt.slice(0, 8)}.json`
 }
 

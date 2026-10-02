@@ -36,7 +36,7 @@ const TOKEN_PROGRAMS = new Set(['TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA', '
 const TRANSFER = 3
 const TRANSFER_CHECKED = 12
 
-export function tokenTransfers(keys: string[], inner: InnerInstructions[] | null | undefined, instruction: number) {
+function tokenTransfers(keys: string[], inner: InnerInstructions[] | null | undefined, instruction: number) {
     const transfers: { source: string; destination: string; amount: bigint }[] = []
     for (const group of inner ?? []) {
         if (group.index !== instruction) continue

@@ -25,7 +25,7 @@ async function logsFor(connection: Connection, signature: string): Promise<strin
     return tx?.meta?.logMessages ?? []
 }
 
-export async function confirmOrThrow(connection: Connection, tx: Transaction, signature: string, latest: BlockhashWithExpiryBlockHeight) {
+async function confirmOrThrow(connection: Connection, tx: Transaction, signature: string, latest: BlockhashWithExpiryBlockHeight) {
     const result = await withRetry(() => connection.confirmTransaction({ signature, ...latest }, 'confirmed'))
     if (result.value.err) throw failureFromStatus(result.value.err, programIds(tx), await logsFor(connection, signature), signature)
     return signature

@@ -1,14 +1,14 @@
-export const RUNNING = 0
-export const HOLDS = 1
-export const FAILS = 2
-export const MALFORMED = -1
+const RUNNING = 0
+const HOLDS = 1
+const FAILS = 2
+const MALFORMED = -1
 
-export const STATE_LEN = 60
+const STATE_LEN = 60
 const POINT_END = 31
 const OFFSET_AT = 31
 const FIRST_PRODUCT = 7n
 
-export function rewind(saved: Uint8Array): Uint8Array {
+function rewind(saved: Uint8Array): Uint8Array {
     const state = new Uint8Array(STATE_LEN)
     state.set(saved.subarray(0, POINT_END))
     new DataView(state.buffer).setBigUint64(OFFSET_AT, FIRST_PRODUCT, true)

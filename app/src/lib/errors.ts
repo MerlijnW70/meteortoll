@@ -1,6 +1,5 @@
 import type { PublicKey } from '@solana/web3.js'
-import { DynamicBondingCurveIdl } from '@meteora-ag/dynamic-bonding-curve-sdk'
-import { DBC, TOLL, tollIdl } from '@meteortoll/core'
+import { DBC, TOLL, dbcErrors, tollIdl } from '@meteortoll/core'
 
 export type ErrorKind = 'cancelled' | 'funds' | 'slippage' | 'program' | 'expired' | 'busy' | 'network' | 'unknown'
 
@@ -20,7 +19,7 @@ interface IdlError {
 
 const programErrors = new Map<string, Map<number, IdlError>>([
     [TOLL.toBase58(), new Map(((tollIdl as unknown as { errors?: IdlError[] }).errors ?? []).map((e) => [e.code, e]))],
-    [DBC.toBase58(), new Map(((DynamicBondingCurveIdl as unknown as { errors?: IdlError[] }).errors ?? []).map((e) => [e.code, e]))],
+    [DBC.toBase58(), new Map((dbcErrors as IdlError[]).map((e) => [e.code, e]))],
 ])
 
 const programNames: Record<string, string> = { [TOLL.toBase58()]: 'the toll program', [DBC.toBase58()]: 'Meteora DBC' }

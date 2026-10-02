@@ -1,7 +1,7 @@
 import { PublicKey } from '@solana/web3.js'
 import catalog from '../../../problems/catalog.json'
 
-export const CLUSTERS = ['devnet', 'mainnet'] as const
+const CLUSTERS = ['devnet', 'mainnet'] as const
 export type Cluster = (typeof CLUSTERS)[number]
 
 export const LAUNCHPADS: Record<Cluster, string | undefined> = {

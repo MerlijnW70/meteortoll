@@ -1,7 +1,7 @@
-import { PROTOCOL_FEE_PERCENT } from '@meteora-ag/dynamic-bonding-curve-sdk'
 import { type Economics, feeSplit, launchWindowText, percentOfTrade } from '@meteortoll/core'
 import all from '../../../problems/economics.json'
 import { CLUSTER } from './config'
+import { PROTOCOL_FEE_PERCENT } from './dbc'
 
 export const ECONOMICS: Economics = (all as Record<string, Economics>)[CLUSTER]
 

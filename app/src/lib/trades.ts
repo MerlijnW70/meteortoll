@@ -1,9 +1,9 @@
-import { BorshCoder, type Idl, utils } from '@coral-xyz/anchor'
+import { BorshCoder, utils } from '@coral-xyz/anchor'
 import type { Connection, PublicKey, VersionedTransactionResponse } from '@solana/web3.js'
-import { DynamicBondingCurveIdl } from '@meteora-ag/dynamic-bonding-curve-sdk'
+import { dbcIdl } from './dbc'
 import { DBC } from '@meteortoll/core'
 
-const coder = new BorshCoder(DynamicBondingCurveIdl as Idl)
+const coder = new BorshCoder(dbcIdl)
 const EVENT_IX_TAG = Uint8Array.from([0xe4, 0x45, 0xa5, 0x2e, 0x51, 0xcb, 0x9a, 0x1d])
 
 export interface Trade {
@@ -45,7 +45,7 @@ function startsWith(data: Uint8Array, prefix: Uint8Array) {
     return prefix.every((byte, i) => data[i] === byte)
 }
 
-export function decodeSwaps(dataBase58: string[]): DecodedSwap[] {
+function decodeSwaps(dataBase58: string[]): DecodedSwap[] {
     const found: DecodedSwap[] = []
     for (const encoded of dataBase58) {
         const data = utils.bytes.bs58.decode(encoded)

@@ -19,7 +19,7 @@ interface Role {
     tone: string
 }
 
-export const ROLES: Role[] = [
+const ROLES: Role[] = [
     {
         key: 'trade',
         audience: 'Traders',

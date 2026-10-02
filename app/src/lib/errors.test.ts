@@ -77,3 +77,9 @@ test('detail cut', () => {
     assert.equal(describeError(new Error('x'.repeat(240))).detail, 'x'.repeat(240))
     assert.equal(describeError(new Error('x'.repeat(241))).detail, `${'x'.repeat(240)}…`)
 })
+
+test('dbc errors match sdk', async () => {
+    const { dbcErrors } = await import('@meteortoll/core')
+    const { DynamicBondingCurveIdl } = await import('@meteora-ag/dynamic-bonding-curve-sdk')
+    assert.deepEqual(dbcErrors, DynamicBondingCurveIdl.errors.map(({ code, name, msg }) => ({ code, name, msg })))
+})

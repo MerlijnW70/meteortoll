@@ -8,7 +8,7 @@ import {
 import { Keypair, type PublicKey, Transaction, type TransactionVersion } from '@solana/web3.js'
 
 const STORAGE = 'meteortoll:devWallet'
-export const DevWalletName = 'Dev Wallet (local test key)' as WalletName<'Dev Wallet (local test key)'>
+const DevWalletName = 'Dev Wallet (local test key)' as WalletName<'Dev Wallet (local test key)'>
 
 const icon =
     'data:image/svg+xml;base64,' +

@@ -1,6 +1,6 @@
 import { AnchorProvider, BorshAccountsCoder, type Idl, Program } from '@coral-xyz/anchor'
 import { type AccountInfo, type Connection, PublicKey, type Transaction, type VersionedTransaction } from '@solana/web3.js'
-import { DynamicBondingCurveIdl } from '@meteora-ag/dynamic-bonding-curve-sdk'
+import { dbcIdl } from './dbc'
 import { DBC, type ProblemAccount, problemPhase, type ProblemPhase, tollIdl } from '@meteortoll/core'
 import { classify } from './classify'
 import { CATALOG, LAUNCHPAD } from './config'
@@ -71,7 +71,7 @@ function describe(address: string, account: ProblemAccount, token: TokenName | u
     }
 }
 
-const dbcCoder = new BorshAccountsCoder(DynamicBondingCurveIdl as Idl)
+const dbcCoder = new BorshAccountsCoder(dbcIdl)
 
 export interface PoolState {
     config: PublicKey
@@ -118,7 +118,7 @@ function tokenAmount(info: AccountInfo<Buffer> | null): bigint {
 
 export const totalBounty = (p: Pick<ProblemView, 'vaultLamports' | 'unsweptLamports' | 'bondsLamports'>) => p.vaultLamports + p.unsweptLamports + p.bondsLamports
 
-export function spareLamports(info: Pick<AccountInfo<Buffer>, 'lamports' | 'data'> | null, rentExempt: bigint): bigint {
+function spareLamports(info: Pick<AccountInfo<Buffer>, 'lamports' | 'data'> | null, rentExempt: bigint): bigint {
     if (!info) return 0n
     const spare = BigInt(info.lamports) - rentExempt
     return spare > 0n ? spare : 0n

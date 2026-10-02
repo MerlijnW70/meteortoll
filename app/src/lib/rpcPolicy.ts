@@ -1,6 +1,6 @@
 import { TOLL } from '@meteortoll/core'
 
-export const ALLOWED = new Set([
+const ALLOWED = new Set([
     'getAccountInfo',
     'getBalance',
     'getBlockHeight',
