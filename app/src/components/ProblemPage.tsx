@@ -1,6 +1,6 @@
 'use client'
 
-import { type ReactNode, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { useProblem } from '@/hooks/useProblems'
 import { ForeignProblemError, type ProblemView } from '@/lib/chain'
@@ -15,16 +15,7 @@ import { Rules } from './problem/Rules'
 import { Staircase } from './problem/Staircase'
 import { TradeFeed } from './problem/TradeFeed'
 import { VerifierReplay } from './problem/VerifierReplay'
-import { Panel, Skeleton } from './ui'
-
-function Section({ title, children }: { title: string; children: ReactNode }) {
-    return (
-        <section className="border-t border-border pt-8">
-            <h2 className="mb-5 text-xl font-semibold tracking-tight">{title}</h2>
-            {children}
-        </section>
-    )
-}
+import { Panel, Section, Skeleton } from './ui'
 
 const TABS = ['History', 'Trades'] as const
 

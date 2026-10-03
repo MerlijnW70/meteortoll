@@ -6,7 +6,7 @@ import { MoneyFlow } from '@/components/explain/MoneyFlow'
 import { RolePaths } from '@/components/explain/RolePaths'
 import { BOUNTY_SHARE, LAUNCH_WINDOW_TEXT } from '@/lib/economics'
 import { Strassen } from '@/components/explain/Strassen'
-import { More, PageIntro, Panel } from '@/components/ui'
+import { More, PageIntro } from '@/components/ui'
 import { explorer, REPO_URL } from '@/lib/config'
 
 export const metadata: Metadata = { title: 'How it works' }
@@ -86,24 +86,19 @@ const FAQ: [string, ReactNode][] = [
 
 function Trust() {
     return (
-        <div className="mx-auto max-w-5xl space-y-8">
-            <div className="space-y-5">
-                <PageIntro title="How it works">Open math problems, funded by trading, paid out by code.</PageIntro>
-                <ol aria-label="The loop" className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+        <div className="mx-auto max-w-5xl space-y-12">
+            <div className="space-y-10">
+                <PageIntro title="How it works">
+                    Open math problems, funded by trading, paid out by code.
+                </PageIntro>
+                <ol aria-label="The loop" className="grid grid-cols-2 gap-x-6 gap-y-8 border-y border-border py-8 lg:grid-cols-4">
                     {LOOP.map(([title, body], i) => (
-                        <li key={title} className="relative flex items-start gap-2.5 rounded-xl border border-border bg-panel p-3 sm:gap-3 sm:p-4">
-                            <span aria-hidden className="num grid size-6 shrink-0 place-items-center rounded-full bg-accent/15 text-xs font-semibold text-accent sm:size-7 sm:text-sm">
-                                {i + 1}
+                        <li key={title} className="min-w-0">
+                            <span aria-hidden className="num block text-3xl font-semibold tracking-tight text-accent">
+                                0{i + 1}
                             </span>
-                            <span>
-                                <span className="block text-sm font-medium first-letter:uppercase sm:text-base">{title}</span>
-                                <span className="hidden text-xs text-muted sm:block">{body}</span>
-                            </span>
-                            {i < LOOP.length - 1 && (
-                                <span aria-hidden className="absolute -right-2.5 top-1/2 z-10 hidden -translate-y-1/2 text-faint lg:block">
-                                    →
-                                </span>
-                            )}
+                            <span className="mt-2 block font-semibold first-letter:uppercase sm:text-lg">{title}</span>
+                            <span className="mt-1 block text-sm text-muted">{body}</span>
                         </li>
                     ))}
                 </ol>
@@ -117,10 +112,10 @@ function Trust() {
                         label: 'Why you can trust it',
                         content: (
                             <div className="space-y-4">
-                                <ul className="grid gap-3 sm:grid-cols-2">
+                                <ul className="grid gap-x-10 gap-y-8 sm:grid-cols-2">
                                     {GUARANTEES.map(({ title, plain, detail }) => (
-                                        <li key={title} className="rounded-xl border border-border bg-panel p-4">
-                                            <h3 className="font-medium">{title}</h3>
+                                        <li key={title} className="border-t border-border pt-5">
+                                            <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
                                             <p className="mt-1 text-sm text-muted">{plain}</p>
                                             <More label="Technical detail" className="mt-3">
                                                 <p className="text-sm text-muted">{detail}</p>
@@ -128,8 +123,8 @@ function Trust() {
                                         </li>
                                     ))}
                                 </ul>
-                                <Panel className="space-y-2 p-4 text-sm">
-                                    <h3 className="font-medium">Check it yourself</h3>
+                                <div className="space-y-2 border-t border-border pt-5 text-sm">
+                                    <h3 className="text-lg font-semibold tracking-tight">Check it yourself</h3>
                                     <p>
                                         <span className="text-muted">Program · </span>
                                         <a className="break-all font-mono hover:underline" href={explorer('address', TOLL.toBase58())} target="_blank" rel="noreferrer">
@@ -148,7 +143,7 @@ function Trust() {
                                             large. The program has had a self-review and extensive tests against the real Meteora programs, not a third-party audit.
                                         </p>
                                     </More>
-                                </Panel>
+                                </div>
                             </div>
                         ),
                     },
@@ -158,9 +153,9 @@ function Trust() {
                         id: 'faq',
                         label: 'Questions',
                         content: (
-                            <div className="divide-y divide-border rounded-xl border border-border bg-panel">
+                            <div className="divide-y divide-border border-y border-border">
                                 {FAQ.map(([question, answer]) => (
-                                    <details key={question} className="group px-5 py-4">
+                                    <details key={question} className="group py-5">
                                         <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium [&::-webkit-details-marker]:hidden">
                                             {question}
                                             <span aria-hidden className="text-muted transition-transform group-open:rotate-45">

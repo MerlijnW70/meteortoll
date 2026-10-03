@@ -7,7 +7,10 @@ import type { KnownFormat } from '@/lib/known'
 import type { LaunchKind } from '@/lib/launchDraft'
 import { explorer } from '@/lib/config'
 import { LAUNCH_FEE_SOL } from '@/lib/economics'
+import { cardTitle } from '@/lib/card'
+import type { ProblemView } from '@/lib/chain'
 import { percentDown } from '@/lib/format'
+import { MatrixArt } from '../MatrixArt'
 import { Meter, Panel, Skeleton, sol } from '../ui'
 import { Share } from '../Share'
 import type { Launched } from './useLaunch'
@@ -23,25 +26,29 @@ const badge: Record<LaunchKind, [string, string]> = {
 export function Preview({ format, target, symbol, kind, quote }: { format: KnownFormat | null; target: string; symbol: string; kind: LaunchKind; quote: FirstBuyQuote | null }) {
     if (!format) {
         return (
-            <Panel className="grid min-h-44 place-items-center p-4 text-center text-sm text-faint">
+            <Panel className="grid aspect-[16/10] place-items-center rounded-3xl border-dashed p-4 text-center text-sm text-faint">
                 <p>Your problem&apos;s card appears here.</p>
             </Panel>
         )
     }
+    const [n1, n2, n3] = format.n
+    const sketch = { phase: 'open', account: { n1, n2, n3, targetRank: Number(target) || format.bestKnown.rank } } as ProblemView
     return (
-        <Panel className="p-4" aria-label="Preview">
-            <div className="mb-3 space-y-2">
-                <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${badge[kind][1]}`}>{badge[kind][0]}</span>
-                <div className="flex items-baseline justify-between gap-2">
-                    <span className="whitespace-nowrap font-mono text-lg">
-                        ⟨{format.n.join('×')} : ≤{target || '?'}⟩
-                    </span>
-                    <span className="text-xs text-muted">{symbol}</span>
+        <Panel className="rounded-3xl p-2.5" aria-label="Preview">
+            <MatrixArt problem={sketch} className="aspect-[16/10] rounded-2xl px-3 pb-2 pt-9">
+                <span className={`absolute left-3 top-3 rounded-full border bg-panel px-2.5 py-1 text-xs font-medium ${badge[kind][1]}`}>{badge[kind][0]}</span>
+                <span className="absolute right-3 top-3 rounded-full bg-panel/80 px-2.5 py-1 text-xs text-muted">{symbol}</span>
+            </MatrixArt>
+            <div className="px-3.5 pb-3.5 pt-4">
+            <div className="mb-3 space-y-1">
+                <div className="text-2xl font-semibold tracking-tight">{cardTitle({ n1, n2, n3 })}</div>
+                <div className="whitespace-nowrap font-mono text-sm text-muted">
+                    ⟨{format.n.join('×')} : ≤{target || '?'}⟩
                 </div>
             </div>
             <div className="mb-4 grid grid-cols-3 gap-2 text-sm">
                 <div>
-                    <div className="text-xs text-muted">Bounty</div>
+                    <div className="text-xs text-muted">Prize</div>
                     <div className="num font-medium">{quote ? sol(BigInt(quote.bounty.toString())) : '0'} SOL</div>
                 </div>
                 <div>
@@ -59,6 +66,7 @@ export function Preview({ format, target, symbol, kind, quote }: { format: Known
                 </p>
             )}
             <Meter label="Curve to graduation" value={quote?.curveShare ?? 0} detail={percentDown(quote?.curveShare ?? 0, 1)} />
+            </div>
         </Panel>
     )
 }

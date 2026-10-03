@@ -48,7 +48,7 @@ export function AttemptRow({ problem, attempt, owner }: { problem: ProblemView; 
     }
 
     return (
-        <li className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3 text-sm">
+        <li className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border p-4 text-sm">
             <div className="min-w-0">
                 <Link href={`/p/${problem.address}`} className="font-mono hover:underline">
                     ⟨{shape(problem).label} : ≤{problem.account.targetRank}⟩
@@ -58,12 +58,12 @@ export function AttemptRow({ problem, attempt, owner }: { problem: ProblemView; 
             </div>
             <div className="flex gap-2">
                 {step.resume && (
-                    <Link href={`/solve?problem=${problem.address}`} className="rounded-lg bg-accent px-3 py-1.5 font-medium text-bg hover:opacity-90">
+                    <Link href={`/solve?problem=${problem.address}`} className="rounded-full bg-accent px-4 py-1.5 font-semibold text-bg hover:opacity-90">
                         Continue
                     </Link>
                 )}
                 {step.close && (
-                    <button onClick={close} disabled={busy || !wallet} className="rounded-lg border border-border px-3 py-1.5 text-muted hover:text-text disabled:opacity-40">
+                    <button onClick={close} disabled={busy || !wallet} className="rounded-full border border-border px-4 py-1.5 text-muted hover:text-text disabled:opacity-40">
                         {busy ? 'Closing…' : step.close}
                     </button>
                 )}

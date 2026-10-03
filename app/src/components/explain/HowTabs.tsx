@@ -39,7 +39,7 @@ export function HowTabs({ tabs }: { tabs: HowTab[] }) {
     return (
         <div className="space-y-6">
             <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-                <div role="tablist" aria-label="How it works" className="inline-flex min-w-max gap-1 rounded-xl bg-panel-2 p-1">
+                <div role="tablist" aria-label="How it works" className="inline-flex min-w-max gap-1 rounded-full bg-panel-2 p-1">
                     {tabs.map((tab, index) => (
                         <button
                             key={tab.id}
@@ -53,7 +53,7 @@ export function HowTabs({ tabs }: { tabs: HowTab[] }) {
                             tabIndex={active === tab.id ? 0 : -1}
                             onClick={() => open(tab.id)}
                             onKeyDown={(event) => onKey(event, index)}
-                            className={`whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                            className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                                 active === tab.id ? 'bg-panel text-text shadow-sm' : 'text-muted hover:text-text'
                             }`}
                         >

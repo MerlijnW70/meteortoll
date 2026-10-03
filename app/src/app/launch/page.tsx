@@ -8,7 +8,7 @@ import { Cost, LaunchedPanel, Preview } from '@/components/launch/LaunchSummary'
 import { TargetStep, TokenStep } from '@/components/launch/TargetStep'
 import { useLaunch } from '@/components/launch/useLaunch'
 import { useLaunchCost, useLaunchTerms } from '@/components/launch/useLaunchTerms'
-import { PageIntro, Panel, sol } from '@/components/ui'
+import { BUTTON, BUTTON_QUIET, PageIntro, Panel, sol } from '@/components/ui'
 import { useProblems } from '@/hooks/useProblems'
 import { FIRST_BUY_CAP_SOL, FIRST_BUY_PRESETS, firstBuyProblem, parseSol, quoteFirstBuy } from '@/lib/firstBuy'
 import type { KnownFormat } from '@/lib/known'
@@ -37,9 +37,9 @@ function Step({
     const mark =
         state === 'done' ? 'bg-good/15 text-good' : state === 'current' ? 'bg-accent text-bg' : 'border border-border text-faint'
     return (
-        <Panel className={`p-5 ${state === 'locked' ? 'opacity-60' : ''}`} aria-label={`Step ${n} of ${STEPS}: ${title}`}>
+        <section className={`border-t border-border pt-6 first:border-t-0 first:pt-0 ${state === 'locked' ? 'opacity-60' : ''}`} aria-label={`Step ${n} of ${STEPS}: ${title}`}>
             <div className="flex items-center gap-3">
-                <span aria-hidden className={`num grid size-7 shrink-0 place-items-center rounded-full text-sm font-semibold ${mark}`}>
+                <span aria-hidden className={`num grid size-8 shrink-0 place-items-center rounded-full text-sm font-semibold ${mark}`}>
                     {state === 'done' ? '✓' : n}
                 </span>
                 <div className="min-w-0 flex-1">
@@ -47,18 +47,18 @@ function Step({
                         Step {n} of {STEPS}
                         {optional && ' · optional'}
                     </p>
-                    <h2 className="font-medium">{title}</h2>
+                    <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
                 </div>
                 {state === 'done' && onChange && (
-                    <button type="button" onClick={onChange} className="rounded-lg border border-border px-3 py-1.5 text-sm text-muted hover:text-text">
+                    <button type="button" onClick={onChange} className={`${BUTTON_QUIET} px-4 py-1.5`}>
                         Change
                     </button>
                 )}
             </div>
-            {state === 'done' && summary && <div className="mt-3 pl-10">{summary}</div>}
-            {state === 'current' && <div className="mt-4">{children}</div>}
-            {state === 'locked' && <p className="mt-1 pl-10 text-sm text-faint">Choose a problem first.</p>}
-        </Panel>
+            {state === 'done' && summary && <div className="mt-3 pl-11">{summary}</div>}
+            {state === 'current' && <div className="mt-5">{children}</div>}
+            {state === 'locked' && <p className="mt-1 pl-11 text-sm text-faint">Choose a problem first.</p>}
+        </section>
     )
 }
 
@@ -121,20 +121,22 @@ export default function Launch() {
 
     const kind = format && draft ? launchKind(format, Number(draft.target)) : 'open'
     return (
-        <div className="space-y-6">
-            <PageIntro title="Launch a problem">Pick a problem, set the target, launch. One wallet approval.</PageIntro>
+        <div className="space-y-12">
+            <PageIntro title="Launch a problem">
+                Pick an open problem, set the target, and launch its token and prize in one wallet approval.
+            </PageIntro>
             {unfinished && (
                 <Panel className="flex flex-wrap items-center justify-between gap-3 p-4" role="alert">
                     <p className="text-sm text-warn">
-                        Your launch of ⟨{unfinished.n.join('×')} : ≤{unfinished.target}⟩ created its pool, but the problem is not registered yet. Finish it to open the bounty.
+                        Your launch of ⟨{unfinished.n.join('×')} : ≤{unfinished.target}⟩ created its pool, but the problem is not registered yet. Finish it to open the prize.
                     </p>
-                    <button type="button" onClick={finish} disabled={busy} className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-bg disabled:opacity-40">
+                    <button type="button" onClick={finish} disabled={busy} className={BUTTON}>
                         {busy ? 'Registering…' : 'Finish registration'}
                     </button>
                 </Panel>
             )}
-            <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-                <div className="space-y-4">
+            <div className="grid items-start gap-12 lg:grid-cols-[minmax(0,1fr)_22rem]">
+                <div className="min-w-0 space-y-8">
                     <Step
                         n={1}
                         title="Choose a problem"
@@ -167,7 +169,7 @@ export default function Launch() {
 
                 <aside className="space-y-4 lg:sticky lg:top-20" aria-label="Launch summary">
                     <Preview format={format} target={draft?.target ?? ''} symbol={draft?.symbol ?? ''} kind={kind} quote={buyError ? null : quote} />
-                    <Panel className="space-y-4 p-4">
+                    <Panel className="space-y-4 rounded-3xl p-5">
                         {format && (
                             <Cost
                                 connected={!!publicKey}
@@ -185,7 +187,7 @@ export default function Launch() {
                         <button
                             onClick={() => launch(request)}
                             disabled={busy || !format || (!!publicKey && (!!problem || !!buyError))}
-                            className="w-full rounded-lg bg-accent px-5 py-3 text-sm font-semibold text-bg disabled:opacity-40"
+                            className={`${BUTTON} w-full py-3`}
                         >
                             {!format
                                 ? 'Choose a problem first'

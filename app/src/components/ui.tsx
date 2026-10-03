@@ -14,7 +14,7 @@ export function Skeleton({ className = '' }: { className?: string }) {
 
 export function Panel({ children, className = '', ...rest }: ComponentProps<'section'>) {
     return (
-        <section {...rest} className={`rounded-xl border border-border bg-panel ${className}`}>
+        <section {...rest} className={`rounded-2xl border border-border bg-panel ${className}`}>
             {children}
         </section>
     )
@@ -68,12 +68,30 @@ export function short(address: string): string {
     return `${address.slice(0, 4)}…${address.slice(-4)}`
 }
 
-export function PageIntro({ title, children }: { title: ReactNode; children?: ReactNode }) {
+export const BUTTON = 'inline-flex items-center justify-center rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-bg transition hover:opacity-90 disabled:opacity-40'
+export const BUTTON_QUIET = 'inline-flex items-center justify-center rounded-full border border-border px-5 py-2.5 text-sm transition hover:border-accent/60 hover:text-text disabled:opacity-40'
+
+export function PageIntro({ title, eyebrow, children, className = '' }: { title: ReactNode; eyebrow?: ReactNode; children?: ReactNode; className?: string }) {
     return (
-        <div className="space-y-2">
-            <h1 className="text-3xl font-semibold">{title}</h1>
-            {children && <div className="max-w-2xl text-lg text-muted">{children}</div>}
-        </div>
+        <header className={`max-w-3xl ${className}`}>
+            {eyebrow && <p className="mb-2 text-sm text-muted">{eyebrow}</p>}
+            <h1 className="text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl">{title}</h1>
+            {children && <div className="mt-4 max-w-2xl text-lg text-muted">{children}</div>}
+        </header>
+    )
+}
+
+export function Section({ title, id, aside, children, className = '' }: { title: ReactNode; id?: string; aside?: ReactNode; children: ReactNode; className?: string }) {
+    return (
+        <section id={id} aria-labelledby={id ? `${id}-title` : undefined} className={`scroll-mt-24 border-t border-border pt-8 ${className}`}>
+            <div className="mb-5 flex flex-wrap items-baseline justify-between gap-3">
+                <h2 id={id ? `${id}-title` : undefined} className="text-xl font-semibold tracking-tight">
+                    {title}
+                </h2>
+                {aside}
+            </div>
+            {children}
+        </section>
     )
 }
 

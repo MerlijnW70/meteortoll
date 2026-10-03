@@ -127,7 +127,7 @@ export default function Home() {
         ranked.find((p) => p.phase === 'open' && !problemStanding(p, CLUSTER === 'mainnet')) ??
         ranked[0]
     return (
-        <div className="space-y-10">
+        <div className="space-y-16">
             <Hero problem={flagship} loading={isLoading} />
             <RolePaths />
             <StatsStrip />

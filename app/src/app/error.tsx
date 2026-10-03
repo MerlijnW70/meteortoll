@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect } from 'react'
+import { BUTTON, BUTTON_QUIET, PageIntro } from '@/components/ui'
 import { describeError } from '@/lib/errors'
 import { sendReport } from '@/lib/report'
 
@@ -12,18 +13,17 @@ export default function RouteError({ error, retry }: { error: Error & { digest?:
     }, [error])
     const friendly = describeError(error)
     return (
-        <div role="alert" className="mx-auto max-w-lg space-y-4 rounded-xl border border-bad/40 bg-panel p-6 text-center">
-            <h1 className="text-lg font-medium">This page ran into a problem</h1>
-            <p className="text-sm text-muted">
+        <div role="alert" className="space-y-6 py-10">
+            <PageIntro eyebrow="Something went wrong" title="This page ran into a problem.">
                 {friendly.title}
                 {friendly.detail ? `. ${friendly.detail}` : '.'}
-            </p>
+            </PageIntro>
             {error.digest && <p className="font-mono text-xs text-faint">reference {error.digest}</p>}
-            <div className="flex justify-center gap-3">
-                <button onClick={() => retry()} className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-bg">
+            <div className="flex flex-wrap gap-3">
+                <button onClick={() => retry()} className={BUTTON}>
                     Try again
                 </button>
-                <Link href="/" className="rounded-lg border border-border px-4 py-2 text-sm">
+                <Link href="/" className={BUTTON_QUIET}>
                     All problems
                 </Link>
             </div>

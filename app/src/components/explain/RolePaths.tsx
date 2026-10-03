@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { BOND_LAMPORTS } from '@meteortoll/core'
 import { BOUNTY_SHARE, HAS_TREASURY, PROTOCOL_SHARE, TREASURY_SHARE } from '@/lib/economics'
-import { More } from '../ui'
+import { BUTTON_QUIET, More } from '../ui'
 
 const BOND_SOL = Number(BOND_LAMPORTS) / 1e9
 
@@ -25,7 +25,7 @@ const ROLES: Role[] = [
         audience: 'Traders',
         title: 'I want to trade',
         who: 'You trade on Solana.',
-        gets: ['Every token is a real open problem', `${BOUNTY_SHARE} of each trade funds its bounty`, 'Graduates to a Meteora DAMM v2 pool'],
+        gets: ['Every token is a real open problem', `${BOUNTY_SHARE} of each trade funds its prize`, 'Graduates to a Meteora DAMM v2 pool'],
         cta: ['/#problems', 'Browse problems'],
         does: 'Buy and sell the token of an open problem on its Meteora bonding curve, from any Solana wallet.',
         why: [
@@ -53,7 +53,7 @@ const ROLES: Role[] = [
         audience: 'Solvers',
         title: 'I want to solve & claim',
         who: 'Mathematicians, AI researchers, programmers.',
-        gets: ['Win the whole bounty', 'No judges: the program decides', 'Fees that arrive later are also claimable'],
+        gets: ['Win the whole prize', 'No judges: the program decides', 'Fees that arrive later are also claimable'],
         cta: ['/solve', 'Open the solver'],
         does: 'Find a scheme with fewer multiplications than the record, check it free in your browser, and submit it.',
         why: [
@@ -94,15 +94,15 @@ const ROLES: Role[] = [
 
 export function RolePaths() {
     return (
-        <section aria-labelledby="roles-title" className="space-y-4">
-            <h2 id="roles-title" className="text-xl font-semibold">
+        <section aria-labelledby="roles-title" className="space-y-6">
+            <h2 id="roles-title" className="text-2xl font-semibold tracking-tight sm:text-3xl">
                 What do you want to do?
             </h2>
-            <ul className="grid gap-4 lg:grid-cols-3">
+            <ul className="grid gap-10 lg:grid-cols-3 lg:gap-0 lg:divide-x lg:divide-border">
                 {ROLES.map((role) => (
-                    <li key={role.key} id={`role-${role.key}`} className="flex flex-col rounded-xl border border-border bg-panel p-5">
+                    <li key={role.key} id={`role-${role.key}`} className="flex flex-col lg:px-8 lg:first:pl-0 lg:last:pr-0">
                         <p className={`text-xs font-semibold uppercase tracking-wide ${role.tone}`}>{role.audience}</p>
-                        <h3 className="mt-1 text-xl font-semibold">{role.title}</h3>
+                        <h3 className="mt-1 text-2xl font-semibold tracking-tight">{role.title}</h3>
                         <p className="mt-1 text-sm text-muted">{role.who}</p>
                         <ul className="mt-4 space-y-2 text-sm font-medium">
                             {role.gets.map((line) => (
@@ -115,7 +115,7 @@ export function RolePaths() {
                             ))}
                         </ul>
                         <div className="mt-auto flex flex-wrap items-start gap-x-4 gap-y-3 pt-5">
-                            <Link href={role.cta[0]} className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:border-accent hover:text-accent">
+                            <Link href={role.cta[0]} className={BUTTON_QUIET}>
                                 {role.cta[1]}
                             </Link>
                             <More className="w-full text-sm">

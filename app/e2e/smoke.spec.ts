@@ -193,7 +193,7 @@ test('portfolio', async ({ page }) => {
         localStorage.setItem('walletName', JSON.stringify('Dev Wallet (local test key)'))
     }, secret)
     await page.goto('/me')
-    await expect(page.getByText('Added to bounties')).toBeVisible({ timeout: 60_000 })
+    await expect(page.getByText('Added to prizes')).toBeVisible({ timeout: 60_000 })
     const lcheck = page.getByRole('row').filter({ hasText: 'LCHECK' })
     await expect(lcheck).toContainText('0.05 SOL', { timeout: 90_000 })
     await expect(lcheck).toContainText('%')

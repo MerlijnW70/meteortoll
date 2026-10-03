@@ -10,11 +10,11 @@ const UPDATED = '2026-10-02'
 
 function Section({ title, gist, children }: { title: string; gist: string; children: React.ReactNode }) {
     return (
-        <section className="border-t border-border pt-4">
+        <section className="border-t border-border pt-5">
             <details className="group">
                 <summary className="flex cursor-pointer list-none items-start justify-between gap-4 [&::-webkit-details-marker]:hidden">
                     <span>
-                        <span className="block font-medium">{title}</span>
+                        <span className="block text-lg font-semibold tracking-tight">{title}</span>
                         <span className="mt-0.5 block text-sm text-muted">{gist}</span>
                     </span>
                     <span aria-hidden className="mt-1 text-muted transition-transform group-open:rotate-45">
@@ -29,8 +29,10 @@ function Section({ title, gist, children }: { title: string; gist: string; child
 
 export default function Terms() {
     return (
-        <div className="mx-auto max-w-3xl space-y-6">
-            <PageIntro title="Terms and risks">Plain language, because the risks are real. Open a section for the full text. Last updated {UPDATED}.</PageIntro>
+        <div className="mx-auto max-w-3xl space-y-8">
+            <PageIntro eyebrow={`Last updated ${UPDATED}`} title="Terms and risks">
+                Plain language, because the risks are real. Open a section for the full text.
+            </PageIntro>
 
             <Panel className="border-warn/30 bg-warn/5 p-4 text-sm text-warn">
                 Problem tokens can lose all their value. Only trade what you can afford to lose. Nothing on this site is financial, investment, legal or tax advice.
