@@ -1,4 +1,11 @@
 import { TOLL } from '@meteortoll/core'
+import { LAUNCHPAD } from './config'
+
+export function clientIp(headers: Headers): string {
+    const direct = headers.get('x-vercel-forwarded-for') ?? headers.get('x-real-ip')
+    if (direct) return direct.trim()
+    return headers.get('x-forwarded-for')?.split(',').pop()?.trim() || 'unknown'
+}
 
 const ALLOWED = new Set([
     'getAccountInfo',
@@ -46,6 +53,11 @@ export function refusal(call: RpcCall): string | null {
         if (program !== TOLL.toBase58()) return 'getProgramAccounts is only allowed for the toll program'
         const filters = (config as { filters?: unknown } | undefined)?.filters
         if (!Array.isArray(filters) || filters.length === 0) return 'getProgramAccounts needs a filter'
+        const scoped = filters.some((f) => {
+            const memcmp = (f as { memcmp?: { offset?: unknown; bytes?: unknown } } | null)?.memcmp
+            return memcmp?.offset === 8 && memcmp.bytes === LAUNCHPAD.toBase58()
+        })
+        if (!scoped) return "getProgramAccounts must filter on this site's launchpad"
     }
     return null
 }

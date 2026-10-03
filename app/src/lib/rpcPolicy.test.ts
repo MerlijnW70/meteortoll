@@ -1,7 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { TOLL } from '@meteortoll/core'
-import { Budget, canonical, fromThisSite, refusal } from './rpcPolicy'
+import { Budget, canonical, clientIp, fromThisSite, refusal } from './rpcPolicy'
+import { LAUNCHPAD } from './config'
 
 const URL_ = 'https://meteortoll.vercel.app/api/rpc'
 const headers = (h: Record<string, string>) => new Headers(h)
@@ -26,7 +27,11 @@ test('refused requests', () => {
     assert.match(refusal({ method: 'getProgramAccounts', params: ['TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'] })!, /toll program/)
     assert.match(refusal({ method: 'getProgramAccounts', params: [TOLL.toBase58()] })!, /filter/)
     assert.match(refusal({ method: 'getProgramAccounts', params: [TOLL.toBase58(), { filters: [] }] })!, /filter/)
-    assert.equal(refusal({ method: 'getProgramAccounts', params: [TOLL.toBase58(), { filters: [{ memcmp: { offset: 8, bytes: 'x' } }] }] }), null)
+    assert.match(refusal({ method: 'getProgramAccounts', params: [TOLL.toBase58(), { filters: [{ memcmp: { offset: 8, bytes: 'x' } }] }] })!, /launchpad/)
+    assert.match(refusal({ method: 'getProgramAccounts', params: [TOLL.toBase58(), { filters: [{ dataSize: 277 }] }] })!, /launchpad/)
+    assert.match(refusal({ method: 'getProgramAccounts', params: [TOLL.toBase58(), { filters: [{ memcmp: { offset: 40, bytes: LAUNCHPAD.toBase58() } }] }] })!, /launchpad/)
+    assert.match(refusal({ method: 'getProgramAccounts', params: [TOLL.toBase58(), { filters: [null] }] })!, /launchpad/)
+    assert.equal(refusal({ method: 'getProgramAccounts', params: [TOLL.toBase58(), { filters: [{ dataSize: 277 }, { memcmp: { offset: 8, bytes: LAUNCHPAD.toBase58() } }] }] }), null)
     assert.equal(refusal({ method: 'getBalance', params: ['x'] }), null)
 })
 
@@ -95,4 +100,13 @@ test('budget forgets stale clients', () => {
     budget.over('b', 5, 0)
     budget.over('c', 1, 2_000)
     assert.equal(budget.over('a', 1, 2_100), false)
+})
+
+test('client ip', () => {
+    const ip = (h: Record<string, string>) => clientIp(new Headers(h))
+    assert.equal(ip({ 'x-vercel-forwarded-for': '1.2.3.4', 'x-real-ip': '5.6.7.8', 'x-forwarded-for': '9.9.9.9, 1.2.3.4' }), '1.2.3.4')
+    assert.equal(ip({ 'x-real-ip': ' 5.6.7.8 ', 'x-forwarded-for': '9.9.9.9' }), '5.6.7.8')
+    assert.equal(ip({ 'x-forwarded-for': 'spoofed, 1.2.3.4' }), '1.2.3.4')
+    assert.equal(ip({ 'x-forwarded-for': '1.2.3.4' }), '1.2.3.4')
+    assert.equal(ip({}), 'unknown')
 })

@@ -15,10 +15,11 @@ const TRANSIENT = ['network', 'busy', 'expired']
 const problems = new Map<string, { at: number; value: Promise<ProblemView> }>()
 
 const LIST_TTL_MS = 30_000
+const MIN_REFRESH_MS = 5_000
 let list: { at: number; value: Promise<ProblemView[]> } | null = null
 
 export function serverProblems(now = Date.now(), fresh = false): Promise<ProblemView[]> {
-    if (!fresh && list && now - list.at < LIST_TTL_MS) return list.value
+    if (list && now - list.at < (fresh ? MIN_REFRESH_MS : LIST_TTL_MS)) return list.value
     const value = fetchProblems(serverConnection())
     const entry = { at: now, value }
     list = entry

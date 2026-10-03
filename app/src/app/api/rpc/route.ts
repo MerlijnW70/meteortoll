@@ -1,5 +1,5 @@
 import { MAX_BATCH, MAX_BODY_BYTES } from '@/lib/proxyLimits'
-import { Budget, canonical, count, fromThisSite, HEAVY_READS, refusal, RELAYS, type RpcCall } from '@/lib/rpcPolicy'
+import { Budget, canonical, clientIp, count, fromThisSite, HEAVY_READS, refusal, RELAYS, type RpcCall } from '@/lib/rpcPolicy'
 import { postWithFailover, rpcUpstreams } from '@/lib/upstream'
 
 const WINDOW_MS = 10_000
@@ -17,7 +17,7 @@ const deny = (status: number, error: string) => Response.json({ error }, { statu
 export async function POST(request: Request) {
     if (!fromThisSite(request.headers, request.url)) return deny(403, 'only this site’s pages may use this relay')
 
-    const client = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+    const client = clientIp(request.headers)
     if (requests.over(client, 1) || allRequests.over(ALL, 1)) return deny(429, 'too many requests')
 
     const text = await request.text()

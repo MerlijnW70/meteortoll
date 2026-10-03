@@ -1,12 +1,12 @@
 import { PublicKey } from '@solana/web3.js'
 import type { ProblemView } from '@/lib/chain'
-import { Budget } from '@/lib/rpcPolicy'
+import { Budget, clientIp } from '@/lib/rpcPolicy'
 import { serverProblems } from '@/lib/server'
 
 const lookups = new Budget(600, 60_000)
 
 export async function GET(request: Request, context: RouteContext<'/api/metadata/[mint]'>) {
-    const client = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+    const client = clientIp(request.headers)
     if (lookups.over(client, 1)) return Response.json({ error: 'too many requests' }, { status: 429 })
     const { mint } = await context.params
     let key: PublicKey
@@ -22,7 +22,7 @@ export async function GET(request: Request, context: RouteContext<'/api/metadata
         console.error('[metadata] lookup failed', error instanceof Error ? error.message : String(error))
         return Response.json({ error: 'metadata is temporarily unavailable' }, { status: 502, headers: { 'cache-control': 'no-store' } })
     }
-    if (!problem) return Response.json({ error: 'no problem uses this mint' }, { status: 404, headers: { 'cache-control': 'no-store' } })
+    if (!problem) return Response.json({ error: 'no problem uses this mint' }, { status: 404, headers: { 'cache-control': 'public, s-maxage=5' } })
     const { n1, n2, n3, targetRank } = problem.account
     const origin = new URL(request.url).origin
     const record = problem.info.bestKnown ? ` Best known rank ${problem.info.bestKnown.rank} (${problem.info.bestKnown.source}, ${problem.info.bestKnown.asOf}).` : ''
