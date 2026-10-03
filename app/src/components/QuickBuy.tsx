@@ -10,7 +10,9 @@ import { notifyError, notifySuccess } from '@/lib/notify'
 
 const QUICK_MAX_FEE_PERCENT = 1.5
 
-export function QuickBuy({ problem, sol = 0.1 }: { problem: ProblemView; sol?: number }) {
+const STYLE = 'num rounded-md bg-good/15 px-3 py-1.5 text-xs font-semibold text-good hover:bg-good/25 disabled:opacity-50'
+
+export function QuickBuy({ problem, sol = 0.1, className = STYLE }: { problem: ProblemView; sol?: number; className?: string }) {
     const { connection } = useConnection()
     const { publicKey, sendTransaction } = useWallet()
     const { setVisible } = useWalletModal()
@@ -39,7 +41,7 @@ export function QuickBuy({ problem, sol = 0.1 }: { problem: ProblemView; sol?: n
             onClick={buy}
             disabled={busy}
             aria-label={`Buy ${sol} SOL of ${problem.info.symbol || 'this problem'}`}
-            className="num rounded-md bg-good/15 px-3 py-1.5 text-xs font-semibold text-good hover:bg-good/25 disabled:opacity-50"
+            className={className}
         >
             {busy ? 'Buying…' : `Buy ${sol} SOL`}
         </button>

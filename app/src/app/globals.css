@@ -14,6 +14,8 @@
   --bad: #ff5c6c;
   --warn: #ffb547;
   --shimmer: #20242c;
+  --art-s: 30%;
+  --art-l: 15%;
 }
 
 :root[data-theme="light"] {
@@ -30,6 +32,8 @@
   --bad: #d12b3a;
   --warn: #a5520a;
   --shimmer: #e6e9ee;
+  --art-s: 70%;
+  --art-l: 96%;
 }
 
 @theme inline {

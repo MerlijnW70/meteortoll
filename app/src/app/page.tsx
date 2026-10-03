@@ -47,9 +47,9 @@ function Problems({ listed, isLoading }: { listed: ProblemView[] | undefined; is
                 </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {isLoading && [0, 1, 2].map((i) => <Skeleton key={i} className="h-56" />)}
+                {isLoading && [0, 1, 2].map((i) => <Skeleton key={i} className="h-80" />)}
                 {items.map((p) => (
-                    <ProblemCard key={p.address} problem={p} showPhase={filter === 'all'} />
+                    <ProblemCard key={p.address} problem={p} />
                 ))}
             </div>
             {!isLoading && items.length === 0 && (
