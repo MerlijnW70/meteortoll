@@ -41,4 +41,4 @@ jobs:
         run: node node_modules/tsx/dist/cli.mjs --tsconfig app/tsconfig.json app/scripts/keeper.mts
         env:
           KEEPER_SECRET_KEY: ${{ secrets.KEEPER_SECRET_KEY }}
-          SOLANA_RPC_URL: ${{ secrets.SOLANA_RPC_URL }}
+          SOLANA_RPC_URL: ${{ secrets.KEEPER_RPC_URL || secrets.SOLANA_RPC_URL }}

@@ -11,6 +11,28 @@ export const PROGRAM_DATA_HEADER = 4 + 8 + 1 + 32
 const BUFFER_HEADER = 4 + 1 + 32
 const PROGRAM_ACCOUNT = 4 + 32
 export const LAUNCH_LAMPORTS = 25_610_600
+export const launchLamports = (launchFeeSol: number) => LAUNCH_LAMPORTS + Math.round(launchFeeSol * 1e9)
+export const MIN_GRACE_SLOTS = 150
+export const MAX_GRACE_SLOTS = 216_000
+export const MAX_DIMENSION = 255
+export const MAX_PRODUCT_COST = 4_096
+
+export function statementProblem(n: number[], target: number): string | null {
+    if (n.length !== 3 || !n.every((v) => Number.isInteger(v) && v >= 1 && v <= MAX_DIMENSION)) return `each dimension must be a whole number from 1 to ${MAX_DIMENSION}`
+    const [a, b, c] = n
+    if (a * b + b * c + c * a > MAX_PRODUCT_COST) return `${a}×${b}×${c} is too large to verify on-chain (n1n2 + n2n3 + n3n1 must be at most ${MAX_PRODUCT_COST})`
+    if (!Number.isInteger(target) || target < Math.max(a * b, b * c, c * a) || target >= a * b * c) return `the target must be from ${Math.max(a * b, b * c, c * a)} to ${a * b * c - 1}`
+    return null
+}
+
+export function siteProblem(uri: string, mainnet: boolean): string | null {
+    if (!mainnet) return null
+    try {
+        return new URL(uri).protocol === 'https:' ? null : 'on mainnet the metadata URI must use https; it is permanent'
+    } catch {
+        return `${uri} is not a URL`
+    }
+}
 export const SETUP_LAMPORTS = 30_000_000
 const WRITE_CHUNK = 1_000
 const SIGNATURE_FEE = 5_000

@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { Keypair, type Connection } from '@solana/web3.js'
-import { assertCluster, clusterOf, deployCost, GENESIS, PROGRAM_DATA_HEADER, programDataMatches, upgradeAuthority } from './preflight.js'
+import { assertCluster, clusterOf, deployCost, GENESIS, LAUNCH_LAMPORTS, launchLamports, PROGRAM_DATA_HEADER, programDataMatches, siteProblem, statementProblem, upgradeAuthority } from './preflight.js'
 
 function programData(body: number[], authority: Uint8Array | null, padding = 0): Uint8Array {
     const data = new Uint8Array(PROGRAM_DATA_HEADER + body.length + padding)
@@ -62,4 +62,24 @@ test('cluster guard', async () => {
     await assert.rejects(assertCluster(at(GENESIS.mainnet), 'localnet'), /serves mainnet/)
     await assert.rejects(assertCluster(at('abc'), 'mainnet'), /unknown \(abc\)/)
     await assert.rejects(assertCluster(at('abc'), 'devnet'), /unknown \(abc\)/)
+})
+
+test('launch fee counted', () => {
+    assert.equal(launchLamports(0), LAUNCH_LAMPORTS)
+    assert.equal(launchLamports(0.05), LAUNCH_LAMPORTS + 50_000_000)
+})
+
+test('statement limits', () => {
+    assert.equal(statementProblem([7, 7, 9], 314), null)
+    assert.match(statementProblem([256, 2, 2], 600)!, /1 to 255/)
+    assert.match(statementProblem([40, 40, 40], 1_600)!, /too large/)
+    assert.match(statementProblem([2, 2, 2], 3)!, /target/)
+    assert.match(statementProblem([2, 2, 2], 8)!, /target/)
+})
+
+test('mainnet uri', () => {
+    assert.equal(siteProblem('http://localhost:3000/api/metadata/x', false), null)
+    assert.match(siteProblem('http://localhost:3000/api/metadata/x', true)!, /https/)
+    assert.equal(siteProblem('https://meteortoll.vercel.app/api/metadata/x', true), null)
+    assert.match(siteProblem('not a url', true)!, /not a URL/)
 })

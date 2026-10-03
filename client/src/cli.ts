@@ -25,10 +25,24 @@ import {
 } from './env.js'
 import { launchParams, type Profile } from './params.js'
 import type { Economics } from '@meteortoll/core'
-import { assertCluster, BPF_LOADER_UPGRADEABLE, clusterOf, deployCost, LAUNCH_LAMPORTS, programDataMatches, SETUP_LAMPORTS, sha256, upgradeAuthority } from './preflight.js'
+import {
+    assertCluster,
+    BPF_LOADER_UPGRADEABLE,
+    clusterOf,
+    deployCost,
+    launchLamports,
+    MAX_GRACE_SLOTS,
+    MIN_GRACE_SLOTS,
+    programDataMatches,
+    SETUP_LAMPORTS,
+    sha256,
+    siteProblem,
+    statementProblem,
+    upgradeAuthority,
+} from './preflight.js'
 import { metadataUri, SITE_URL } from './site.js'
 import { buyTransaction, MAX_FEE_PERCENT, parseLimits, SLIPPAGE_BPS } from './trade.js'
-import { targetProblem } from '../../app/src/lib/known.js'
+import { knownFormat, targetProblem } from '../../app/src/lib/known.js'
 import { commitment, encodeScheme, type FmmScheme, schemeHeader, VERIFY_BUDGET } from '@meteortoll/core'
 import {
     attemptAddress,
@@ -82,6 +96,8 @@ async function setup(args: string[]) {
         return
     }
     const grace = Number(flag(args, 'grace', CLUSTER === 'mainnet' ? '9000' : '150'))
+    if (!Number.isInteger(grace) || grace < MIN_GRACE_SLOTS || grace > MAX_GRACE_SLOTS) throw new Error(`--grace must be from ${MIN_GRACE_SLOTS} to ${MAX_GRACE_SLOTS} slots`)
+    if (CLUSTER === 'mainnet' && !args.includes('--treasury')) throw new Error('on mainnet, pass --treasury <address> explicitly: the fee claimer is permanent')
     const treasury = new PublicKey(flag(args, 'treasury', wallet.publicKey.toBase58()))
     const config = Keypair.generate()
     const settings = clusterEconomics()
@@ -111,11 +127,15 @@ async function setup(args: string[]) {
 async function launch(args: string[]) {
     const [n1, n2, n3, target] = args.slice(0, 4).map(Number)
     if (![n1, n2, n3, target].every((v) => Number.isInteger(v) && v >= 1)) throw new Error('usage: launch n1 n2 n3 target --name NAME --symbol SYMBOL')
-    if (target >= n1 * n2 * n3) throw new Error(`the target must be below the schoolbook rank ${n1 * n2 * n3}`)
+    const invalid = statementProblem([n1, n2, n3], target)
+    if (invalid) throw new Error(`launch refused: ${invalid}`)
     const refused = targetProblem([n1, n2, n3], target)
     if (refused) throw new Error(`launch refused: ${refused}`)
+    const team = knownFormat(n1, n2, n3)?.team
+    if (team && team.rank <= target && !args.includes('--demo')) throw new Error(`launch refused: the team already holds a rank-${team.rank} scheme for this format; pass --demo to launch it as a disclosed demo`)
     const name = flag(args, 'name')
     const symbol = flag(args, 'symbol')
+    if (name.length > 32 || symbol.length > 10) throw new Error('the name may have at most 32 characters and the symbol at most 10')
     const state = loadState()
     if (!state.config || !state.launchpad) throw new Error('run setup first')
     const config = new PublicKey(state.config)
@@ -123,6 +143,8 @@ async function launch(args: string[]) {
     const base = resumePool ? null : Keypair.generate()
     const baseMint = base ? base.publicKey : new PublicKey(flag(args, 'base'))
     const uri = flag(args, 'uri', metadataUri(SITE_URL, baseMint.toBase58()))
+    const badUri = siteProblem(uri, CLUSTER === 'mainnet')
+    if (badUri) throw new Error(`launch refused: ${badUri}`)
     const pool = deriveDbcPoolAddress(NATIVE_MINT, baseMint, config)
     if (resumePool && !pool.equals(new PublicKey(resumePool))) throw new Error('--pool does not match --base and the config')
     const problem = problemAddress(new PublicKey(state.launchpad), pool, [n1, n2, n3], target)
@@ -471,7 +493,7 @@ async function preflight(args: string[]) {
     if (!state.launchpad) needed += SETUP_LAMPORTS
     console.log(`launchpad: ${state.launchpad ?? 'not set up'}`)
     const problems = Number(flag(args, 'problems', '4'))
-    needed += problems * LAUNCH_LAMPORTS + MARGIN_LAMPORTS
+    needed += problems * launchLamports(clusterEconomics().launchFeeSol) + MARGIN_LAMPORTS
     const balance = await connection.getBalance(wallet.publicKey)
     console.log(`wallet ${wallet.publicKey.toBase58()}: ${SOL(balance)} SOL; the remaining stages and ${problems} launch(es) need ${SOL(needed)} SOL`)
     if (balance < needed) fail(`short by ${SOL(needed - balance)} SOL`)
