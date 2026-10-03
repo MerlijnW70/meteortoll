@@ -1,5 +1,5 @@
 import { BOND_LAMPORTS } from '@meteortoll/core'
-import { ECONOMICS, HAS_TREASURY, LAUNCH_FEE_SOL, LAUNCH_WINDOW, LAUNCH_WINDOW_TEXT, SPLIT } from '@/lib/economics'
+import { ECONOMICS, HAS_TREASURY, LAUNCH_FEE_SOL, LAUNCH_WINDOW, LAUNCH_WINDOW_TEXT, PROTOCOL_LAUNCH_FEE_PERCENT, SPLIT } from '@/lib/economics'
 import { More } from '../ui'
 
 const BOND_SOL = Number(BOND_LAMPORTS) / 1e9
@@ -85,7 +85,7 @@ export function MoneyFlow() {
                     The meteortoll treasury takes
                     {HAS_TREASURY && <> {ECONOMICS.treasurySharePercent}% of what the protocol leaves of each fee, and as much of a full curve&apos;s surplus</>}
                     {HAS_TREASURY && LAUNCH_FEE_SOL > 0 && <>, and</>}
-                    {LAUNCH_FEE_SOL > 0 && <> a {LAUNCH_FEE_SOL} SOL fee per launch</>}. It is set in the launchpad&apos;s config on-chain and cannot change.
+                    {LAUNCH_FEE_SOL > 0 && <> a {LAUNCH_FEE_SOL} SOL fee per launch, of which Meteora keeps {PROTOCOL_LAUNCH_FEE_PERCENT}%</>}. It is set in the launchpad&apos;s config on-chain and cannot change.
                 </p>
             )}
 

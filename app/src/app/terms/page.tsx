@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { PageIntro, Panel } from '@/components/ui'
 import { REPO_URL } from '@/lib/config'
-import { ECONOMICS, HAS_TREASURY, LAUNCH_FEE_SOL, LAUNCH_WINDOW_TEXT, TREASURY_SHARE } from '@/lib/economics'
+import { ECONOMICS, HAS_TREASURY, LAUNCH_FEE_SOL, LAUNCH_WINDOW_TEXT, PROTOCOL_LAUNCH_FEE_PERCENT, TREASURY_SHARE } from '@/lib/economics'
 
 export const metadata: Metadata = { title: 'Terms and risks' }
 
@@ -82,7 +82,7 @@ export default function Terms() {
                         The meteortoll treasury takes
                         {HAS_TREASURY && <> {ECONOMICS.treasurySharePercent}% of the trading fee the protocol leaves ({TREASURY_SHARE} of each trade) and the same share of a full curve&apos;s surplus</>}
                         {HAS_TREASURY && LAUNCH_FEE_SOL > 0 && <>, and</>}
-                        {LAUNCH_FEE_SOL > 0 && <> {LAUNCH_FEE_SOL} SOL per launch</>}. These are fixed in the launchpad&apos;s on-chain config and cannot be raised later.
+                        {LAUNCH_FEE_SOL > 0 && <> {LAUNCH_FEE_SOL} SOL per launch, of which Meteora keeps {PROTOCOL_LAUNCH_FEE_PERCENT}%</>}. These are fixed in the launchpad&apos;s on-chain config and cannot be raised later.
                     </p>
                 )}
                 <p>

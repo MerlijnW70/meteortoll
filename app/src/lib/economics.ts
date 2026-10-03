@@ -13,5 +13,6 @@ export const TREASURY_SHARE = percentOfTrade(SPLIT.treasury)
 export const PROTOCOL_SHARE = percentOfTrade(SPLIT.protocol)
 export const HAS_TREASURY = ECONOMICS.treasurySharePercent > 0
 export const LAUNCH_FEE_SOL = ECONOMICS.launchFeeSol
+export { PROTOCOL_LAUNCH_FEE_PERCENT } from './dbc'
 export const LAUNCH_WINDOW = ECONOMICS.launchWindow ?? null
 export const LAUNCH_WINDOW_TEXT = LAUNCH_WINDOW ? launchWindowText(LAUNCH_WINDOW) : null

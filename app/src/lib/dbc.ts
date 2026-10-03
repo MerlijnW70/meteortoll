@@ -3,3 +3,4 @@ import idl from '../../../idls/dynamic_bonding_curve.json'
 
 export const dbcIdl = idl as Idl
 export const PROTOCOL_FEE_PERCENT = 20
+export const PROTOCOL_LAUNCH_FEE_PERCENT = 10
