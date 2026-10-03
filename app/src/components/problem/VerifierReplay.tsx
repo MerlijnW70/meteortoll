@@ -12,7 +12,7 @@ import { recoverScheme } from '@/lib/history'
 import { type Progress, sharedVerifier } from '@/lib/verifier'
 import { count } from '@/lib/format'
 import { errorBoundText } from '@/lib/bound'
-import { Panel, short, Skeleton } from '../ui'
+import { short, Skeleton } from '../ui'
 
 const FRAMES = 90
 
@@ -71,11 +71,8 @@ export function VerifierReplay({ problem }: { problem: ProblemView }) {
     const tripleShare = state?.directDone ? 1 : 0
 
     return (
-        <Panel className="space-y-4 p-5">
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h2 className="font-medium">Check it yourself</h2>
-                <span className="text-xs text-faint">the program&apos;s verifier, compiled to WebAssembly, running in your browser</span>
-            </div>
+        <div className="space-y-4">
+            <p className="text-sm text-muted">The program&apos;s own verifier, compiled to WebAssembly, runs in your browser.</p>
             {recovered.isLoading && <Skeleton className="h-24" />}
             {recovered.data === null && <p className="text-sm text-muted">The winning upload could not be found in this RPC&apos;s history.</p>}
             {recovered.data && (
@@ -154,6 +151,6 @@ export function VerifierReplay({ problem }: { problem: ProblemView }) {
                     </p>
                 </>
             )}
-        </Panel>
+        </div>
     )
 }

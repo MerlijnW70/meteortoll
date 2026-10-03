@@ -5,7 +5,7 @@ import { useHistory } from '@/hooks/useHistory'
 import type { ProblemView } from '@/lib/chain'
 import { explorer } from '@/lib/config'
 import type { EventKind } from '@/lib/history'
-import { Panel, short, ShowAll, Skeleton, sol } from '../ui'
+import { short, ShowAll, Skeleton, sol } from '../ui'
 
 const labels: Record<EventKind, [string, string]> = {
     register: ['Launched', 'text-muted'],
@@ -32,8 +32,7 @@ export function History({ problem }: { problem: ProblemView }) {
     const newest = data ? [...data].reverse() : []
     const shown = open ? newest : newest.slice(0, FIRST)
     return (
-        <Panel className="p-5">
-            <h2 className="mb-3 font-medium">History</h2>
+        <div>
             {isLoading && <Skeleton className="h-32" />}
             {error && <p className="text-sm text-bad">History could not be loaded.</p>}
             {data && (
@@ -63,6 +62,6 @@ export function History({ problem }: { problem: ProblemView }) {
                 </ol>
             )}
             {newest.length > FIRST && <ShowAll open={open} total={newest.length} onToggle={() => setOpen(!open)} />}
-        </Panel>
+        </div>
     )
 }

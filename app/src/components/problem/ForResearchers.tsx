@@ -1,7 +1,7 @@
 import { TOLL } from "@meteortoll/core";
 import type { ProblemView } from "@/lib/chain";
 import { explorer } from "@/lib/config";
-import { More, Panel } from "../ui";
+import { More } from "../ui";
 
 export function ForResearchers({ problem }: { problem: ProblemView }) {
   const rows: [string, string][] = [
@@ -12,8 +12,7 @@ export function ForResearchers({ problem }: { problem: ProblemView }) {
     ["Bounty vault", problem.account.quoteVault.toBase58()],
   ];
   return (
-    <Panel className="p-5">
-      <h2 className="mb-2 font-medium">For researchers</h2>
+    <div>
       <More label="Addresses and scheme format">
         <p className="mb-3 text-sm text-muted">
           Submit an <span className="font-mono">fmm</span> JSON scheme with
@@ -41,6 +40,6 @@ export function ForResearchers({ problem }: { problem: ProblemView }) {
           ))}
         </dl>
       </More>
-    </Panel>
+    </div>
   );
 }

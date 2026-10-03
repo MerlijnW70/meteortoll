@@ -5,7 +5,7 @@ import type { ProblemView } from '@/lib/chain'
 import { explorer } from '@/lib/config'
 import { useTrades } from '@/hooks/useMarket'
 import { ago } from '@/lib/format'
-import { Panel, short, ShowAll, Skeleton, sol } from '../ui'
+import { short, ShowAll, Skeleton, sol } from '../ui'
 
 const FEED_LENGTH = 20
 const FIRST = 6
@@ -16,8 +16,7 @@ export function TradeFeed({ problem }: { problem: ProblemView }) {
     const [open, setOpen] = useState(false)
     const shown = open ? data : data?.slice(0, FIRST)
     return (
-        <Panel className="p-5">
-            <h2 className="mb-3 font-medium">Trades</h2>
+        <div>
             {isLoading && <Skeleton className="h-24" />}
             {error && <p className="text-sm text-bad">Trades could not be loaded.</p>}
             {data && data.length === 0 && <p className="py-6 text-center text-sm text-faint">No trades yet. The first buy starts the bounty.</p>}
@@ -50,6 +49,6 @@ export function TradeFeed({ problem }: { problem: ProblemView }) {
                 </table>
             )}
             {data && data.length > FIRST && <ShowAll open={open} total={data.length} onToggle={() => setOpen(!open)} />}
-        </Panel>
+        </div>
     )
 }

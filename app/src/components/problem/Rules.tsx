@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { TOLL } from '@meteortoll/core'
 import type { ProblemView } from '@/lib/chain'
 import { errorBoundText } from '@/lib/bound'
-import { Panel, shape, short } from '../ui'
+import { shape, short } from '../ui'
 
 const SLOT_SECONDS = 0.4
 
@@ -14,8 +14,7 @@ export function Rules({ problem }: { problem: ProblemView }) {
     const coefficients = problem.info.coefficients
     const grace = problem.account.graceSlots.toNumber()
     return (
-        <Panel className="p-5">
-            <h2 className="mb-3 font-medium">Rules</h2>
+        <div>
             <ul className="space-y-1.5 text-sm">
                 <li>
                     <span className="text-muted">What counts · </span>a scheme with rank ≤ {target}, coefficients {coefficients}.
@@ -48,6 +47,6 @@ export function Rules({ problem }: { problem: ProblemView }) {
                     <li>No expiry. The statement is fixed in the problem address and cannot change.</li>
                 </ul>
             )}
-        </Panel>
+        </div>
     )
 }

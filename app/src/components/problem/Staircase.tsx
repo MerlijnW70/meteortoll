@@ -1,17 +1,16 @@
 import type { ProblemView } from '@/lib/chain'
-import { Panel, shape } from '../ui'
+import { shape } from '../ui'
 
 export function Staircase({ problem }: { problem: ProblemView }) {
     const { naive, target } = shape(problem)
     const best = problem.info.bestKnown
     const steps = [
-        { label: 'Schoolbook', rank: naive },
-        ...(best ? [{ label: 'Best published', rank: best.rank }] : []),
-        { label: 'Target', rank: target },
+        { label: 'Usual way', rank: naive },
+        ...(best ? [{ label: 'Best known', rank: best.rank }] : []),
+        { label: 'Goal', rank: target },
     ]
     return (
-        <Panel className="p-5">
-            <h2 className="mb-4 font-medium">The record to beat</h2>
+        <div>
             <div className="space-y-3">
                 {steps.map((step, i) => (
                     <div key={step.label} className="grid grid-cols-[7rem_1fr_3.5rem] items-center gap-3 text-sm">
@@ -34,6 +33,6 @@ export function Staircase({ problem }: { problem: ProblemView }) {
                     , {best.asOf}
                 </p>
             )}
-        </Panel>
+        </div>
     )
 }

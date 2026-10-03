@@ -5,7 +5,7 @@ import type { ProblemView } from '@/lib/chain'
 import { useTrades } from '@/hooks/useMarket'
 import { type Trade, solPerToken } from '@/lib/trades'
 import { useTheme } from '../ThemeSwitch'
-import { Panel, Skeleton } from '../ui'
+import { Skeleton } from '../ui'
 
 const SUPPLY = 1_000_000_000
 
@@ -66,9 +66,9 @@ export function PriceChart({ problem }: { problem: ProblemView }) {
 
     const latest = series.at(-1)?.value
     return (
-        <Panel className="p-5">
+        <div>
             <div className="mb-3 flex items-baseline justify-between">
-                <h2 className="font-medium">Market cap</h2>
+                <span className="text-sm text-muted">Market cap</span>
                 <span className="num text-sm text-muted">{latest !== undefined ? `${latest.toLocaleString('en-US', { maximumFractionDigits: 3 })} SOL` : ''}</span>
             </div>
             {isLoading && <Skeleton className="h-56" />}
@@ -77,6 +77,6 @@ export function PriceChart({ problem }: { problem: ProblemView }) {
                 <p className="py-2 text-sm text-faint">The chart appears after the first two trades.</p>
             )}
             {series.length >= 2 && <div ref={container} className="h-56" role="img" aria-label={`Market cap after each of the last ${series.length} trades`} />}
-        </Panel>
+        </div>
     )
 }

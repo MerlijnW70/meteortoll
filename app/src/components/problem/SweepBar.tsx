@@ -11,7 +11,7 @@ import { notifyError, notifySuccess } from '@/lib/notify'
 import { sweepTxs, tollWriter } from '@/lib/solve'
 import { previewGain, sweepPlan } from '@/lib/sweeps'
 import { sendWithWallet } from '@/lib/tx'
-import { Panel, sol } from '../ui'
+import { sol } from '../ui'
 
 const listed = (items: string[]) => (items.length < 3 ? items.join(' and ') : `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`)
 
@@ -72,7 +72,7 @@ export function SweepBar({ problem }: { problem: ProblemView }) {
               : 'Fees'
     const where = problem.phase === 'open' ? 'the bounty' : "the vault the solver claims from"
     return (
-        <Panel className="flex flex-wrap items-center justify-between gap-3 p-4 text-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4 text-sm">
             <p>
                 <span className="num font-medium">{amount}</span>{' '}
                 <span className="text-muted" title={`From ${listed(sources)}. Anyone can sweep it.`}>
@@ -82,6 +82,6 @@ export function SweepBar({ problem }: { problem: ProblemView }) {
             <button onClick={sweep} disabled={busy} className="rounded-lg border border-accent/60 px-3 py-1.5 font-medium text-accent hover:bg-accent/10 disabled:opacity-40">
                 {busy ? 'Sweeping…' : !wallet ? 'Connect wallet to sweep' : problem.phase === 'open' ? 'Sweep into the bounty' : 'Sweep into the vault'}
             </button>
-        </Panel>
+        </div>
     )
 }
