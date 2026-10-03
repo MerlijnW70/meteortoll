@@ -1,8 +1,8 @@
 {
   "devnet": { "treasurySharePercent": 0, "launchFeeSol": 0, "launchWindow": null },
   "mainnet": {
-    "treasurySharePercent": 0,
-    "launchFeeSol": 0,
+    "treasurySharePercent": 20,
+    "launchFeeSol": 0.05,
     "launchWindow": { "startingFeeBps": 5000, "endingFeeBps": 100, "numberOfPeriod": 24, "totalDurationSlots": 360 }
   }
 }
