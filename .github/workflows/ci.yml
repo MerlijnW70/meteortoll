@@ -52,7 +52,11 @@ jobs:
           key: program-${{ env.SOLANA_VERSION }}-${{ hashFiles('Cargo.lock') }}
       - name: Solana toolchain
         run: |
-          [ -x "$HOME/.local/share/solana/install/active_release/bin/solana" ] || sh -c "$(curl -sSfL "https://release.anza.xyz/$SOLANA_VERSION/install")"
+          if [ ! -x "$HOME/.local/share/solana/install/active_release/bin/solana" ]; then
+            curl -sSfL "https://release.anza.xyz/$SOLANA_VERSION/install" -o solana-install.sh
+            echo "53573ebca5559b0a1fd640c32d00651f8b225a273b072454fb10d6d6506be48a  solana-install.sh" | sha256sum -c -
+            sh solana-install.sh
+          fi
           echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
       - name: Meteora and Metaplex programs from mainnet
         run: |
@@ -81,13 +85,19 @@ jobs:
           path: ~/.cargo/bin/solana-verify
           key: solana-verify-0.5.2
       - run: '[ -x ~/.cargo/bin/solana-verify ] || cargo install solana-verify --version 0.5.2 --locked'
+      - name: The build image is the pinned one
+        run: |
+          docker pull solanafoundation/solana-verifiable-build:4.1.2
+          test "$(docker inspect --format '{{index .RepoDigests 0}}' solanafoundation/solana-verifiable-build:4.1.2)" = "solanafoundation/solana-verifiable-build@sha256:2e0b78f44ee76612e9260c7c988570c5e14de6fbd93e0ab07115ec7054473b4f"
       - name: Build in the verifiable container
         run: ~/.cargo/bin/solana-verify build --library-name toll --base-image solanafoundation/solana-verifiable-build:4.1.2 --cargo-build-sbf-args="--tools-version v1.57"
       - name: Program hash
         run: ~/.cargo/bin/solana-verify get-executable-hash target/deploy/toll.so | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Solana toolchain
         run: |
-          sh -c "$(curl -sSfL "https://release.anza.xyz/v4.1.2/install")"
+          curl -sSfL "https://release.anza.xyz/v4.1.2/install" -o solana-install.sh
+          echo "53573ebca5559b0a1fd640c32d00651f8b225a273b072454fb10d6d6506be48a  solana-install.sh" | sha256sum -c -
+          sh solana-install.sh
           echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
       - name: Meteora and Metaplex programs from mainnet
         run: |
