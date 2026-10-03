@@ -100,7 +100,7 @@ export default function Me() {
     const error = problems.error ?? portfolio.error
     const data = portfolio.data
     const attempts = data?.positions.filter((p) => p.attempt) ?? []
-    const claimable = data?.positions.filter((p) => p.claimable && totalBounty(p.problem) > 0n) ?? []
+    const claimable = data?.positions.filter((p) => p.claimable && (totalBounty(p.problem) > 0n || !!p.attempt)) ?? []
     const holdings = rows.reduce((sum, r) => sum + (r.value ?? 0n), 0n)
     const priced = rows.filter((r) => r.unrealized !== null)
     const unrealized = priced.reduce((sum, r) => sum + r.unrealized!, 0n)
@@ -181,7 +181,7 @@ export default function Me() {
                         </h2>
                         {rows.length === 0 ? (
                             <Panel className="border-dashed p-8 text-center text-sm text-muted">
-                                <p>You hold no problem tokens yet. Every trade adds to a bounty for whoever beats a record.</p>
+                                <p>You hold no problem tokens yet. Every trade adds to a prize for whoever beats a record.</p>
                                 <Link href="/" className={`mt-4 ${BUTTON}`}>
                                     Browse problems
                                 </Link>

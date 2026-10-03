@@ -11,6 +11,7 @@ import { sendReport, worthReporting } from '@/lib/report'
 import { NetworkStatus } from '@/components/NetworkStatus'
 import { WalletLayer } from '@/components/wallet/WalletLayer'
 import '@/styles/wallet-adapter.css'
+import { useTheme } from '@/components/ThemeSwitch'
 
 globalThis.Buffer ??= Buffer
 
@@ -57,9 +58,14 @@ export function Providers({ children }: { children: ReactNode }) {
                     <NetworkStatus />
                     <UncaughtErrors />
                     {children}
-                    <Toaster theme="dark" position="bottom-right" richColors />
+                    <ThemedToaster />
                 </WalletLayer>
             </ConnectionProvider>
         </QueryClientProvider>
     )
+}
+
+function ThemedToaster() {
+    const { theme } = useTheme()
+    return <Toaster theme={theme} position="bottom-right" richColors />
 }

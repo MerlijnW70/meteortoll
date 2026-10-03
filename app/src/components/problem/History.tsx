@@ -9,13 +9,13 @@ import { short, ShowAll, Skeleton, sol } from '../ui'
 
 const labels: Record<EventKind, [string, string]> = {
     register: ['Launched', 'text-muted'],
-    sweep: ['Fees swept into the bounty', 'text-muted'],
+    sweep: ['Fees swept into the prize', 'text-muted'],
     commit: ['Committed a sealed scheme', 'text-accent'],
     reveal: ['Revealed', 'text-accent'],
     verify: ['Verification started', 'text-accent'],
     solved: ['Verified on-chain: holds', 'text-good'],
     failed: ['Verified on-chain: does not hold', 'text-bad'],
-    claim: ['Claimed the bounty', 'text-good'],
+    claim: ['Claimed the prize', 'text-good'],
     close: ['Closed the attempt', 'text-muted'],
 }
 

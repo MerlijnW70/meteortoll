@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import type { ProblemView } from './chain'
-import { cardChip, cardHues, cardTitle, colLight, mixHue, randomLook, rowLight } from './card'
+import { cardChip, cardHues, cardTitle, colLight, mixHue, randomLook, rowLight, shareState } from './card'
 
 const problem = (phase: ProblemView['phase'], n: [number, number, number], target: number, best?: number, listed = true) =>
     ({ phase, account: { n1: n[0], n2: n[1], n3: n[2], targetRank: target }, info: { bestKnown: best === undefined ? undefined : { rank: best }, listed } }) as unknown as ProblemView
@@ -59,4 +59,13 @@ test('light range', () => {
     for (let i = 0; i < 40; i++) {
         for (const l of [rowLight(i, 999), colLight(i, 999)]) assert.ok(l >= 46 && l < 68)
     }
+})
+
+test('share states', () => {
+    assert.equal(shareState(problem('open', [7, 7, 9], 314, 315), false), 'prize')
+    assert.equal(shareState(problem('grace', [7, 7, 9], 314, 315), false), 'review')
+    assert.equal(shareState(problem('solved', [7, 7, 9], 314, 315), false), 'solved')
+    assert.equal(shareState(problem('open', [7, 7, 9], 315, 315), false), 'notWinnable')
+    assert.equal(shareState(problem('open', [7, 7, 9], 314, 315, false), true), 'unreviewed')
+    assert.equal(shareState({ ...problem('open', [7, 7, 9], 314, 315), info: { kind: 'demo', listed: true, bestKnown: { rank: 315 } } } as never, false), 'demo')
 })

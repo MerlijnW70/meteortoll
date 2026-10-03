@@ -42,7 +42,7 @@ export function MoneyFlow() {
                         {HAS_TREASURY && <>, {fmt(TREASURY)} SOL to the meteortoll treasury</>}
                     </Node>
                     <Arrow />
-                    <Node title="The problem's bounty" value={`+${fmt(TO_BOUNTY)} SOL`} tone="text-good">
+                    <Node title="The problem's prize" value={`+${fmt(TO_BOUNTY)} SOL`} tone="text-good">
                         held by the program, not a person
                     </Node>
                     <Arrow />
@@ -53,7 +53,7 @@ export function MoneyFlow() {
             </figure>
 
             <div className="rounded-xl border border-dashed border-border p-4">
-                <p className="mb-3 text-sm font-medium">The bounty also grows from</p>
+                <p className="mb-3 text-sm font-medium">The prize also grows from</p>
                 <ul className={`grid gap-2 sm:grid-cols-2 ${LAUNCH_WINDOW ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
                     {LAUNCH_WINDOW && (
                         <li className="rounded-lg bg-panel-2 p-3 text-sm">
@@ -95,22 +95,22 @@ export function MoneyFlow() {
                         <dt className="inline font-medium">Trading fees. </dt>
                         <dd className="inline text-muted">
                             Every trade on the bonding curve pays 1%. Meteora&apos;s protocol keeps its share of that fee
-                            {HAS_TREASURY ? `, the meteortoll treasury ${ECONOMICS.treasurySharePercent}% of the rest,` : ''} and the rest is the bounty&apos;s. Anyone can sweep it
-                            into the bounty, and a keeper does every 30 minutes.
+                            {HAS_TREASURY ? `, the meteortoll treasury ${ECONOMICS.treasurySharePercent}% of the rest,` : ''} and the rest is the prize&apos;s. Anyone can sweep it
+                            into the prize, and a keeper does every 30 minutes.
                         </dd>
                     </div>
                     {LAUNCH_WINDOW && (
                         <div>
                             <dt className="inline font-medium">Launch window. </dt>
                             <dd className="inline text-muted">
-                                Right after a launch the fee is {LAUNCH_WINDOW_TEXT}, so bots that buy in the first seconds pay most of their fee into the bounty.
+                                Right after a launch the fee is {LAUNCH_WINDOW_TEXT}, so bots that buy in the first seconds pay most of their fee into the prize.
                                 The launcher&apos;s own first buy, up to 1 SOL and made in the same transaction as the pool, pays the normal fee.
                             </dd>
                         </div>
                     )}
                     <div>
                         <dt className="inline font-medium">Graduation surplus. </dt>
-                        <dd className="inline text-muted">When the curve fills, the pool creator&apos;s share of what it raised beyond the migration amount goes to the bounty.</dd>
+                        <dd className="inline text-muted">When the curve fills, the pool creator&apos;s share of what it raised beyond the migration amount goes to the prize.</dd>
                     </div>
                     <div>
                         <dt className="inline font-medium">Locked DAMM v2 position. </dt>
@@ -118,7 +118,7 @@ export function MoneyFlow() {
                     </div>
                     <div>
                         <dt className="inline font-medium">Failed bonds. </dt>
-                        <dd className="inline text-muted">Every submission stakes {BOND_SOL} SOL. A revealed scheme that fails the check loses its bond to the bounty.</dd>
+                        <dd className="inline text-muted">Every submission stakes {BOND_SOL} SOL. A revealed scheme that fails the check loses its bond to the prize.</dd>
                     </div>
                 </dl>
             </More>

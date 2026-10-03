@@ -244,8 +244,12 @@ test('problem filters', async ({ page }) => {
         const tab = page.getByRole('tab', { name: new RegExp(`^${name}`) })
         await tab.click()
         await expect(tab).toHaveAttribute('aria-selected', 'true')
-        const counted = Number((await tab.textContent())!.replace(/\D/g, ''))
-        await expect(grid.locator('a[href^="/p/"]')).toHaveCount(counted)
+        await expect
+            .poll(async () => {
+                const counted = Number((await tab.textContent())!.replace(/\D/g, ''))
+                return (await grid.locator('a[href^="/p/"]').count()) === counted
+            })
+            .toBe(true)
     }
     await expect(grid.getByRole('button', { name: /^Buy 0.1 SOL of/ }).first()).toBeVisible()
     await fitsTheScreen(page)

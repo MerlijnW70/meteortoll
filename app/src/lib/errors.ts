@@ -31,7 +31,7 @@ const friendlier: Record<string, Partial<Friendly>> = {
     GracePending: { title: 'Claims are not open yet', detail: 'An earlier commitment could still take the solve during the grace window.' },
     CommitmentMismatch: { title: 'The upload does not match your commitment', detail: 'The file differs from the one you committed. Abandon the attempt to get your bond back.' },
     RevealTooEarly: { kind: 'busy', title: 'Too early to reveal', detail: 'The network has not produced a newer slot yet. Try again in a few seconds.' },
-    NotSolver: { title: 'Only the solver can claim this bounty' },
+    NotSolver: { title: 'Only the solver can claim this prize' },
     CheckPending: { title: 'The check is still running', detail: 'Finish the verification before closing the attempt.' },
 }
 

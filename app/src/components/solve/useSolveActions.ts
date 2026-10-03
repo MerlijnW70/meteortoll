@@ -79,7 +79,7 @@ export function useSolveActions(problem: ProblemView, scheme: Uint8Array) {
                 let signature = ''
                 for (const tx of txs) signature = await sendOne(tx)
                 link('claim', signature)
-                toast.success('Bounty claimed')
+                toast.success('Prize claimed')
             }
         } catch (error) {
             notifyError(error)

@@ -13,6 +13,22 @@ export function BuyBar({ problem, watch }: { problem: ProblemView; watch: string
     const [open, setOpen] = useState(false)
     const opener = useRef<HTMLButtonElement>(null)
     const closer = useRef<HTMLButtonElement>(null)
+    const sheet = useRef<HTMLDivElement>(null)
+
+    const trapFocus = (event: React.KeyboardEvent) => {
+        if (event.key !== 'Tab' || !sheet.current) return
+        const focusable = [...sheet.current.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+        if (focusable.length === 0) return
+        const first = focusable[0]
+        const last = focusable[focusable.length - 1]
+        if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault()
+            last.focus()
+        } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault()
+            first.focus()
+        }
+    }
 
     useEffect(() => {
         const target = document.getElementById(watch)
@@ -86,6 +102,8 @@ export function BuyBar({ problem, watch }: { problem: ProblemView; watch: string
                 <div className="fixed inset-0 z-40 lg:hidden">
                     <div className="absolute inset-0 bg-black/50" onClick={hide} aria-hidden />
                     <div
+                        ref={sheet}
+                        onKeyDown={trapFocus}
                         role="dialog"
                         aria-modal="true"
                         aria-label={`Trade ${cardTitle(problem.account)}`}

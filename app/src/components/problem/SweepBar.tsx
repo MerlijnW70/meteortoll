@@ -55,7 +55,7 @@ export function SweepBar({ problem }: { problem: ProblemView }) {
             const txs = await sweepTxs(connection, tollWriter(connection, wallet), problemKey, problem.account, publicKey)
             let signature = ''
             for (const tx of txs) signature = await sendWithWallet(connection, tx, publicKey, sendTransaction)
-            notifySuccess(problem.phase === 'open' ? 'Fees swept into the bounty' : 'Fees swept into the vault', signature)
+            notifySuccess(problem.phase === 'open' ? 'Fees swept into the prize' : 'Fees swept into the vault', signature)
             await Promise.all(['problem', 'problems', 'history', 'sweeps', 'sweepPreview'].map((key) => queries.invalidateQueries({ queryKey: [key] })))
         } catch (error) {
             notifyError(error)
@@ -69,18 +69,18 @@ export function SweepBar({ problem }: { problem: ProblemView }) {
             ? `${sol(preview.data.quote)} SOL${preview.data.base > 0n ? ` and ${tokens(preview.data.base)} ${problem.info.symbol || 'tokens'}` : ''}`
             : plan.data?.trading && problem.unsweptLamports > 0n
               ? `${sol(problem.unsweptLamports)} SOL or more`
-              : 'Fees'
-    const where = problem.phase === 'open' ? 'the bounty' : "the vault the solver claims from"
+              : null
+    const where = problem.phase === 'open' ? 'the prize' : 'the vault the solver claims from'
     return (
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4 text-sm">
             <p>
-                <span className="num font-medium">{amount}</span>{' '}
+                {amount && <span className="num font-medium">{amount} </span>}
                 <span className="text-muted" title={`From ${listed(sources)}. Anyone can sweep it.`}>
-                    in fees, ready for {where}
+                    {amount ? 'in fees, ready for' : 'Fees are ready for'} {where}
                 </span>
             </p>
             <button onClick={sweep} disabled={busy} className="rounded-lg border border-accent/60 px-3 py-1.5 font-medium text-accent hover:bg-accent/10 disabled:opacity-40">
-                {busy ? 'Sweeping…' : !wallet ? 'Connect wallet to sweep' : problem.phase === 'open' ? 'Sweep into the bounty' : 'Sweep into the vault'}
+                {busy ? 'Sweeping…' : !wallet ? 'Connect wallet to sweep' : problem.phase === 'open' ? 'Sweep into the prize' : 'Sweep into the vault'}
             </button>
         </div>
     )

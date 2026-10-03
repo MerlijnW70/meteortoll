@@ -52,7 +52,7 @@ export function TargetStep({ format, draft, onChange, live }: { format: KnownFor
                     <Link href={`/p/${live.address}`} className="text-text underline">
                         Open that problem
                     </Link>{' '}
-                    — a second launch splits traders between two bounties.
+                    — a second launch splits traders between two prizes.
                 </p>
             )}
         </div>

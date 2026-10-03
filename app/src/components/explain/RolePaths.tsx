@@ -29,9 +29,9 @@ const ROLES: Role[] = [
         cta: ['/#problems', 'Browse problems'],
         does: 'Buy and sell the token of an open problem on its Meteora bonding curve, from any Solana wallet.',
         why: [
-            'Each card shows the problem, the record to beat and the bounty.',
-            `Every trade pays a 1% fee: ${PROTOCOL_SHARE} of the trade to Meteora${HAS_TREASURY ? `, ${TREASURY_SHARE} to the meteortoll treasury` : ''} and ${BOUNTY_SHARE} to the bounty.`,
-            'When the curve fills, the token moves to Meteora DAMM v2 and its fees keep funding the bounty.',
+            'Each card shows the problem, the record to beat and the prize.',
+            `Every trade pays a 1% fee: ${PROTOCOL_SHARE} of the trade to Meteora${HAS_TREASURY ? `, ${TREASURY_SHARE} to the meteortoll treasury` : ''} and ${BOUNTY_SHARE} to the prize.`,
+            'When the curve fills, the token moves to Meteora DAMM v2 and its fees keep funding the prize.',
         ],
         note: (
             <>
@@ -42,9 +42,9 @@ const ROLES: Role[] = [
             </>
         ),
         steps: [
-            ['Pick a problem', 'Its card shows the bounty, the record to beat and how far the curve has filled.'],
-            ['Buy or sell', `Every trade pays a 1% fee; ${BOUNTY_SHARE} of the trade goes to the bounty.`],
-            ['Watch it graduate', 'A full curve moves to Meteora DAMM v2; its fees keep funding the bounty.'],
+            ['Pick a problem', 'Its card shows the prize, the record to beat and how far the curve has filled.'],
+            ['Buy or sell', `Every trade pays a 1% fee; ${BOUNTY_SHARE} of the trade goes to the prize.`],
+            ['Watch it graduate', 'A full curve moves to Meteora DAMM v2; its fees keep funding the prize.'],
         ],
         tone: 'text-accent-2',
     },
@@ -57,7 +57,7 @@ const ROLES: Role[] = [
         cta: ['/solve', 'Open the solver'],
         does: 'Find a scheme with fewer multiplications than the record, check it free in your browser, and submit it.',
         why: [
-            'The program pays the bounty to your wallet: no committee, no application.',
+            'The program pays the prize to your wallet: no committee, no application.',
             'The earliest commitment whose scheme verifies wins, so a copy cannot.',
             'Fees that arrive after your solve are also claimable.',
         ],
@@ -65,7 +65,7 @@ const ROLES: Role[] = [
         steps: [
             ['Check it for free', 'Drop the scheme file on the Solve page; your browser runs the program’s own verifier.'],
             ['Submit', 'Commit, upload, reveal and verify, guided step by step.'],
-            ['Claim', 'Once the solve is final, claim the bounty and any fee that arrives later.'],
+            ['Claim', 'Once the solve is final, claim the prize and any fee that arrives later.'],
         ],
         tone: 'text-good',
     },
@@ -76,17 +76,17 @@ const ROLES: Role[] = [
         who: 'Labs, universities, AI companies, startups.',
         gets: ['The sharpest solvers on your problem', 'Traders fund the prize', 'Every answer checked on-chain'],
         cta: ['/launch', 'Launch a problem'],
-        does: 'Pick a matrix multiplication format and a target, and launch its token and bounty in one wallet approval.',
+        does: 'Pick a matrix multiplication format and a target, and launch its token and prize in one wallet approval.',
         why: [
             'Anyone in the world can work on it, without you hiring a team.',
-            'Trading fills the bounty, so you do not have to.',
+            'Trading fills the prize, so you do not have to.',
             'The program checks every answer, so nobody has to review submissions.',
         ],
         note: 'Today: matrix multiplication formats with a published record. The cost is shown exactly before you sign.',
         steps: [
             ['Choose a format', 'A shape with a published record; the target is usually one below it.'],
             ['Launch', 'One approval creates the token, its bonding curve and the problem, with an optional first buy of up to 1 SOL.'],
-            ['Share it', 'The bounty grows with trading. The problem belongs to whoever solves it.'],
+            ['Share it', 'The prize grows with trading. The problem belongs to whoever solves it.'],
         ],
         tone: 'text-accent',
     },

@@ -120,3 +120,13 @@ export function ShowAll({ open, total, noun, onToggle }: { open: boolean; total:
         </button>
     )
 }
+
+export function tabKeys<T>(event: React.KeyboardEvent<HTMLElement>, items: readonly T[], current: T, select: (item: T) => void) {
+    const at = items.indexOf(current)
+    const moves: Record<string, number> = { ArrowRight: at + 1, ArrowLeft: at - 1 + items.length, Home: 0, End: items.length - 1 }
+    if (!(event.key in moves)) return
+    event.preventDefault()
+    const next = moves[event.key] % items.length
+    select(items[next])
+    event.currentTarget.querySelectorAll<HTMLElement>('[role="tab"]')[next]?.focus()
+}

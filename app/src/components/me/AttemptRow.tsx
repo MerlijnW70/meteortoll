@@ -20,7 +20,7 @@ function next(attempt: AttemptAccount, problem: ProblemView, owner: PublicKey): 
             ? { text: 'Committed. Drop the same scheme file on Solve to upload and verify it.', close: 'Abandon and refund bond', resume: true }
             : { text: 'Another scheme was verified first. Abandon to get your bond back.', close: 'Abandon and refund bond' }
     if (status === 'revealed') return { text: 'Revealed. Drop the same scheme file on Solve to finish verification.', resume: true }
-    if (status === 'fails') return { text: 'The scheme did not hold; the bond went to the bounty. Close to recover the upload rent.', close: 'Close attempt' }
+    if (status === 'fails') return { text: 'The scheme did not hold; the bond went to the prize. Close to recover the upload rent.', close: 'Close attempt' }
     if (won) return { text: problem.phase === 'solved' ? 'Verified. Claim below to also get your bond and upload rent back.' : 'Verified. In the grace window.' }
     return { text: 'Your scheme holds, but an earlier commitment took the solve. Close to get your bond back.', close: 'Close attempt' }
 }

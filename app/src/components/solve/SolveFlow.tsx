@@ -37,7 +37,7 @@ export function SolveFlow({ problem, scheme }: { problem: ProblemView; scheme: U
         <Panel className="scroll-mt-24 space-y-4 rounded-3xl p-6" id="submit">
             <div>
                 <h3 className="font-medium">
-                    Submitting to <span className="font-mono">⟨{shape(problem).label} : ≤{problem.account.targetRank}⟩</span> · bounty{' '}
+                    Submitting to <span className="font-mono">⟨{shape(problem).label} : ≤{problem.account.targetRank}⟩</span> · prize{' '}
                     <span className="num">{sol(totalBounty(problem))} SOL</span>
                 </h3>
                 <p className="text-xs text-muted">
@@ -77,7 +77,7 @@ export function SolveFlow({ problem, scheme }: { problem: ProblemView; scheme: U
                         </label>
                     </div>
                 ))}
-            {failed && <p className="rounded-lg bg-bad/10 p-3 text-sm text-bad">The scheme did not hold at the random point. The bond went to the bounty.</p>}
+            {failed && <p className="rounded-lg bg-bad/10 p-3 text-sm text-bad">The scheme did not hold at the random point. The bond went to the prize.</p>}
             {lost && (
                 <p className="rounded-lg bg-warn/10 p-3 text-sm text-warn">Your scheme holds, but an earlier commitment took the solve. Close the attempt to get your bond back.</p>
             )}
@@ -97,7 +97,7 @@ export function SolveFlow({ problem, scheme }: { problem: ProblemView; scheme: U
                 )}
             </div>
             {status === 'committed' && (
-                <p className="text-xs text-muted">Once uploaded, your scheme is public. Abandoning then lets a later committer take the bounty with it.</p>
+                <p className="text-xs text-muted">Once uploaded, your scheme is public. Abandoning then lets a later committer take the prize with it.</p>
             )}
         </Panel>
     )

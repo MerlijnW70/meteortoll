@@ -59,7 +59,7 @@ export function FirstBuyStep({ presets, value, onChange, quote, error }: { prese
                         <dd className="num text-xs text-muted">{percentDown(quote.supplyShare, 2)} of supply</dd>
                     </div>
                     <div>
-                        <dt className="text-xs text-muted">To the bounty</dt>
+                        <dt className="text-xs text-muted">To the prize</dt>
                         <dd className="num font-medium">{sol(BigInt(quote.bounty.toString()))} SOL</dd>
                         <dd className="text-xs text-muted">the trading fee</dd>
                     </div>
@@ -72,7 +72,7 @@ export function FirstBuyStep({ presets, value, onChange, quote, error }: { prese
             )}
             <p className="text-xs text-muted">
                 {LAUNCH_WINDOW
-                    ? `Bought before anyone else can, at the normal 1% fee. After it, buyers pay ${LAUNCH_WINDOW_TEXT}: what bots pay goes to the bounty.`
+                    ? `Bought before anyone else can, at the normal 1% fee. After it, buyers pay ${LAUNCH_WINDOW_TEXT}: what bots pay goes to the prize.`
                     : 'Bought before anyone else can.'}
             </p>
         </div>

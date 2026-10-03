@@ -121,7 +121,7 @@ export function LaunchedPanel({ launched, statement, onAnother }: { launched: La
             <div className="space-y-2">
                 <p className="text-sm text-accent-2">Launched</p>
                 <h2 className="font-mono text-3xl">{statement}</h2>
-                <p className="mx-auto max-w-md text-muted">The token is live on its bonding curve and the bounty is open. Every trade from now on adds to it.</p>
+                <p className="mx-auto max-w-md text-muted">The token is live on its bonding curve and the prize is open. Every trade from now on adds to it.</p>
             </div>
             <div className="flex flex-wrap justify-center gap-3">
                 <Link href={`/p/${launched.problem}`} className="rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-bg">
@@ -132,8 +132,8 @@ export function LaunchedPanel({ launched, statement, onAnother }: { launched: La
                 </a>
             </div>
             <div className="flex flex-col items-center gap-2">
-                <p className="text-xs text-muted">Bounties grow with trading. Share it:</p>
-                <Share text={`New open problem on meteortoll: ${statement}. Trading funds the bounty; a Solana program pays the first scheme that verifies.`} url={url} />
+                <p className="text-xs text-muted">Prizes grow with trading. Share it:</p>
+                <Share text={`New open problem on meteortoll: ${statement}. Trading funds the prize; a Solana program pays the first scheme that verifies.`} url={url} />
             </div>
             <button type="button" onClick={onAnother} className="text-sm text-muted underline hover:text-text">
                 Launch another

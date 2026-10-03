@@ -41,8 +41,8 @@ export function Rules({ problem }: { problem: ProblemView }) {
                         The program checks the scheme as a polynomial identity at that point. A wrong scheme passes with probability at most{' '}
                         {errorBoundText(problem.account.n1, problem.account.n2, problem.account.n3)}.
                     </li>
-                    <li>A failing or malformed scheme forfeits its bond to the bounty.</li>
-                    <li>Earliest commitment wins: anyone copying an upload necessarily commits later, so the copy cannot take the bounty.</li>
+                    <li>A failing or malformed scheme forfeits its bond to the prize.</li>
+                    <li>Earliest commitment wins: anyone copying an upload necessarily commits later, so the copy cannot take the prize.</li>
                     <li>Trading fees keep arriving after a solve, and the solver can claim again.</li>
                     <li>No expiry. The statement is fixed in the problem address and cannot change.</li>
                 </ul>

@@ -16,7 +16,7 @@ const BOND_SOL = Number(BOND_LAMPORTS) / 1e9
 const LOOP: [string, string][] = [
     ['An open problem', 'multiply matrices with fewer multiplications'],
     ['becomes a token', 'traded on a Meteora bonding curve'],
-    ['trading fills a bounty', `${BOUNTY_SHARE} of every trade`],
+    ['trading fills a prize', `${BOUNTY_SHARE} of every trade`],
     ['a verified answer takes it', 'checked by a Solana program'],
 ]
 
@@ -27,8 +27,9 @@ const GUARANTEES: { title: string; plain: string; detail: ReactNode }[] = [
         detail: (
             <>
                 The check treats the scheme as a polynomial identity and evaluates it at a random point. Three numbers drawn from a slot hash newer than the
-                submission give every matrix entry its value, so a wrong scheme passes with probability at most (n₁n₂ + n₂n₃ + n₃n₁)/2⁶¹: below one in 10¹⁵ per attempt for
-                every format here. Anyone can send the verify calls; the result does not depend on who does.
+                submission give every matrix entry its value, so a wrong scheme passes one check with probability at most (n₁n₂ + n₂n₃ + n₃n₁)/2⁶¹: below one in 10¹⁵
+                for every format here. A solver can wait for a newer slot before revealing, which gives a fresh point, but even a billion tries stay below one in a
+                million. Anyone can send the verify calls; the result does not depend on who does.
             </>
         ),
     },
@@ -48,7 +49,7 @@ const GUARANTEES: { title: string; plain: string; detail: ReactNode }[] = [
         detail: (
             <>
                 A revealed attempt cannot withdraw before its check ends. The bond does not make a wrong scheme pass more often: the random point is public
-                once drawn, so a solver can see a failure coming and simply not reveal, and each new attempt gives a wrong scheme at most a (n₁n₂ + n₂n₃ +
+                once drawn, so a solver can see a failure coming and simply wait for another slot, and each point gives a wrong scheme at most a (n₁n₂ + n₂n₃ +
                 n₃n₁)/2⁶¹ chance. What keeps wrong answers out is that bound, not the bond.
             </>
         ),
@@ -59,7 +60,7 @@ const GUARANTEES: { title: string; plain: string; detail: ReactNode }[] = [
         detail: (
             <>
                 The problem&apos;s address is derived from its pool and its statement, and it is the pool&apos;s creator on Meteora. Only the program can sign
-                for it, which is why only a verified solver can move the bounty.
+                for it, which is why only a verified solver can move the prize.
             </>
         ),
     },
@@ -70,17 +71,17 @@ const FAQ: [string, ReactNode][] = [
         ? ([
               [
                   'Why is the fee so high right after a launch?',
-                  `To keep bots from sniping new tokens. Right after a launch the fee is ${LAUNCH_WINDOW_TEXT}, under 10% after about a minute, and what Meteora does not keep goes to the bounty. The launcher's own first buy, up to 1 SOL, pays the normal fee, and the trade panel shows the fee before you buy.`,
+                  `To keep bots from sniping new tokens. Right after a launch the fee is ${LAUNCH_WINDOW_TEXT}, under 10% after about a minute, and what Meteora does not keep goes to the prize. The launcher's own first buy, up to 1 SOL, pays the normal fee, and the trade panel shows the fee before you buy.`,
               ],
           ] as [string, ReactNode][])
         : []),
-    ['Do I need to understand the math to trade?', 'No. Trading works like any other token. The math matters to solvers; traders back the problems they find interesting and fund the bounty by trading.'],
-    ['Can the team take the bounty?', 'No instruction lets anyone but a verified solver move it. During the hackathon the team can still upgrade the program; that authority moves to a multisig or is revoked before any public bounty is large.'],
-    ['What if nobody solves it?', 'The bounty stays in the vault and keeps growing with trading. There is no deadline and no refund: an unsolved bounty stays locked.'],
+    ['Do I need to understand the math to trade?', 'No. Trading works like any other token. The math matters to solvers; traders back the problems they find interesting and fund the prize by trading.'],
+    ['Can the team take the prize?', 'No instruction lets anyone but a verified solver move it. During the hackathon the team can still upgrade the program; that authority moves to a multisig or is revoked before any public prize is large.'],
+    ['What if nobody solves it?', 'The prize stays in the vault and keeps growing with trading. There is no deadline and no refund: an unsolved prize stays locked.'],
     ['What if two people solve it?', 'The earliest commitment whose scheme verifies wins. After a scheme verifies there is a grace window, shown on each problem page, in which an earlier committed scheme can still take the solve. The solve is final once it ends and no revealed attempt is still being checked.'],
     ['What does submitting cost?', `The ${BOND_SOL} SOL bond, which comes back if the scheme holds, plus network fees and rent for the upload buffer, which is returned when the attempt closes. The Solve page checks your scheme in the browser first, for free.`],
-    ['Who keeps the bounty topped up?', 'Anyone can move fees into the bounty, and a small keeper wallet does it every 30 minutes. It only pays transaction fees and can never receive anything.'],
-    ['What is a disclosed demo?', 'A problem the meteortoll team can already answer, launched to show the full loop. It is marked on every page and is not a public bounty.'],
+    ['Who keeps the prize topped up?', 'Anyone can move fees into the prize, and a small keeper wallet does it every 30 minutes. It only pays transaction fees and can never receive anything.'],
+    ['What is a disclosed demo?', 'A problem the meteortoll team can already answer, launched to show the full loop. It is marked on every page and is not a public prize.'],
     ['Has it been audited?', 'Not by a third party yet. The program has been reviewed by the team and is tested against the real Meteora programs. Its source is public.'],
 ]
 
@@ -139,7 +140,7 @@ function Trust() {
                                     </p>
                                     <More label="Upgrade authority and audit">
                                         <p className="text-muted">
-                                            Upgrade authority is held by the team during the hackathon and will be moved to a multisig or revoked before any public bounty is
+                                            Upgrade authority is held by the team during the hackathon and will be moved to a multisig or revoked before any public prize is
                                             large. The program has had a self-review and extensive tests against the real Meteora programs, not a third-party audit.
                                         </p>
                                     </More>

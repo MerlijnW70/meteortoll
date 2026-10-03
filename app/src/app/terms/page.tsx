@@ -41,14 +41,14 @@ export default function Terms() {
             <Section title="What this site is" gist="An interface to public Solana programs. It never holds your funds or keys.">
                 <p>
                     meteortoll is an interface to public Solana programs: Meteora&apos;s Dynamic Bonding Curve and DAMM v2, and the open-source toll program that holds and pays out
-                    bounties. Every trade, commitment and payout is a transaction you sign in your own wallet. The site never holds your funds or your keys, and cannot move them.
+                    prizes. Every trade, commitment and payout is a transaction you sign in your own wallet. The site never holds your funds or your keys, and cannot move them.
                 </p>
             </Section>
 
-            <Section title="Risks of trading problem tokens" gist="Prices can fall to near zero, and a token is not a share of its bounty.">
+            <Section title="Risks of trading problem tokens" gist="Prices can fall to near zero, and a token is not a share of its prize.">
                 <ul className="list-disc space-y-1 pl-5">
                     <li>A token&apos;s price is set by its bonding curve and, after graduation, by a DAMM v2 pool. It can fall to near zero, and there may be no one to sell to.</li>
-                    <li>Buying a token does not give you a share of its bounty. The bounty goes to the solver, and the token keeps trading after the problem is solved.</li>
+                    <li>Buying a token does not give you a share of its prize. The prize goes to the solver, and the token keeps trading after the problem is solved.</li>
                     <li>Every trade pays a fee, and swaps carry a slippage limit; you may receive less than the estimate shown.</li>
                     {LAUNCH_WINDOW_TEXT && (
                         <li>Right after a launch the fee is {LAUNCH_WINDOW_TEXT}. The trade panel shows it before you buy; one-click buys refuse to trade inside it.</li>
@@ -60,15 +60,15 @@ export default function Terms() {
             <Section title="Risks of the programs" gist="Not audited by a third party yet; the team can still upgrade the program.">
                 <ul className="list-disc space-y-1 pl-5">
                     <li>The toll program has been self-reviewed and tested against the real Meteora programs. It has not had a third-party audit, and it may contain bugs that lose funds.</li>
-                    <li>During the hackathon the program&apos;s upgrade authority is held by the team, which means the team could change the program. It will be moved to a multisig or revoked before any public bounty is large.</li>
+                    <li>During the hackathon the program&apos;s upgrade authority is held by the team, which means the team could change the program. It will be moved to a multisig or revoked before any public prize is large.</li>
                     <li>Meteora&apos;s programs, Solana itself and the RPC services this site uses can fail, halt or behave unexpectedly.</li>
                 </ul>
             </Section>
 
             <Section title="Risks of solving" gist="A revealed scheme that fails loses its bond; the earliest commitment wins.">
                 <ul className="list-disc space-y-1 pl-5">
-                    <li>Committing stakes a bond. If your scheme fails the on-chain check, the bond goes to the bounty and is not returned.</li>
-                    <li>The earliest commitment that holds wins, even if you revealed first. A bounty may be small, or may never be claimed.</li>
+                    <li>Committing stakes a bond. If your scheme fails the on-chain check, the bond goes to the prize and is not returned.</li>
+                    <li>The earliest commitment that holds wins, even if you revealed first. A prize may be small, or may never be claimed.</li>
                     <li>Your commitment&apos;s salt is kept in this browser. If you clear it before revealing, you cannot reveal, and can only abandon the attempt to get the bond back.</li>
                 </ul>
             </Section>
@@ -86,7 +86,7 @@ export default function Terms() {
                     </p>
                 )}
                 <p>
-                    The team runs fmm, a search tool for matrix multiplication schemes. Any problem whose target fmm already meets is labelled a disclosed demo and is not a public bounty. If fmm
+                    The team runs fmm, a search tool for matrix multiplication schemes. Any problem whose target fmm already meets is labelled a disclosed demo and is not a public prize. If fmm
                     ever solves a public problem, the team will say so before claiming. See{' '}
                     <Link href="/trust" className="text-accent hover:underline">
                         How it works

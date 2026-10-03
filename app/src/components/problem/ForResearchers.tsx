@@ -9,7 +9,7 @@ export function ForResearchers({ problem }: { problem: ProblemView }) {
     ["Problem", problem.address],
     ["DBC pool", problem.account.pool.toBase58()],
     ["Token mint", problem.account.baseMint.toBase58()],
-    ["Bounty vault", problem.account.quoteVault.toBase58()],
+    ["Prize vault", problem.account.quoteVault.toBase58()],
   ];
   return (
     <div>

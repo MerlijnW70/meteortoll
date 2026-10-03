@@ -42,15 +42,15 @@ export function targetNote(format: KnownFormat, target: number): TargetNote | nu
         return { tone: 'warn', text: `No scheme can meet ${target}: this format needs at least ${bound.rank} multiplications (${bound.source}). Use ${bound.rank} to ${best - 1}.` }
     }
     if (target >= best) {
-        return { tone: 'warn', text: `A rank-${best} scheme is already published, so anyone holding it could claim this bounty at once. Use ${best - 1} or lower for an open problem.` }
+        return { tone: 'warn', text: `A rank-${best} scheme is already published, so anyone holding it could claim this prize at once. Use ${best - 1} or lower for an open problem.` }
     }
     if (launchKind(format, target) === 'demo') {
         return {
             tone: 'warn',
-            text: `The meteortoll team already holds a rank-${format.team!.rank} scheme for this format, so this launches as a disclosed demo, not a public bounty. Use ${format.team!.rank - 1} or lower for a public bounty.`,
+            text: `The meteortoll team already holds a rank-${format.team!.rank} scheme for this format, so this launches as a disclosed demo, not a public prize. Use ${format.team!.rank - 1} or lower for a public prize.`,
         }
     }
-    if (target === best - 1) return { tone: 'good', text: 'One below the record: the scheme that takes this bounty is a new record.' }
+    if (target === best - 1) return { tone: 'good', text: 'One below the record: the scheme that takes this prize is a new record.' }
     return { tone: 'good', text: `${best - target} below the record: a harder problem than a new record alone.` }
 }
 

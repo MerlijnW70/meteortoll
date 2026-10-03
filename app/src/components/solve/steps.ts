@@ -10,7 +10,7 @@ export const STEPS: [Step, string, string][] = [
     ['reveal', 'Reveal', 'Proves the upload matches the commitment and fixes the random test point.'],
     ['verify', 'Verify on-chain', 'The program checks the scheme at that point.'],
     ['grace', 'Grace window', 'An earlier commitment that also holds could still take the solve.'],
-    ['claim', 'Claim', 'Takes the bounty and returns your bond and buffer rent.'],
+    ['claim', 'Claim', 'Takes the prize and returns your bond and buffer rent.'],
 ]
 
 export const ORDER = STEPS.map(([step]) => step)

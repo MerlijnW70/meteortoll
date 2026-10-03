@@ -7,7 +7,7 @@ import { RolePaths } from '@/components/explain/RolePaths'
 import { ProductArt } from '@/components/MatrixArt'
 import { CHIP, CHIP_TONE, DOT, ProblemCard } from '@/components/ProblemCard'
 import { StatsStrip } from '@/components/StatsStrip'
-import { Skeleton, sol } from '@/components/ui'
+import { Skeleton, sol, tabKeys } from '@/components/ui'
 import { useProblems } from '@/hooks/useProblems'
 import { type ProblemView, totalBounty } from '@/lib/chain'
 import { cardChip, cardTitle } from '@/lib/card'
@@ -34,21 +34,29 @@ function Problems({ listed, isLoading }: { listed: ProblemView[] | undefined; is
                 <h2 id="problems-title" className="text-xl font-semibold">
                     Problems
                 </h2>
-                <div role="tablist" aria-label="Filter problems" className="inline-flex rounded-lg bg-panel-2 p-1 text-sm">
+                <div
+                    role="tablist"
+                    aria-label="Filter problems"
+                    className="inline-flex rounded-full bg-panel-2 p-1 text-sm"
+                    onKeyDown={(event) => tabKeys(event, FILTERS.map(([value]) => value), filter, setChosen)}
+                >
                     {FILTERS.map(([value, label]) => (
                         <button
                             key={value}
                             role="tab"
+                            id={`filter-${value}`}
                             aria-selected={filter === value}
+                            aria-controls={filter === value ? 'problem-grid' : undefined}
+                            tabIndex={filter === value ? 0 : -1}
                             onClick={() => setChosen(value)}
-                            className={`rounded-md px-3 py-1.5 ${filter === value ? 'bg-panel text-text shadow-sm' : 'text-muted hover:text-text'}`}
+                            className={`rounded-full px-3 py-1.5 ${filter === value ? 'bg-panel text-text shadow-sm' : 'text-muted hover:text-text'}`}
                         >
                             {label} <span className="num text-xs text-muted">{isLoading ? '' : count(value)}</span>
                         </button>
                     ))}
                 </div>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div id="problem-grid" role="tabpanel" aria-labelledby={`filter-${filter}`} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {isLoading && [0, 1, 2].map((i) => <Skeleton key={i} className="h-80" />)}
                 {items.map((p) => (
                     <ProblemCard key={p.address} problem={p} />

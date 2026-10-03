@@ -18,7 +18,7 @@ import { sol } from '../ui'
 
 const BUY_PRESETS = [0.05, 0.1, 0.5, 1]
 const SELL_PRESETS = [25, 50, 100]
-const FEE_RESERVE_LAMPORTS = 3_000_000n
+const FEE_RESERVE_LAMPORTS = 5_000_000n
 
 export function TradePanel({ problem, anchor = true }: { problem: ProblemView; anchor?: boolean }) {
     const { connection } = useConnection()
@@ -58,7 +58,7 @@ export function TradePanel({ problem, anchor = true }: { problem: ProblemView; a
     if (problem.graduated) {
         return (
             <div className="rounded-lg bg-panel-2 p-4 text-sm">
-                <p className="mb-2">This token graduated to a Meteora DAMM v2 pool. Its fees still fund the bounty.</p>
+                <p className="mb-2">This token graduated to a Meteora DAMM v2 pool. Its fees still go {problem.phase === 'solved' ? 'to the solver' : 'to the prize'}.</p>
                 {CLUSTER === 'mainnet' ? (
                     <a className="text-accent hover:underline" href={`https://jup.ag/swap/SOL-${problem.account.baseMint.toBase58()}`} target="_blank" rel="noreferrer">
                         Trade on Jupiter →
@@ -107,17 +107,16 @@ export function TradePanel({ problem, anchor = true }: { problem: ProblemView; a
 
     return (
         <div id={anchor ? 'trade' : undefined} className="scroll-mt-24 space-y-3">
-            <div className="grid grid-cols-2 rounded-lg bg-panel-2 p-1 text-sm" role="tablist">
+            <div className="grid grid-cols-2 rounded-lg bg-panel-2 p-1 text-sm" role="group" aria-label="Buy or sell">
                 {(['buy', 'sell'] as const).map((s) => (
                     <button
                         key={s}
-                        role="tab"
-                        aria-selected={side === s}
+                        aria-pressed={side === s}
                         onClick={() => {
                             setSide(s)
                             setAmount(s === 'buy' ? '0.1' : '')
                         }}
-                        className={`rounded-md py-1.5 capitalize ${side === s ? (s === 'buy' ? 'bg-good/20 text-good' : 'bg-bad/20 text-bad') : 'text-muted'}`}
+                        className={`rounded-md py-2 capitalize ${side === s ? (s === 'buy' ? 'bg-good/20 text-good' : 'bg-bad/20 text-bad') : 'text-muted'}`}
                     >
                         {s}
                     </button>
@@ -142,7 +141,7 @@ export function TradePanel({ problem, anchor = true }: { problem: ProblemView; a
             </label>
             <div className="flex gap-1.5">
                 {presets.map(([value, label]) => (
-                    <button key={value} onClick={() => pickPreset(value)} className="num rounded-md border border-border px-2 py-1 text-xs text-muted hover:border-accent/60 hover:text-text">
+                    <button key={value} onClick={() => pickPreset(value)} className="num rounded-full border border-border px-3 py-2 text-xs text-muted hover:border-accent/60 hover:text-text">
                         {label}
                     </button>
                 ))}
@@ -153,7 +152,7 @@ export function TradePanel({ problem, anchor = true }: { problem: ProblemView; a
                     <dd>{quote.isFetching && !quote.data ? '…' : outputLabel}</dd>
                 </div>
                 <div className="flex justify-between">
-                    <dt className="text-muted">{problem.phase === 'solved' ? 'Pays the solver' : 'Adds to the bounty'}</dt>
+                    <dt className="text-muted">{problem.phase === 'solved' ? 'Pays the solver' : 'Adds to the prize'}</dt>
                     <dd className="text-accent-2">{quote.data ? `${sol(toBounty, 6)} SOL` : '—'}</dd>
                 </div>
                 <div className="flex justify-between">
@@ -164,7 +163,7 @@ export function TradePanel({ problem, anchor = true }: { problem: ProblemView; a
             {quote.data && quote.data.feePercent > 1.05 && quote.data.windowSlotsLeft > 0 && (
                 <p role="alert" className="rounded-lg bg-warn/10 p-2.5 text-xs text-warn">
                     Launch window: the fee is <strong>{quote.data.feePercent.toFixed(0)}%</strong> right now and falls to 1% in about{' '}
-                    {windowSeconds(quote.data.windowSlotsLeft)} s. It keeps bots from sniping the launch, and what Meteora does not keep goes to the bounty.
+                    {windowSeconds(quote.data.windowSlotsLeft)} s. It keeps bots from sniping the launch, and what Meteora does not keep goes to the prize.
                 </p>
             )}
             {quote.data && side === 'buy' && !quote.data.unspent.isZero() && (

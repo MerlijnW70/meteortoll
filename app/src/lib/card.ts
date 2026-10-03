@@ -43,3 +43,16 @@ export function mixHue(a: number, b: number, t: number): number {
     const d = ((((b - a) % 360) + 540) % 360) - 180
     return (((a + d * t) % 360) + 360) % 360
 }
+
+export type ShareState = 'prize' | 'demo' | 'notWinnable' | 'unreviewed' | 'review' | 'solved'
+
+export function shareState(problem: Pick<ProblemView, 'phase' | 'account' | 'info'>, mainnet: boolean): ShareState {
+    if (problem.phase === 'solved') return 'solved'
+    if (problem.phase === 'grace') return 'review'
+    const standing = problemStanding(problem, mainnet)
+    if (standing === 'answered' || standing === 'impossible') return 'notWinnable'
+    if (standing === 'unreviewed') return 'unreviewed'
+    return problem.info.kind === 'demo' ? 'demo' : 'prize'
+}
+
+export const SHARE_BADGE: Record<ShareState, string> = { prize: 'OPEN', demo: 'DEMO', notWinnable: 'NOT WINNABLE', unreviewed: 'UNREVIEWED', review: 'CHECKING AN ANSWER', solved: 'SOLVED' }

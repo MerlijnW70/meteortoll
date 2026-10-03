@@ -15,7 +15,7 @@ import { Rules } from './problem/Rules'
 import { Staircase } from './problem/Staircase'
 import { TradeFeed } from './problem/TradeFeed'
 import { VerifierReplay } from './problem/VerifierReplay'
-import { Panel, Section, Skeleton } from './ui'
+import { Panel, Section, Skeleton, tabKeys } from './ui'
 
 const TABS = ['History', 'Trades'] as const
 
@@ -23,14 +23,15 @@ function Activity({ problem }: { problem: ProblemView }) {
     const [tab, setTab] = useState<(typeof TABS)[number]>('History')
     return (
         <div>
-            <div role="tablist" aria-label="Activity" className="mb-5 inline-flex rounded-full bg-panel-2 p-1 text-sm">
+            <div role="tablist" aria-label="Activity" className="mb-5 inline-flex rounded-full bg-panel-2 p-1 text-sm" onKeyDown={(event) => tabKeys(event, TABS, tab, setTab)}>
                 {TABS.map((name) => (
                     <button
                         key={name}
                         role="tab"
                         id={`tab-${name}`}
                         aria-selected={tab === name}
-                        aria-controls={`panel-${name}`}
+                        aria-controls={tab === name ? `panel-${name}` : undefined}
+                        tabIndex={tab === name ? 0 : -1}
                         onClick={() => setTab(name)}
                         className={`rounded-full px-4 py-1.5 ${tab === name ? 'bg-panel text-text shadow-sm' : 'text-muted hover:text-text'}`}
                     >
@@ -125,7 +126,7 @@ function ForeignProblem({ address, launchpad }: { address: string; launchpad: st
         <Panel role="alert" className="mx-auto max-w-lg space-y-3 border-warn/40 p-6 text-center">
             <h1 className="text-lg font-medium">Not a meteortoll problem</h1>
             <p className="text-sm text-muted">
-                This account was registered on another launchpad, with its own launch settings. Its trading fees may not go to a bounty at all. meteortoll does not list or vouch for
+                This account was registered on another launchpad, with its own launch settings. Its trading fees may not go to a prize at all. meteortoll does not list or vouch for
                 it.
             </p>
             <p className="break-all font-mono text-xs text-faint">

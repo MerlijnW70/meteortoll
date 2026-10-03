@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { useHistory } from '@/hooks/useHistory'
 import { useStats } from '@/hooks/useStats'
-import { cardChip, cardTitle } from '@/lib/card'
+import { cardChip, cardTitle, shareState } from '@/lib/card'
 import { type ProblemView, totalBounty } from '@/lib/chain'
 import { problemStanding, standingNote } from '@/lib/classify'
 import { CLUSTER } from '@/lib/config'
@@ -76,9 +76,14 @@ export function ProblemHeader({ problem }: { problem: ProblemView }) {
                     </span>
                     <Share
                         text={
-                            problem.phase === 'open'
-                                ? `Multiply a ${n1}×${n2} by a ${n2}×${n3} matrix with ${target} multiplications and claim the ${sol(totalBounty(problem))} SOL prize. Checked on-chain, no committee.`
-                                : `⟨${label} : ≤${target}⟩ was solved and verified on-chain. Check the scheme yourself:`
+                            {
+                                prize: `Multiply a ${n1}×${n2} by a ${n2}×${n3} matrix with ${target} multiplications and claim the ${sol(totalBounty(problem))} SOL prize. Checked on-chain, no committee.`,
+                                demo: `⟨${label} : ≤${target}⟩ on meteortoll: a disclosed demo of a math problem you can trade, checked on-chain.`,
+                                notWinnable: `⟨${label} : ≤${target}⟩ on meteortoll. This target is already answered or impossible.`,
+                                unreviewed: `⟨${label} : ≤${target}⟩ on meteortoll, launched by someone else and not reviewed.`,
+                                review: `An answer to ⟨${label} : ≤${target}⟩ just passed the on-chain check. Watch the grace window:`,
+                                solved: `⟨${label} : ≤${target}⟩ was solved and verified on-chain. Check the scheme yourself:`,
+                            }[shareState(problem, CLUSTER === 'mainnet')]
                         }
                     />
                 </div>

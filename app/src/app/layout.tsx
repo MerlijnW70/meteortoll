@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     twitter: { card: 'summary_large_image' },
     title: { default: 'meteortoll — open problems you can trade', template: '%s · meteortoll' },
     description:
-        'Each token is an open matrix multiplication problem on Meteora DBC. Trading fees fund the bounty; a scheme verified on-chain claims it.',
+        'Each token is an open matrix multiplication problem on Meteora DBC. Trading fees fund the prize; a scheme verified on-chain claims it.',
 }
 
 export const viewport: Viewport = {

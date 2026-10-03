@@ -33,7 +33,7 @@ export function ClaimPanel({ problem }: { problem: ProblemView }) {
             let signature = ''
             for (const tx of txs) signature = await sendWithWallet(connection, tx, publicKey!, sendTransaction)
             notifySuccess('Claimed', signature)
-            await Promise.all(['problem', 'problems', 'attempt', 'portfolio', 'history'].map((key) => queries.invalidateQueries({ queryKey: [key] })))
+            await Promise.all(['problem', 'problems', 'attempt', 'portfolio', 'history', 'balances', 'balance'].map((key) => queries.invalidateQueries({ queryKey: [key] })))
         } catch (error) {
             notifyError(error)
         } finally {
@@ -49,8 +49,8 @@ export function ClaimPanel({ problem }: { problem: ProblemView }) {
                 You solved this problem.{' '}
                 {nothing ? 'New fees will be claimable here as trading continues.' : `${sol(owed)} SOL is claimable${attempt.data ? ', plus your bond and buffer rent' : ''}.`}
             </span>
-            <button onClick={claim} disabled={busy || nothing} className="rounded-lg bg-good px-4 py-1.5 font-medium text-bg disabled:opacity-40">
-                {busy ? 'Claiming…' : 'Claim'}
+            <button onClick={claim} disabled={busy || nothing || attempt.isPending} className="rounded-full bg-good px-4 py-1.5 font-semibold text-bg disabled:opacity-40">
+                {busy ? 'Claiming…' : attempt.isPending ? 'Checking…' : 'Claim'}
             </button>
         </div>
     )

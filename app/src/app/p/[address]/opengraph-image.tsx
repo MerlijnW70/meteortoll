@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og'
 import { ForeignProblemError, totalBounty } from '@/lib/chain'
-import { problemStanding, STANDING_LABEL } from '@/lib/classify'
+import { SHARE_BADGE, shareState } from '@/lib/card'
 import { CLUSTER } from '@/lib/config'
 import { serverProblem } from '@/lib/server'
 
@@ -21,17 +21,19 @@ export default async function Image({ params }: { params: Promise<{ address: str
         const problem = await serverProblem(address)
         const { n1, n2, n3, targetRank } = problem.account
         const best = problem.info.bestKnown?.rank
-        const bounty = (Number(totalBounty(problem)) / 1e9).toLocaleString('en-US', { maximumFractionDigits: 4 })
+        const prize = (Number(totalBounty(problem)) / 1e9).toLocaleString('en-US', { maximumFractionDigits: 4 })
+        const state = shareState(problem, CLUSTER === 'mainnet')
         title = `${n1}×${n2}×${n3} · rank ≤ ${targetRank}`
-        line = problem.phase === 'open' ? `Bounty ${bounty} SOL · verified on-chain, no committee` : `Solved with rank ${problem.account.solvedRank} · verified on-chain`
-        badge = problem.phase === 'open' ? 'OPEN' : 'SOLVED'
-        badgeColor = problem.phase === 'open' ? colors.accent : colors.good
-        if (problem.info.kind === 'demo') badge = `DEMO · ${badge}`
-        const standing = problemStanding(problem, CLUSTER === 'mainnet')
-        if (standing) {
-            badge = STANDING_LABEL[standing].toUpperCase()
-            badgeColor = colors.warn
-        }
+        line = {
+            prize: `Prize ${prize} SOL · verified on-chain, no committee`,
+            demo: 'A disclosed demo of the full loop, not a public prize',
+            notWinnable: 'Already answered or impossible: no prize can be won',
+            unreviewed: 'Launched by someone else, not reviewed by meteortoll',
+            review: `A rank-${problem.account.solvedRank} answer passed; the grace window is open`,
+            solved: `Solved with rank ${problem.account.solvedRank} · verified on-chain`,
+        }[state]
+        badge = SHARE_BADGE[state]
+        badgeColor = state === 'prize' ? colors.accent : state === 'solved' || state === 'review' ? colors.good : colors.warn
         figure = best ? `${best} → ${targetRank}` : `${n1 * n2 * n3} → ${targetRank}`
     } catch (error) {
         if (error instanceof ForeignProblemError) {

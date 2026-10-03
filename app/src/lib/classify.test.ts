@@ -8,7 +8,7 @@ test('solvable is demo', () => {
     const c = classify(undefined, team, 834)
     assert.equal(c.kind, 'demo')
     assert.equal(c.teamMeetsTarget, true)
-    assert.match(c.demoNote ?? '', /rank-833 .* not a public bounty/)
+    assert.match(c.demoNote ?? '', /rank-833 .* not a public prize/)
 })
 
 test('target at team rank', () => {

@@ -4,8 +4,11 @@ import { type ReactNode, useState } from 'react'
 import type { ProblemView } from '@/lib/chain'
 import { cardHues, colLight, mixHue, randomLook, rowLight } from '@/lib/card'
 
+export const DRAWN = 24
+export const drawn = ({ n1, n2, n3 }: Pick<ProblemView['account'], 'n1' | 'n2' | 'n3'>) => ({ n1: Math.min(n1, DRAWN), n2: Math.min(n2, DRAWN), n3: Math.min(n3, DRAWN) })
+
 function Matrices({ problem, saturation }: { problem: ProblemView; saturation: number }) {
-    const { n1, n2, n3 } = problem.account
+    const { n1, n2, n3 } = drawn(problem.account)
     const [a, b] = cardHues(problem.account)
     const cell = 9
     const gap = 3
@@ -50,7 +53,7 @@ export function MatrixArt({ problem, className = '', children }: { problem: Prob
 
 export function ProductArt({ problem, className = '', children }: { problem: ProblemView; className?: string; children?: ReactNode }) {
     const [look] = useState(() => randomLook())
-    const { n1, n2, n3 } = problem.account
+    const { n1, n2, n3 } = drawn(problem.account)
     const { a, b, seed } = look
     const saturation = problem.phase === 'solved' ? 55 : 75
     const cell = 9

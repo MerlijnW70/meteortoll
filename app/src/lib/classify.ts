@@ -24,7 +24,7 @@ export function classify(curated: Curation | undefined, team: TeamRecord | undef
     const demoNote =
         curated?.demoNote ??
         (teamMeetsTarget
-            ? `Disclosed demo: the meteortoll team's search tool (${team!.tool}) already holds a rank-${team!.rank} scheme for this format, which meets this target, so this is not a public bounty. If the team ever submits it, it will say so publicly.`
+            ? `Disclosed demo: the meteortoll team's search tool (${team!.tool}) already holds a rank-${team!.rank} scheme for this format, which meets this target, so this is not a public prize. If the team ever submits it, it will say so publicly.`
             : undefined)
     return { kind, demoNote: kind === 'demo' ? demoNote : undefined, teamMeetsTarget }
 }
@@ -49,7 +49,7 @@ export function standing({ n, target, best, listed, mainnet }: StandingInput): S
 
 export function standingNote(kind: Standing, n: readonly number[], best?: number): string {
     const bound = rankBound(n)
-    if (kind === 'impossible') return `No scheme can meet this target: the rank is at least ${bound.rank} (${bound.source}). Not a bounty anyone can win.`
+    if (kind === 'impossible') return `No scheme can meet this target: the rank is at least ${bound.rank} (${bound.source}). Not a prize anyone can win.`
     if (kind === 'answered') return bound.exact ? `Already answered: the rank is exactly ${bound.rank} (${bound.source}). Not an open problem.` : `Already answered: a rank-${best} scheme is published. Not an open problem.`
     return 'Unreviewed: launched by anyone and not checked by meteortoll.'
 }
