@@ -61,13 +61,13 @@ function NavLinks({ className }: { className: string }) {
 export function Header() {
     return (
         <header className="sticky top-0 z-20 border-b border-border bg-bg/85 backdrop-blur">
-            <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4">
-                <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
+            <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 sm:gap-6">
+                <Link href="/" aria-label="meteortoll" className="flex shrink-0 items-center gap-2 font-semibold tracking-tight">
                     <Mark />
-                    meteortoll
+                    <span className="hidden min-[400px]:inline">meteortoll</span>
                 </Link>
                 <NavLinks className="hidden gap-5 text-sm sm:flex" />
-                <div className="ml-auto flex items-center gap-3">
+                <div className="ml-auto flex items-center gap-2 sm:gap-3">
                     {CLUSTER !== 'mainnet' && <span className="rounded-md border border-warn/40 px-2 py-0.5 text-xs text-warn">{CLUSTER}</span>}
                     <ThemeSwitch />
                     <WalletButton />

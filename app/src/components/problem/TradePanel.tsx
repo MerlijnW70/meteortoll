@@ -20,7 +20,7 @@ const BUY_PRESETS = [0.05, 0.1, 0.5, 1]
 const SELL_PRESETS = [25, 50, 100]
 const FEE_RESERVE_LAMPORTS = 3_000_000n
 
-export function TradePanel({ problem }: { problem: ProblemView }) {
+export function TradePanel({ problem, anchor = true }: { problem: ProblemView; anchor?: boolean }) {
     const { connection } = useConnection()
     const { publicKey, sendTransaction } = useWallet()
     const { setVisible } = useWalletModal()
@@ -106,7 +106,7 @@ export function TradePanel({ problem }: { problem: ProblemView }) {
     }
 
     return (
-        <div id="trade" className="scroll-mt-24 space-y-3">
+        <div id={anchor ? 'trade' : undefined} className="scroll-mt-24 space-y-3">
             <div className="grid grid-cols-2 rounded-lg bg-panel-2 p-1 text-sm" role="tablist">
                 {(['buy', 'sell'] as const).map((s) => (
                     <button

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useProblem } from '@/hooks/useProblems'
 import { ForeignProblemError, type ProblemView } from '@/lib/chain'
 import { ErrorPanel } from './ErrorPanel'
+import { BuyBar } from './problem/BuyBar'
 import { ForResearchers } from './problem/ForResearchers'
 import { History } from './problem/History'
 import { MarketPanel } from './problem/MarketPanel'
@@ -79,10 +80,10 @@ export function ProblemPage({ address }: { address: string }) {
         )
     }
     return (
-        <div className="space-y-12">
+        <div className="space-y-12 pb-20 lg:pb-0">
             <ProblemHeader problem={problem} />
             <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_360px]">
-                <aside className="lg:sticky lg:top-20 lg:order-2 lg:self-start">
+                <aside id="trade-card" className="lg:sticky lg:top-20 lg:order-2 lg:self-start">
                     <MarketPanel problem={problem} />
                 </aside>
                 <div className="min-w-0 space-y-12 lg:order-1">
@@ -107,6 +108,7 @@ export function ProblemPage({ address }: { address: string }) {
                     </Section>
                 </div>
             </div>
+            <BuyBar problem={problem} watch="trade-card" />
         </div>
     )
 }

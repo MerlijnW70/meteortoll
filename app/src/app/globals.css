@@ -124,6 +124,9 @@ body {
   border-radius: 8px !important;
   font-size: 14px !important;
   padding: 0 14px !important;
+  line-height: 36px !important;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 :root[data-theme="light"] {
@@ -201,6 +204,22 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .live-dot::after {
+    animation: none;
+  }
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+.sheet-up {
+  animation: sheet-up 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet-up {
     animation: none;
   }
 }
