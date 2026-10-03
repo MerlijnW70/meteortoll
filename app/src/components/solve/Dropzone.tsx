@@ -20,15 +20,15 @@ export function Dropzone({ onFile }: { onFile: (file: File) => void }) {
             }}
             onDragLeave={() => setDragging(false)}
             onDrop={onDrop}
-            className={`block cursor-pointer rounded-xl border-2 border-dashed p-10 text-center transition-colors focus-within:border-accent ${
-                dragging ? 'border-accent bg-accent/5' : 'border-border hover:border-accent/50'
+            className={`block cursor-pointer rounded-3xl border-2 border-dashed px-6 py-14 text-center transition-colors focus-within:border-accent ${
+                dragging ? 'border-accent bg-accent/5' : 'border-border bg-panel hover:border-accent/50'
             }`}
         >
-            <span aria-hidden className="mx-auto mb-3 grid size-10 place-items-center rounded-full bg-accent/15 text-lg text-accent">
+            <span aria-hidden className="mx-auto mb-4 grid size-12 place-items-center rounded-full bg-accent text-xl text-bg">
                 ↑
             </span>
-            <span className="block font-medium">Drop your scheme file here</span>
-            <span className="mt-1 block text-sm text-muted">or click to choose one · free, and it never leaves your browser</span>
+            <span className="block text-lg font-semibold">Drop your scheme file here</span>
+            <span className="mt-1 block text-sm text-muted">or tap to choose one · free, and it never leaves your browser</span>
             <input
                 id={id}
                 type="file"

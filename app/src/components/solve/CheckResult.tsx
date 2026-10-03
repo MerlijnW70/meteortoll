@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { type ProblemView, totalBounty } from '@/lib/chain'
 import type { Checked } from '@/lib/checkFile'
 import { count } from '@/lib/format'
+import { cardTitle } from '@/lib/card'
+import { MatrixArt } from '../MatrixArt'
 import { Panel, shape, sol } from '../ui'
 
 const tone = { holds: 'border-good/40', fails: 'border-bad/40', malformed: 'border-bad/40', running: 'border-border' }
@@ -22,15 +24,15 @@ export function CheckResult({
     const { header, result } = checked
     const verdict = result.verdict
     return (
-        <Panel className={`space-y-4 p-5 ${tone[verdict]}`} aria-live="polite">
+        <Panel className={`space-y-5 rounded-3xl p-6 ${tone[verdict]}`} aria-live="polite">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="min-w-0">
-                    <div className="font-mono text-xl">
+                    <div className="font-mono text-2xl tracking-tight">
                         ⟨{header.n1}×{header.n2}×{header.n3} : {header.rank}⟩
                     </div>
                     <div className="break-all text-xs text-muted">{checked.file}</div>
                 </div>
-                <span className={`shrink-0 rounded-full px-3 py-1 text-sm font-medium ${badge[verdict]}`}>{label[verdict]}</span>
+                <span className={`shrink-0 rounded-full px-4 py-1.5 text-base font-semibold ${badge[verdict]}`}>{label[verdict]}</span>
             </div>
 
             {verdict === 'holds' && answers.length > 0 && (
@@ -40,16 +42,16 @@ export function CheckResult({
                     </p>
                     <ul className="space-y-2">
                         {answers.map((p) => (
-                            <li key={p.address} className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-panel-2 p-3">
-                                <span>
-                                    <Link className="font-mono hover:underline" href={`/p/${p.address}`}>
-                                        ⟨{shape(p).label} : ≤{p.account.targetRank}⟩
-                                    </Link>{' '}
-                                    <span className="text-xs text-muted">{p.info.symbol}</span>
-                                    <span className="num block text-sm text-good">{sol(totalBounty(p))} SOL bounty</span>
+                            <li key={p.address} className="flex flex-wrap items-center gap-3 rounded-2xl bg-panel-2 p-3">
+                                <MatrixArt problem={p} className="h-12 w-[4.5rem] shrink-0 rounded-xl p-1" />
+                                <span className="min-w-0 flex-1">
+                                    <Link className="font-semibold hover:underline" href={`/p/${p.address}`}>
+                                        {cardTitle(p.account)}
+                                    </Link>
+                                    <span className="num block text-sm text-good">{sol(totalBounty(p))} SOL prize</span>
                                 </span>
-                                <button onClick={() => onSubmit(p.address)} className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-bg">
-                                    Submit for this bounty
+                                <button onClick={() => onSubmit(p.address)} className="rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-bg hover:opacity-90">
+                                    Submit for this prize
                                 </button>
                             </li>
                         ))}

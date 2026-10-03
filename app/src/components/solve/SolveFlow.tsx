@@ -34,7 +34,7 @@ export function SolveFlow({ problem, scheme }: { problem: ProblemView; scheme: U
     const canClose = !!attempt && (status === 'committed' || failed || lost)
 
     return (
-        <Panel className="space-y-4 p-5" id="submit">
+        <Panel className="scroll-mt-24 space-y-4 rounded-3xl p-6" id="submit">
             <div>
                 <h3 className="font-medium">
                     Submitting to <span className="font-mono">⟨{shape(problem).label} : ≤{problem.account.targetRank}⟩</span> · bounty{' '}

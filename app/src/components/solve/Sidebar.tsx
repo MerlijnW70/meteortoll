@@ -9,7 +9,9 @@ import { fetchPortfolio } from '@/lib/portfolio'
 import { MAX_SCHEME_BYTES } from '@/lib/checkFile'
 import { count } from '@/lib/format'
 import { useProblems } from '@/hooks/useProblems'
-import { More, Panel, shape, Skeleton, sol } from '../ui'
+import { cardTitle } from '@/lib/card'
+import { MatrixArt } from '../MatrixArt'
+import { More, shape, Skeleton, sol } from '../ui'
 
 const statement = (p: ProblemView) => `⟨${shape(p).label} : ≤${p.account.targetRank}⟩`
 
@@ -17,33 +19,34 @@ export function OpenBounties({ answers }: { answers: Set<string> }) {
     const { data: problems, isLoading } = useProblems()
     const open = (problems ?? []).filter((p) => p.phase === 'open' && !p.info.hidden).sort((a, b) => Number(totalBounty(b) - totalBounty(a)))
     return (
-        <Panel className="p-4">
-            <h2 className="mb-3 font-medium">Open bounties</h2>
+        <section>
+            <h2 className="mb-3 text-lg font-semibold tracking-tight">Open prizes</h2>
             {isLoading && <Skeleton className="h-24" />}
             {!isLoading && open.length === 0 && <p className="text-sm text-muted">No open problems right now.</p>}
-            <ul className="space-y-1">
+            <ul className="divide-y divide-border">
                 {open.map((p) => {
                     const answered = answers.has(p.address)
                     return (
                         <li key={p.address}>
                             <Link
                                 href={`/p/${p.address}`}
-                                className={`flex items-center justify-between gap-3 rounded-lg px-2.5 py-2 text-sm hover:bg-panel-2 ${answered ? 'bg-good/10 ring-1 ring-good/40' : ''}`}
+                                className={`-mx-2 flex items-center gap-3 rounded-xl px-2 py-2.5 text-sm hover:bg-panel-2 ${answered ? 'bg-good/10 ring-1 ring-good/40' : ''}`}
                             >
-                                <span className="min-w-0">
-                                    <span className="block font-mono">{statement(p)}</span>
+                                <MatrixArt problem={p} className="h-11 w-16 shrink-0 rounded-lg p-1" />
+                                <span className="min-w-0 flex-1">
+                                    <span className="block truncate font-medium">{cardTitle(p.account)}</span>
                                     <span className="block text-xs text-muted">
-                                        {answered ? <span className="text-good">your scheme answers this</span> : `record ${p.info.bestKnown?.rank ?? '—'}`}
+                                        {answered ? <span className="text-good">your scheme answers this</span> : `in ${p.account.targetRank} steps · record ${p.info.bestKnown?.rank ?? '—'}`}
                                         {p.info.kind === 'demo' && ' · demo'}
                                     </span>
                                 </span>
-                                <span className="num shrink-0 font-medium">{sol(totalBounty(p))} SOL</span>
+                                <span className="num shrink-0 font-semibold">{sol(totalBounty(p), 3)} SOL</span>
                             </Link>
                         </li>
                     )
                 })}
             </ul>
-        </Panel>
+        </section>
     )
 }
 
@@ -67,8 +70,8 @@ export function YourAttempts() {
     const attempts = (portfolio.data?.positions ?? []).filter((p) => p.attempt)
     if (!publicKey || attempts.length === 0) return null
     return (
-        <Panel className="p-4">
-            <h2 className="mb-3 font-medium">Your attempts</h2>
+        <section>
+            <h2 className="mb-3 text-lg font-semibold tracking-tight">Your attempts</h2>
             <ul className="space-y-2 text-sm">
                 {attempts.map(({ problem, attempt }) => (
                     <li key={problem.address} className="flex items-center justify-between gap-3">
@@ -76,13 +79,13 @@ export function YourAttempts() {
                             <span className="block font-mono">{statement(problem)}</span>
                             <span className="block text-xs text-muted">{NEXT[statusName(attempt!.status)] ?? statusName(attempt!.status)}</span>
                         </span>
-                        <Link href={`/solve?problem=${problem.address}`} className="shrink-0 text-xs text-accent hover:underline">
-                            Continue
+                        <Link href={`/solve?problem=${problem.address}`} className="shrink-0 py-1 text-sm text-accent hover:underline">
+                            Continue ›
                         </Link>
                     </li>
                 ))}
             </ul>
-        </Panel>
+        </section>
     )
 }
 
@@ -95,8 +98,8 @@ const EXAMPLE = `{
 
 export function SchemeFormat() {
     return (
-        <Panel id="scheme-format" className="scroll-mt-24 space-y-3 p-4 text-sm">
-            <h2 className="font-medium">Scheme format</h2>
+        <section id="scheme-format" className="scroll-mt-24 space-y-3 border-t border-border pt-8 text-sm">
+            <h2 className="text-xl font-semibold tracking-tight">What file do I need?</h2>
             <p className="text-muted">
                 JSON with <code className="font-mono text-text">n, u, v, w</code>: one row per multiplication. <strong className="text-text">w is C transposed.</strong>
             </p>
@@ -116,9 +119,9 @@ export function SchemeFormat() {
                     <li>The encoded scheme may be at most {count(MAX_SCHEME_BYTES)} bytes; a .bin file in that encoding works too.</li>
                 </ul>
             </More>
-            <a href="/samples/strassen-2x2x2.json" download className="inline-block rounded-lg border border-border px-3 py-1.5 text-xs text-muted hover:text-text">
+            <a href="/samples/strassen-2x2x2.json" download className="inline-block rounded-full border border-border px-4 py-2 text-sm text-muted hover:text-text">
                 Download Strassen&apos;s 2×2×2 as an example
             </a>
-        </Panel>
+        </section>
     )
 }

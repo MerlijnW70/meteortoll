@@ -169,7 +169,7 @@ test('home roles', async ({ page }) => {
 test('solve page', async ({ page }) => {
     const errors = watch(page)
     await page.goto('/solve')
-    await expect(page.getByRole('heading', { name: 'Open bounties' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Open prizes' })).toBeVisible()
     await expect(page.getByRole('link', { name: /Download Strassen/ })).toHaveAttribute('href', '/samples/strassen-2x2x2.json')
     await expect(page.getByText('w is C transposed.')).toBeVisible()
     await page.getByText('Example, index layout and limits').click()

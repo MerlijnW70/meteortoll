@@ -10,8 +10,9 @@ import { Dropzone } from '@/components/solve/Dropzone'
 import { OpenBounties, SchemeFormat, YourAttempts } from '@/components/solve/Sidebar'
 import { SolveFlow } from '@/components/solve/SolveFlow'
 import { BOND_SOL } from '@/components/solve/steps'
-import { PageIntro, Panel, shape, sol } from '@/components/ui'
+import { Panel, shape, sol } from '@/components/ui'
 import { useProblems } from '@/hooks/useProblems'
+import { totalBounty } from '@/lib/chain'
 import { brokenScheme, type Checked, checkFile } from '@/lib/checkFile'
 import { sharedVerifier } from '@/lib/verifier'
 
@@ -31,11 +32,11 @@ const STEPS = 2
 
 function Step({ n, title, active, children }: { n: number; title: string; active: boolean; children: ReactNode }) {
     return (
-        <section className={`space-y-4 ${active ? '' : 'opacity-70'}`} aria-label={`Step ${n} of ${STEPS}: ${title}`}>
+        <section className={`space-y-5 ${active ? '' : 'opacity-60'}`} aria-label={`Step ${n} of ${STEPS}: ${title}`}>
             <div className="flex items-center gap-3">
                 <span
                     aria-hidden
-                    className={`num grid size-7 shrink-0 place-items-center rounded-full text-sm font-semibold ${active ? 'bg-accent text-bg' : 'border border-border text-faint'}`}
+                    className={`num grid size-8 shrink-0 place-items-center rounded-full text-sm font-semibold ${active ? 'bg-accent text-bg' : 'border border-border text-faint'}`}
                 >
                     {n}
                 </span>
@@ -43,11 +44,37 @@ function Step({ n, title, active, children }: { n: number; title: string; active
                     <p className="text-xs text-muted">
                         Step {n} of {STEPS}
                     </p>
-                    <h2 className="text-lg font-medium">{title}</h2>
+                    <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
                 </div>
             </div>
             {children}
         </section>
+    )
+}
+
+function Intro() {
+    const { data: problems } = useProblems()
+    const open = (problems ?? []).filter((p) => p.phase === 'open' && !p.info.hidden)
+    const total = open.reduce((sum, p) => sum + totalBounty(p), 0n)
+    return (
+        <header className="max-w-2xl">
+            <p className="text-sm text-muted">Solve</p>
+            <h1 className="mt-2 text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl">Found a faster way? Check it, then claim the prize.</h1>
+            <p className="mt-4 text-lg text-muted">
+                Drop your scheme. Your browser runs the same check the Solana program runs, for free, and the file never leaves your computer.
+            </p>
+            {problems && (
+                <p className="num mt-4 text-sm text-muted">
+                    <span className="font-semibold text-text">{open.length}</span> open {open.length === 1 ? 'prize' : 'prizes'}
+                    {open.length > 0 && (
+                        <>
+                            {' '}
+                            · <span className="font-semibold text-text">{sol(total, 3)} SOL</span> in total
+                        </>
+                    )}
+                </p>
+            )}
+        </header>
     )
 }
 
@@ -122,10 +149,10 @@ function Solve() {
 
     const answered = new Set(checked?.result.verdict === 'holds' ? answers.map((p) => p.address) : [])
     return (
-        <div className="space-y-6">
-            <PageIntro title="Solve">Found a way to multiply matrices with fewer multiplications than the record? Check it here for free, then claim the bounty.</PageIntro>
-            <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_21rem]">
-                <div className="space-y-10">
+        <div className="space-y-12">
+            <Intro />
+            <div className="grid items-start gap-12 lg:grid-cols-[minmax(0,1fr)_22rem]">
+                <div className="min-w-0 space-y-12">
                     <Step n={1} title="Check your scheme" active>
                         {resuming && !selected && resuming.phase !== 'solved' && (
                             <Panel className="border-accent/40 p-4 text-sm">
@@ -167,27 +194,27 @@ function Solve() {
                         ) : (
                             <p className="text-sm text-muted">
                                 {!checked
-                                    ? `Once your scheme checks out, you submit it here in a few wallet approvals, with a ${BOND_SOL} SOL bond you get back.`
+                                    ? `Once your scheme checks out, you submit it here in two wallet approvals, with a ${BOND_SOL} SOL bond you get back.`
                                     : checked.result.verdict !== 'holds'
                                       ? 'This scheme does not hold, so there is nothing to submit. Fix it and check again.'
                                       : answers.length > 0
-                                        ? 'Pick the bounty to submit to, above.'
-                                        : 'This scheme holds, but no open bounty asks for it.'}
+                                        ? 'Pick the prize to submit to, above.'
+                                        : 'This scheme holds, but no open prize asks for it.'}
                             </p>
                         )}
                     </Step>
+                    <SchemeFormat />
                 </div>
 
-                <aside className="space-y-4 lg:sticky lg:top-20" aria-label="Bounties and help">
+                <aside className="space-y-8 lg:sticky lg:top-20" aria-label="Prizes">
                     {publicKey && (
                         <p className="num text-xs text-muted">
                             Solving as <span className="break-all font-mono text-text">{publicKey.toBase58()}</span>
-                            {balance.data !== undefined && <> · {sol(balance.data)} SOL</>}. Bounties are paid to this address.
+                            {balance.data !== undefined && <> · {sol(balance.data)} SOL</>}. Prizes are paid to this address.
                         </p>
                     )}
                     <YourAttempts />
                     <OpenBounties answers={answered} />
-                    <SchemeFormat />
                 </aside>
             </div>
         </div>
