@@ -178,10 +178,10 @@ body {
 @keyframes live-ring {
   from {
     transform: scale(1);
-    opacity: 0.7;
+    opacity: 0.85;
   }
   to {
-    transform: scale(2.8);
+    transform: scale(3.2);
     opacity: 0;
   }
 }
@@ -196,7 +196,7 @@ body {
   inset: 0;
   border-radius: 9999px;
   background: inherit;
-  animation: live-ring 1.8s ease-out infinite;
+  animation: live-ring 1.6s ease-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
