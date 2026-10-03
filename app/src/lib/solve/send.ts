@@ -3,6 +3,8 @@ import { failureFromStatus } from '../errors'
 import { applyBudget, estimatePrice } from '../fees'
 import { withRetry } from '../rpc'
 
+export class ExpiredError extends Error {}
+
 export async function prepare(connection: Connection, txs: Transaction[], payer: PublicKey) {
     const price = await estimatePrice(connection, txs)
     const latest = await withRetry(() => connection.getLatestBlockhash('confirmed'))
@@ -64,7 +66,7 @@ async function sendBatch(connection: Connection, signed: Transaction[], onProgre
             const last = [...pending]
             const { value: final } = await withRetry(() => connection.getSignatureStatuses(last, { searchTransactionHistory: true }))
             const missing = last.filter((_, i) => !final[i] || final[i]!.err || !['confirmed', 'finalized'].includes(final[i]!.confirmationStatus ?? ''))
-            if (missing.length > 0) throw new Error(`${missing.length} transactions expired before landing; continue to re-sign only the missing ones`)
+            if (missing.length > 0) throw new ExpiredError(`${missing.length} transactions expired before landing; continue to re-sign only the missing ones`)
             pending.clear()
             onProgress(signatures.length)
         }

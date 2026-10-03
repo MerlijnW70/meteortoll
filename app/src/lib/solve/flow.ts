@@ -5,7 +5,7 @@ import { withRetry } from '../rpc'
 import { simulateOrThrow } from '../tx'
 import { commitAndOpen, revealAndVerifyTxs, uploadTxs } from './build'
 import { committedSalt, fetchAttempt, saveSalt } from './program'
-import { prepare, sendAll, waitForSlot } from './send'
+import { ExpiredError, prepare, sendAll, waitForSlot } from './send'
 
 export interface SolveContext {
     connection: Connection
@@ -27,6 +27,7 @@ export const NOTES = {
     solve: 'Committed. Prompt 2 of 2: approve the upload, reveal and verification.',
     resume: 'Approve the upload, reveal and verification in one prompt.',
     verify: 'Approve the verification transactions.',
+    retry: 'Some transactions expired. Approve the remaining ones.',
 }
 
 const MISSING_SALT =
@@ -62,7 +63,7 @@ export async function solveCommitted(ctx: SolveContext, state: AttemptAccount) {
     await solveWith(ctx, state, salt, NOTES.resume)
 }
 
-async function solveWith(ctx: SolveContext, state: AttemptAccount, salt: Uint8Array, prompt: string) {
+async function solveWith(ctx: SolveContext, state: AttemptAccount, salt: Uint8Array, prompt: string, retried = false) {
     const { connection, program, problem, solver, scheme } = ctx
     const attempt = attemptAddress(problem, solver)
     const committedSlot = state.committedSlot.toNumber()
@@ -81,13 +82,22 @@ async function solveWith(ctx: SolveContext, state: AttemptAccount, salt: Uint8Ar
     await simulateOrThrow(connection, uploads[0] ?? steps[0])
     ctx.note(prompt)
     const signed = await ctx.sign([...uploads, ...steps])
-    const written = signed.slice(0, uploads.length)
-    if (written.length > 0) await deliver(connection, written, (done) => ctx.note(`Uploaded ${done} of ${written.length} chunks…`))
-    ctx.note('Waiting for a new slot before the reveal…')
-    await waitForSlot(connection, committedSlot + 2)
-    const [reveal] = await deliver(connection, signed.slice(uploads.length, uploads.length + 1), () => ctx.note('Revealed. Verifying on-chain…'))
-    ctx.link('reveal', reveal)
-    await verifyUntilDone(ctx, signed.slice(uploads.length + 1))
+    try {
+        const written = signed.slice(0, uploads.length)
+        if (written.length > 0) await deliver(connection, written, (done) => ctx.note(`Uploaded ${done} of ${written.length} chunks…`))
+        ctx.note('Waiting for a new slot before the reveal…')
+        await waitForSlot(connection, committedSlot + 2)
+        const [reveal] = await deliver(connection, signed.slice(uploads.length, uploads.length + 1), () => ctx.note('Revealed. Verifying on-chain…'))
+        ctx.link('reveal', reveal)
+        await verifyUntilDone(ctx, signed.slice(uploads.length + 1))
+    } catch (error) {
+        if (retried || !(error instanceof ExpiredError)) throw error
+        const now = await attemptNow(ctx)
+        if (!now) throw error
+        const status = statusName(now.status)
+        if (status === 'committed') await solveWith(ctx, now, salt, NOTES.retry, true)
+        else if (status === 'revealed') await finishVerification(ctx, now)
+    }
 }
 
 export async function finishVerification(ctx: SolveContext, state: AttemptAccount) {

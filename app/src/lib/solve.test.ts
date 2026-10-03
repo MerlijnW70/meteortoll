@@ -5,6 +5,7 @@ import BN from 'bn.js'
 import { ComputeBudgetInstruction, ComputeBudgetProgram, Keypair, PublicKey, type Transaction } from '@solana/web3.js'
 import { type AttemptAccount, attemptAddress, commitment, TOLL } from '@meteortoll/core'
 import { MAX_PRICE } from './fees'
+import { ExpiredError } from './solve/send'
 import { commitThenSolve, committedSalt, revealAndVerifyTxs, saveSalt, type SolveContext, solveCommitted, tollWriter } from './solve'
 
 const store = new Map<string, string>()
@@ -93,6 +94,45 @@ test('two prompts', async () => {
     assert.equal(txs[0].instructions.at(-1)!.programId.toBase58(), TOLL.toBase58())
     assert.ok(txs.every((tx) => tx.recentBlockhash === txs[0].recentBlockhash))
     assert.ok(txs.length >= 5)
+})
+
+test('expiry recovery', async () => {
+    store.clear()
+    const log: string[] = []
+    const sent: Transaction[][] = []
+    const connection = fakeConnection(log)
+    const ctx = context(log, connection, sent, [])
+    let calls = 0
+    ctx.deliver = async (_, txs) => {
+        calls++
+        if (calls === 1) throw new ExpiredError('1 transactions expired before landing')
+        return txs.map((_, i) => `sig${i}`)
+    }
+    await commitThenSolve(ctx)
+    assert.deepEqual(log.filter((l) => l.startsWith('prompt')), ['prompt commit', 'prompt solve', 'prompt solve'])
+    assert.notEqual(sent[0][0].recentBlockhash, sent[1][0].recentBlockhash)
+})
+
+test('expiry once', async () => {
+    store.clear()
+    const log: string[] = []
+    const ctx = context(log, fakeConnection(log), [], [])
+    ctx.deliver = async () => {
+        throw new ExpiredError('1 transactions expired before landing')
+    }
+    await assert.rejects(commitThenSolve(ctx), ExpiredError)
+    assert.deepEqual(log.filter((l) => l.startsWith('prompt')), ['prompt commit', 'prompt solve', 'prompt solve'])
+})
+
+test('other errors', async () => {
+    store.clear()
+    const log: string[] = []
+    const ctx = context(log, fakeConnection(log), [], [])
+    ctx.deliver = async () => {
+        throw new Error('boom')
+    }
+    await assert.rejects(commitThenSolve(ctx), /boom/)
+    assert.deepEqual(log.filter((l) => l.startsWith('prompt')), ['prompt commit', 'prompt solve'])
 })
 
 test('salt after simulation', async () => {
