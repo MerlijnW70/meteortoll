@@ -2,8 +2,8 @@ import { TOLL } from '@meteortoll/core'
 import { LAUNCHPAD } from './config'
 
 export function clientIp(headers: Headers): string {
-    const direct = headers.get('x-vercel-forwarded-for') ?? headers.get('x-real-ip')
-    if (direct) return direct.trim()
+    const direct = (headers.get('x-vercel-forwarded-for') ?? headers.get('x-real-ip'))?.trim()
+    if (direct) return direct
     return headers.get('x-forwarded-for')?.split(',').pop()?.trim() || 'unknown'
 }
 
@@ -46,7 +46,7 @@ export interface RpcCall {
 
 export function refusal(call: RpcCall): string | null {
     if (typeof call !== 'object' || call === null || Array.isArray(call)) return 'each call must be a JSON-RPC object'
-    if (typeof call.method !== 'string' || !ALLOWED.has(call.method)) return `method ${String(call.method)} is not allowed`
+    if (typeof call.method !== 'string' || !ALLOWED.has(call.method)) return `method ${typeof call.method === 'string' ? call.method : typeof call.method} is not allowed`
     if (call.params !== undefined && !Array.isArray(call.params)) return 'params must be an array'
     if (call.method === 'getProgramAccounts') {
         const [program, config] = (call.params as unknown[] | undefined) ?? []

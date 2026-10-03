@@ -102,6 +102,33 @@ test('budget forgets stale clients', () => {
     assert.equal(budget.over('a', 1, 2_100), false)
 })
 
+test('prune at window', () => {
+    const budget = new Budget(5, 1_000, 3)
+    budget.over('a', 1, 0)
+    budget.over('b', 5, 0)
+    budget.over('c', 1, 500)
+    budget.over('d', 1, 1_000)
+    assert.equal(budget.over('b', 1, 1_000), true)
+})
+
+test('prune keeps recent', () => {
+    const budget = new Budget(5, 1_000, 2)
+    budget.over('a', 1, 0)
+    budget.over('b', 5, 500)
+    budget.over('c', 1, 600)
+    assert.equal(budget.over('b', 1, 700), true)
+})
+
+test('prune only when full', () => {
+    const budget = new Budget(5, 1_000, 10)
+    budget.over('a', 1, 0)
+    budget.over('b', 1, 0)
+    budget.over('c', 1, 2_000)
+    assert.equal(budget.size, 3)
+    budget.over('a', 1, 2_000)
+    assert.equal(budget.size, 3)
+})
+
 test('client ip', () => {
     const ip = (h: Record<string, string>) => clientIp(new Headers(h))
     assert.equal(ip({ 'x-vercel-forwarded-for': '1.2.3.4', 'x-real-ip': '5.6.7.8', 'x-forwarded-for': '9.9.9.9, 1.2.3.4' }), '1.2.3.4')
