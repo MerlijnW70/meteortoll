@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { useHistory } from '@/hooks/useHistory'
+import { useStats } from '@/hooks/useStats'
 import { cardChip, cardTitle } from '@/lib/card'
 import { type ProblemView, totalBounty } from '@/lib/chain'
 import { problemStanding, standingNote } from '@/lib/classify'
@@ -34,8 +35,10 @@ function PrizeStat({ problem }: { problem: ProblemView }) {
 }
 
 function PaidStat({ problem }: { problem: ProblemView }) {
+    const stats = useStats()
     const history = useHistory(problem.address)
-    const value = history.data ? `${sol(paidOut(history.data))} SOL` : history.error ? '—' : '…'
+    const counted = stats.data?.perProblem[problem.address]?.paidLamports
+    const value = counted !== undefined ? `${sol(counted)} SOL` : history.data ? `${sol(paidOut(history.data))} SOL` : history.error ? '—' : '…'
     return <Stat big label="Paid to the solver" value={value} sub={`${sol(totalBounty(problem))} SOL left to claim`} />
 }
 

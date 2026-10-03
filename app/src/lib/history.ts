@@ -1,6 +1,6 @@
 import { BorshCoder, type Idl, utils } from '@coral-xyz/anchor'
 import type { Connection, PublicKey, VersionedTransactionResponse } from '@solana/web3.js'
-import { commitment, TOLL, tollIdl } from '@meteortoll/core'
+import { attemptAddress, commitment, TOLL, tollIdl } from '@meteortoll/core'
 import { withRetry } from './rpc'
 
 const coder = new BorshCoder(tollIdl as Idl)
@@ -73,12 +73,12 @@ export interface DecodedCall {
 
 const BATCH = 40
 
-export async function allSignatures(connection: Connection, address: PublicKey, cap: number) {
+export async function allSignatures(connection: Connection, address: PublicKey, cap: number, until?: string) {
     const all: Awaited<ReturnType<Connection['getSignaturesForAddress']>> = []
     let before: string | undefined
     while (all.length < cap) {
         const limit = Math.min(1_000, cap - all.length)
-        const page = await withRetry(() => connection.getSignaturesForAddress(address, { limit, before }, 'confirmed'))
+        const page = await withRetry(() => connection.getSignaturesForAddress(address, { limit, before, until }, 'confirmed'))
         all.push(...page)
         if (page.length < limit) break
         before = page[page.length - 1].signature
@@ -119,10 +119,24 @@ export function tollCalls(tx: VersionedTransactionResponse): DecodedCall[] {
     return calls
 }
 
-function programEvents(tx: VersionedTransactionResponse) {
+const INVOKE = /^Program (\w+) invoke \[\d+\]$/
+const EXIT = /^Program \w+ (success|failed)/
+
+export function programEvents(logs: string[]) {
     const found: { name: string; data: Record<string, unknown> }[] = []
-    for (const line of tx.meta?.logMessages ?? []) {
-        if (!line.startsWith('Program data: ')) continue
+    const stack: string[] = []
+    const toll = TOLL.toBase58()
+    for (const line of logs) {
+        const invoked = INVOKE.exec(line)
+        if (invoked) {
+            stack.push(invoked[1])
+            continue
+        }
+        if (EXIT.test(line)) {
+            stack.pop()
+            continue
+        }
+        if (!line.startsWith('Program data: ') || stack.at(-1) !== toll) continue
         const event = coder.events.decode(line.slice('Program data: '.length))
         if (event) found.push({ name: event.name, data: event.data as Record<string, unknown> })
     }
@@ -135,8 +149,26 @@ const SWEEP_SOURCES: Record<string, string> = {
     sweepPositionFees: 'DAMM v2 position fees',
 }
 
-export async function fetchHistory(connection: Connection, problem: PublicKey): Promise<HistoryEvent[]> {
-    const txs = await fetchTransactions(connection, problem)
+export const HISTORY_WINDOW = 200
+
+const histories = new Map<string, { newest: string; events: HistoryEvent[] }>()
+
+export async function fetchHistory(connection: Connection, problem: PublicKey, cap = HISTORY_WINDOW): Promise<HistoryEvent[]> {
+    const key = `${problem.toBase58()}:${cap}`
+    const known = histories.get(key)
+    const signatures = await allSignatures(connection, problem, cap, known?.newest)
+    if (signatures.length === 0) return firstVerifies(known?.events ?? [])
+    const fresh = eventsIn(await transactionsFor(connection, signatures.filter((s) => !s.err).map((s) => s.signature)))
+    const events = [...(known && signatures.length < cap ? known.events : []), ...fresh]
+    histories.set(key, { newest: signatures[0].signature, events })
+    return firstVerifies(events)
+}
+
+function firstVerifies(events: HistoryEvent[]) {
+    return events.filter((e, i) => e.kind !== 'verify' || !events.slice(0, i).some((p) => p.kind === 'verify' && p.actor === e.actor))
+}
+
+export function eventsIn(txs: VersionedTransactionResponse[]): HistoryEvent[] {
     const events: HistoryEvent[] = []
     for (const tx of txs) {
         const base = { signature: tx.transaction.signatures[0], slot: tx.slot, time: tx.blockTime ?? null }
@@ -164,14 +196,14 @@ export async function fetchHistory(connection: Connection, problem: PublicKey): 
                 events.push({ ...base, kind, actor: payer, lamports, detail: SWEEP_SOURCES[call.name] })
             } else if (kind) events.push({ ...base, kind, actor: call.accounts.solver ?? call.accounts.cranker ?? payer })
         }
-        for (const event of programEvents(tx)) {
+        for (const event of programEvents(tx.meta?.logMessages ?? [])) {
             if (event.name === 'Solved' || event.name === 'solved') {
                 events.push({ ...base, kind: 'solved', actor: String(event.data.solver), detail: `rank ${String(event.data.rank)}` })
             }
             if (event.name === 'Failed' || event.name === 'failed') events.push({ ...base, kind: 'failed', actor: String(event.data.solver) })
         }
     }
-    return events.filter((e, i) => e.kind !== 'verify' || !events.slice(0, i).some((p) => p.kind === 'verify' && p.actor === e.actor))
+    return events
 }
 
 export interface RecoveredScheme {
@@ -183,7 +215,8 @@ export interface RecoveredScheme {
 }
 
 export async function recoverScheme(connection: Connection, problem: PublicKey, solver: string): Promise<RecoveredScheme | null> {
-    const problemTxs = await fetchTransactions(connection, problem)
+    const { PublicKey } = await import('@solana/web3.js')
+    const problemTxs = await fetchTransactions(connection, attemptAddress(problem, new PublicKey(solver)), 1_000)
     let submission: string | undefined
     let attempt: string | undefined
     let committed: number[] | undefined
@@ -202,8 +235,7 @@ export async function recoverScheme(connection: Connection, problem: PublicKey, 
         }
     }
     if (!submission || !attempt || !committed || !salt) return null
-    const { PublicKey } = await import('@solana/web3.js')
-    const writes = await fetchTransactions(connection, new PublicKey(submission))
+    const writes = await fetchTransactions(connection, new PublicKey(submission), 5_000)
     const chunks: { offset: number; bytes: Uint8Array }[] = []
     let length = 0
     for (const tx of writes) {

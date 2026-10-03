@@ -13,8 +13,9 @@ export interface FmmScheme {
 }
 
 function coefficient(raw: number | string): number {
-    const text = String(raw)
+    const text = String(raw).trim()
     if (text.includes('/')) throw new Error(`rational coefficient ${text} is not accepted`)
+    if (typeof raw === 'string' && !/^[+-]?\d+$/.test(text)) throw new Error(`coefficient ${JSON.stringify(raw)} is not a whole number`)
     const value = Number(text)
     if (!Number.isInteger(value) || value < -128 || value > 127) {
         throw new Error(`coefficient ${text} does not fit the i8 encoding`)

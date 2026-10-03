@@ -8,7 +8,7 @@ export function serverConnection(): Connection {
     return new Connection(urls[0], { commitment: 'confirmed', fetch: failoverFetch(urls) })
 }
 
-export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://meteortoll.vercel.app'
+export { SITE_URL } from './config'
 
 const PROBLEM_TTL_MS = 30_000
 const TRANSIENT = ['network', 'busy', 'expired']
@@ -17,8 +17,8 @@ const problems = new Map<string, { at: number; value: Promise<ProblemView> }>()
 const LIST_TTL_MS = 30_000
 let list: { at: number; value: Promise<ProblemView[]> } | null = null
 
-export function serverProblems(now = Date.now()): Promise<ProblemView[]> {
-    if (list && now - list.at < LIST_TTL_MS) return list.value
+export function serverProblems(now = Date.now(), fresh = false): Promise<ProblemView[]> {
+    if (!fresh && list && now - list.at < LIST_TTL_MS) return list.value
     const value = fetchProblems(serverConnection())
     const entry = { at: now, value }
     list = entry
@@ -28,7 +28,10 @@ export function serverProblems(now = Date.now()): Promise<ProblemView[]> {
     return value
 }
 
-export function serverProblem(address: string, now = Date.now()): Promise<ProblemView> {
+export async function serverProblem(address: string, now = Date.now()): Promise<ProblemView> {
+    const listed = await serverProblems(now).catch(() => [])
+    const found = listed.find((p) => p.address === address)
+    if (found) return found
     const hit = problems.get(address)
     if (hit && now - hit.at < PROBLEM_TTL_MS) return hit.value
     if (problems.size > 5_000) problems.clear()

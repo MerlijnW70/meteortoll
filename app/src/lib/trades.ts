@@ -1,6 +1,7 @@
 import { BorshCoder, utils } from '@coral-xyz/anchor'
 import type { Connection, PublicKey, VersionedTransactionResponse } from '@solana/web3.js'
 import { dbcIdl } from './dbc'
+import { allSignatures, transactionsFor } from './history'
 import { DBC } from '@meteortoll/core'
 
 const coder = new BorshCoder(dbcIdl)
@@ -85,13 +86,15 @@ export function tradesIn(tx: VersionedTransactionResponse, pool: PublicKey): Tra
     return trades
 }
 
+const feeds = new Map<string, { newest: string; trades: Trade[] }>()
+
 export async function fetchTrades(connection: Connection, pool: PublicKey, limit = 20): Promise<Trade[]> {
-    const signatures = await connection.getSignaturesForAddress(pool, { limit }, 'confirmed')
-    const ok = signatures.filter((s) => !s.err)
-    if (ok.length === 0) return []
-    const transactions = await connection.getTransactions(
-        ok.map((s) => s.signature),
-        { maxSupportedTransactionVersion: 0, commitment: 'confirmed' }
-    )
-    return transactions.flatMap((tx) => (tx ? tradesIn(tx, pool) : []))
+    const key = `${pool.toBase58()}:${limit}`
+    const known = feeds.get(key)
+    const signatures = await allSignatures(connection, pool, limit, known?.newest)
+    if (signatures.length === 0) return known?.trades ?? []
+    const fresh = (await transactionsFor(connection, signatures.filter((s) => !s.err).map((s) => s.signature))).reverse().flatMap((tx) => tradesIn(tx, pool))
+    const trades = [...fresh, ...(known && signatures.length < limit ? known.trades : [])].slice(0, limit)
+    feeds.set(key, { newest: signatures[0].signature, trades })
+    return trades
 }

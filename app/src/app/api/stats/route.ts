@@ -1,6 +1,8 @@
 import { collectStats, type Stats, toJson } from '@/lib/stats'
 import { serverConnection } from '@/lib/server'
 
+export const maxDuration = 60
+
 const FRESH_MS = 60_000
 let last: { at: number; stats: Promise<Stats> } | null = null
 

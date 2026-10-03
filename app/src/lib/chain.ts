@@ -1,7 +1,7 @@
 import { AnchorProvider, BorshAccountsCoder, type Idl, Program } from '@coral-xyz/anchor'
 import { type AccountInfo, type Connection, PublicKey, type Transaction, type VersionedTransaction } from '@solana/web3.js'
 import { dbcIdl } from './dbc'
-import { DBC, type ProblemAccount, PROBLEM_SPACE, problemPhase, type ProblemPhase, tollIdl } from '@meteortoll/core'
+import { DBC, type ProblemAccount, PROBLEM_SPACE, problemPhase, type ProblemPhase, TOLL, tollIdl } from '@meteortoll/core'
 import { classify } from './classify'
 import { CATALOG, LAUNCHPAD } from './config'
 import { type KnownFormat, knownFormat } from './known'
@@ -63,7 +63,7 @@ function describe(address: string, account: ProblemAccount, token: TokenName | u
         name: curated?.name ?? token?.name ?? `${shape} rank ≤ ${account.targetRank}`,
         symbol: curated?.symbol ?? token?.symbol ?? '',
         ...classify(curated, team, account.targetRank),
-        coefficients: curated?.coefficients ?? 'integers, |c| <= 128',
+        coefficients: curated?.coefficients ?? 'integers from −128 to 127',
         bestKnown: curated?.bestKnown ?? known?.bestKnown,
         team,
         listed: !!curated,
@@ -186,14 +186,35 @@ export function assertOfficial(address: string, account: Pick<ProblemAccount, 'l
     if (!account.launchpad.equals(launchpad)) throw new ForeignProblemError(address, account.launchpad.toBase58())
 }
 
+export class ProblemNotFoundError extends Error {
+    constructor(readonly address: string) {
+        super(`no meteortoll problem at ${address}`)
+        this.name = 'ProblemNotFoundError'
+    }
+}
+
+export function problemKey(address: string): PublicKey {
+    try {
+        return new PublicKey(address)
+    } catch {
+        throw new ProblemNotFoundError(address)
+    }
+}
+
+export function decodeProblem(address: string, info: Pick<AccountInfo<Buffer>, 'owner' | 'data'> | null, connection: Connection): ProblemAccount {
+    if (!info || !info.owner.equals(TOLL) || info.data.length !== PROBLEM_SPACE) throw new ProblemNotFoundError(address)
+    try {
+        return tollReader(connection).coder.accounts.decode('problem', info.data) as ProblemAccount
+    } catch {
+        throw new ProblemNotFoundError(address)
+    }
+}
+
 export async function fetchProblem(connection: Connection, address: string): Promise<ProblemView> {
-    const toll = tollReader(connection)
-    const key = new PublicKey(address)
-    const [account, slot] = await Promise.all([
-        (toll.account as never as Accounts).problem.fetch(key),
-        connection.getSlot('confirmed'),
-    ])
-    assertOfficial(address, account as ProblemAccount)
-    const [view] = await views(connection, [{ publicKey: key, account: account as ProblemAccount }], slot)
+    const key = problemKey(address)
+    const [info, slot] = await Promise.all([connection.getAccountInfo(key, 'confirmed'), connection.getSlot('confirmed')])
+    const account = decodeProblem(address, info, connection)
+    assertOfficial(address, account)
+    const [view] = await views(connection, [{ publicKey: key, account }], slot)
     return view
 }

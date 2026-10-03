@@ -8,7 +8,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { notifyError } from '@/lib/notify'
 import { simulateOrThrow } from '@/lib/tx'
-import { LAUNCHPAD } from '@/lib/config'
+import { LAUNCHPAD, SITE_URL } from '@/lib/config'
 import { finishRegistration, type LaunchRequest, type PendingLaunch, prepareLaunch } from '@/lib/launch'
 import { tollReader } from '@/lib/chain'
 import { withRetry } from '@/lib/rpc'
@@ -83,7 +83,7 @@ export function useLaunch() {
         try {
             setNote('Preparing the launch…')
             const program = tollWriter(connection, wallet)
-            const prepared = await prepareLaunch(connection, program, LAUNCHPAD, publicKey, request, window.location.origin)
+            const prepared = await prepareLaunch(connection, program, LAUNCHPAD, publicKey, request, SITE_URL)
             await prepare(connection, [prepared.create, prepared.register], publicKey)
             await simulateOrThrow(connection, prepared.create)
             setNote('Approve the launch in your wallet: two transactions, one approval.')

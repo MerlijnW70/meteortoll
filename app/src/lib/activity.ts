@@ -4,6 +4,7 @@ import type { ProblemView } from './chain'
 import { allSignatures, tollCalls, transactionsFor, transferredOut } from './history'
 import { withRetry } from './rpc'
 import { tradesIn } from './trades'
+import { CREATOR_PERCENT, toPrize } from './economics'
 
 export type ActivityKind = 'buy' | 'sell' | 'launch' | 'commit' | 'claim' | 'close'
 
@@ -94,4 +95,4 @@ export function costBasis(trades: Pick<Activity, 'kind' | 'lamports' | 'tokens'>
     return { tokens, cost, realized }
 }
 
-export const bountyFunded = (activity: Activity[]) => activity.reduce((sum, a) => sum + (a.fee ?? 0n), 0n)
+export const bountyFunded = (activity: Activity[], creatorPercent = CREATOR_PERCENT) => toPrize(activity.reduce((sum, a) => sum + (a.fee ?? 0n), 0n), creatorPercent)

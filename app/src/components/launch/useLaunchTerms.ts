@@ -5,7 +5,7 @@ import { useConnection, useWallet } from '@solana/wallet-adapter-react'
 import { useQuery } from '@tanstack/react-query'
 import { getCurrentPoint } from '@meteora-ag/dynamic-bonding-curve-sdk'
 import { tollReader } from '@/lib/chain'
-import { LAUNCHPAD } from '@/lib/config'
+import { LAUNCHPAD, SITE_URL } from '@/lib/config'
 import { type LaunchRequest, launchCost, launchTerms, prepareLaunch, statementProblem } from '@/lib/launch'
 import { prepare } from '@/lib/solve/send'
 
@@ -40,7 +40,7 @@ export function useLaunchCost(request: LaunchRequest | null) {
         enabled: settled !== null && settled === key,
         queryFn: async () => {
             const program = tollReader(connection)
-            const prepared = await prepareLaunch(connection, program, LAUNCHPAD, publicKey!, request!, window.location.origin)
+            const prepared = await prepareLaunch(connection, program, LAUNCHPAD, publicKey!, request!, SITE_URL)
             await prepare(connection, [prepared.create, prepared.register], publicKey!)
             return launchCost(connection, program, prepared, publicKey!)
         },

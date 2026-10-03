@@ -77,7 +77,8 @@ const tiny = (x: number | string, v: (number | string)[][] = [[1]], w: (number |
 test('i8 range', () => {
     assert.deepEqual([...encodeScheme(tiny(-128)).subarray(7, 12)], [1, 0, 0, 0, 0x80])
     assert.deepEqual([...encodeScheme(tiny(127)).subarray(7, 12)], [1, 0, 0, 0, 127])
-    for (const bad of [-129, 128, 1.5, '0.5']) assert.throws(() => encodeScheme(tiny(bad)), /i8 encoding/)
+    for (const bad of [-129, 128, 1.5]) assert.throws(() => encodeScheme(tiny(bad)), /i8 encoding/)
+    assert.throws(() => encodeScheme(tiny('0.5')), /whole number/)
 })
 
 test('rank mismatch', () => {
@@ -98,4 +99,11 @@ test('verify calls', () => {
     assert.equal(verifyCalls(5, 2), 3)
     assert.equal(verifyCalls(1, 100), 1)
     assert.equal(verifyCalls(0, 100), 1)
+})
+
+test('strict coefficients', () => {
+    const scheme = (cell: number | string): FmmScheme => ({ n: [1, 1, 1], u: [[cell]], v: [[1]], w: [[1]] })
+    assert.doesNotThrow(() => encodeScheme(scheme('-3')))
+    assert.doesNotThrow(() => encodeScheme(scheme(' 2 ')))
+    for (const bad of ['', ' ', '0x7f', '1e2', '1.0', 'abc']) assert.throws(() => encodeScheme(scheme(bad)), /whole number/, bad)
 })

@@ -5,7 +5,7 @@ import type BN from 'bn.js'
 import type { FirstBuyQuote } from '@/lib/firstBuy'
 import type { KnownFormat } from '@/lib/known'
 import type { LaunchKind } from '@/lib/launchDraft'
-import { explorer } from '@/lib/config'
+import { explorer, SITE_URL } from '@/lib/config'
 import { LAUNCH_FEE_SOL } from '@/lib/economics'
 import { cardTitle } from '@/lib/card'
 import type { ProblemView } from '@/lib/chain'
@@ -115,7 +115,7 @@ export function Cost({ connected, total, loading, error, firstBuy }: CostState) 
 }
 
 export function LaunchedPanel({ launched, statement, onAnother }: { launched: Launched; statement: string; onAnother: () => void }) {
-    const url = `${window.location.origin}/p/${launched.problem}`
+    const url = `${SITE_URL}/p/${launched.problem}`
     return (
         <Panel className="space-y-5 p-6 text-center sm:p-8">
             <div className="space-y-2">

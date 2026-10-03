@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useProblem } from '@/hooks/useProblems'
-import { ForeignProblemError, type ProblemView } from '@/lib/chain'
+import { ForeignProblemError, ProblemNotFoundError, type ProblemView } from '@/lib/chain'
 import { ErrorPanel } from './ErrorPanel'
 import { BuyBar } from './problem/BuyBar'
 import { ForResearchers } from './problem/ForResearchers'
@@ -48,10 +48,8 @@ function Activity({ problem }: { problem: ProblemView }) {
 export function ProblemPage({ address }: { address: string }) {
     const { data: problem, isLoading, error, refetch } = useProblem(address)
     if (error instanceof ForeignProblemError) return <ForeignProblem address={address} launchpad={error.launchpad} />
-    if (error) {
-        const missing = /Account does not exist|has no data|Invalid public key|Non-base58|invalid/i.test(String(error))
-        return missing ? <ProblemNotFound address={address} /> : <ErrorPanel error={error} what="Could not load this problem" onRetry={() => refetch()} />
-    }
+    if (error instanceof ProblemNotFoundError) return <ProblemNotFound address={address} />
+    if (error && !problem) return <ErrorPanel error={error} what="Could not load this problem" onRetry={() => refetch()} />
     if (isLoading || !problem) {
         return (
             <div className="space-y-8" aria-busy="true" aria-label="Loading problem">
@@ -72,6 +70,11 @@ export function ProblemPage({ address }: { address: string }) {
     }
     return (
         <div className="space-y-12 pb-20 lg:pb-0">
+            {error && (
+                <p role="status" className="rounded-full border border-warn/40 px-4 py-2 text-sm text-warn">
+                    Showing the last loaded state; the network did not answer the latest refresh.
+                </p>
+            )}
             <ProblemHeader problem={problem} />
             <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_360px]">
                 <aside id="trade-card" className="lg:sticky lg:top-20 lg:order-2 lg:self-start">

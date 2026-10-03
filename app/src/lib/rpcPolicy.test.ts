@@ -75,7 +75,24 @@ test('budget size cap', () => {
     const budget = new Budget(3, 1000)
     for (let i = 0; i < 10_000; i++) budget.over(`c${i}`, 3, 0)
     assert.ok(!budget.over('new', 1, 0))
-    assert.ok(budget.over('c0', 1, 0))
-    assert.ok(!budget.over('newer', 1, 0))
-    assert.ok(!budget.over('c1', 1, 0))
+    assert.ok(budget.size <= 10_000)
+    assert.ok(budget.over('c9999', 1, 0))
+})
+
+test('budget keeps active clients', () => {
+    const budget = new Budget(5, 1_000, 3)
+    budget.over('a', 1, 0)
+    budget.over('b', 1, 0)
+    budget.over('c', 5, 0)
+    budget.over('d', 1, 10)
+    assert.equal(budget.over('c', 1, 20), true)
+    assert.ok(budget.size <= 3)
+})
+
+test('budget forgets stale clients', () => {
+    const budget = new Budget(5, 1_000, 2)
+    budget.over('a', 5, 0)
+    budget.over('b', 5, 0)
+    budget.over('c', 1, 2_000)
+    assert.equal(budget.over('a', 1, 2_100), false)
 })

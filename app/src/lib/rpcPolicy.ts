@@ -72,14 +72,28 @@ export class Budget {
 
     constructor(
         private readonly limit: number,
-        private readonly windowMs: number
+        private readonly windowMs: number,
+        private readonly clients = 10_000
     ) {}
+
+    get size() {
+        return this.used.size
+    }
+
+    private prune(now: number) {
+        for (const [key, entry] of this.used) if (now - entry.start > this.windowMs) this.used.delete(key)
+        for (const key of this.used.keys()) {
+            if (this.used.size < this.clients) break
+            this.used.delete(key)
+        }
+    }
 
     over(client: string, cost: number, now = Date.now()): boolean {
         if (cost === 0) return false
         const entry = this.used.get(client)
         if (!entry || now - entry.start > this.windowMs) {
-            if (this.used.size > 10_000) this.used.clear()
+            if (!entry && this.used.size >= this.clients) this.prune(now)
+            this.used.delete(client)
             this.used.set(client, { start: now, count: cost })
             return cost > this.limit
         }

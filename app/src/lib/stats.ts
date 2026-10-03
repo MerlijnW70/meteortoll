@@ -1,7 +1,10 @@
 import { type Connection, PublicKey } from '@solana/web3.js'
 import { fetchProblems, type ProblemView, totalBounty } from './chain'
-import { fetchHistory, fetchTransactions, type HistoryEvent, paidOut } from './history'
-import { type Trade, tradesIn } from './trades'
+import { problemStanding } from './classify'
+import { CLUSTER } from './config'
+import { fetchHistory, type HistoryEvent, paidOut } from './history'
+import { CREATOR_PERCENT, toPrize } from './economics'
+import { fetchTrades, type Trade } from './trades'
 
 export interface Stats {
     problems: number
@@ -12,6 +15,31 @@ export interface Stats {
     volumeLamports: bigint
     trades: number
     traders: number
+    perProblem: Record<string, ProblemStats>
+}
+
+export interface ProblemStats {
+    paidLamports: bigint
+    volumeLamports: bigint
+    prizeLamports: bigint
+    trades: number
+    traders: number
+    lastTrade: number | null
+}
+
+export const DAY_SECONDS = 86_400
+
+export function problemStats(trades: Trade[], history: HistoryEvent[], now: number, creatorPercent: number): ProblemStats {
+    const recent = trades.filter((t) => t.time !== null && now - t.time < DAY_SECONDS)
+    const times = trades.flatMap((t) => (t.time === null ? [] : [t.time]))
+    return {
+        paidLamports: paidOut(history),
+        volumeLamports: recent.reduce((sum, t) => sum + t.quoteLamports, 0n),
+        prizeLamports: toPrize(recent.reduce((sum, t) => sum + t.feeLamports, 0n), creatorPercent),
+        trades: recent.length,
+        traders: new Set(recent.map((t) => t.trader)).size,
+        lastTrade: times.length ? Math.max(...times) : null,
+    }
 }
 
 export interface Activity {
@@ -19,15 +47,24 @@ export interface Activity {
     history: HistoryEvent[]
 }
 
-export function summarize(problems: ProblemView[], activity: Map<string, Activity>): Stats {
+export function summarize(
+    problems: ProblemView[],
+    activity: Map<string, Activity>,
+    now = Date.now() / 1000,
+    creatorPercent = CREATOR_PERCENT,
+    mainnet = CLUSTER === 'mainnet'
+): Stats {
     const listed = problems.filter((p) => !p.info.hidden)
+    const winnable = listed.filter((p) => p.phase === 'open' && p.info.kind !== 'demo' && !problemStanding(p, mainnet))
     const traders = new Set<string>()
+    const perProblem: Record<string, ProblemStats> = {}
     let volumeLamports = 0n
     let trades = 0
     let paidLamports = 0n
     for (const p of listed) {
         const a = activity.get(p.address)
         if (!a) continue
+        perProblem[p.address] = problemStats(a.trades, a.history, now, creatorPercent)
         for (const t of a.trades) {
             volumeLamports += t.quoteLamports
             traders.add(t.trader)
@@ -37,22 +74,22 @@ export function summarize(problems: ProblemView[], activity: Map<string, Activit
     }
     return {
         problems: listed.length,
-        open: listed.filter((p) => p.phase === 'open').length,
+        open: winnable.length,
         solved: listed.filter((p) => p.phase === 'solved').length,
-        bountyLamports: listed.filter((p) => p.phase === 'open').reduce((sum, p) => sum + totalBounty(p), 0n),
+        bountyLamports: winnable.reduce((sum, p) => sum + totalBounty(p), 0n),
         paidLamports,
         volumeLamports,
         trades,
         traders: traders.size,
+        perProblem,
     }
 }
 
-const POOL_HISTORY_CAP = 5_000
+const HISTORY_CAP = 5_000
 
 async function activityOf(connection: Connection, problem: ProblemView): Promise<Activity> {
-    const pool = problem.account.pool
-    const [txs, history] = await Promise.all([fetchTransactions(connection, pool, POOL_HISTORY_CAP), fetchHistory(connection, new PublicKey(problem.address))])
-    return { trades: txs.flatMap((tx) => tradesIn(tx, pool)), history }
+    const [trades, history] = await Promise.all([fetchTrades(connection, problem.account.pool, HISTORY_CAP), fetchHistory(connection, new PublicKey(problem.address), HISTORY_CAP)])
+    return { trades, history }
 }
 
 export async function collectStats(connection: Connection): Promise<Stats> {
@@ -66,9 +103,14 @@ export async function collectStats(connection: Connection): Promise<Stats> {
     return summarize(problems, activity)
 }
 
-export type StatsJson = { [K in keyof Stats]: Stats[K] extends bigint ? string : Stats[K] }
+type Jsonish<T> = { [K in keyof T]: T[K] extends bigint ? string : T[K] }
+export type ProblemStatsJson = Jsonish<ProblemStats>
+export type StatsJson = Jsonish<Omit<Stats, 'perProblem'>> & { perProblem?: Record<string, ProblemStatsJson> }
 
-export const toJson = (s: Stats): StatsJson => Object.fromEntries(Object.entries(s).map(([k, v]) => [k, typeof v === 'bigint' ? v.toString() : v])) as StatsJson
+const big = <T extends object>(o: T) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, typeof v === 'bigint' ? v.toString() : v]))
+
+export const toJson = ({ perProblem, ...rest }: Stats): StatsJson =>
+    ({ ...big(rest), perProblem: Object.fromEntries(Object.entries(perProblem).map(([k, d]) => [k, big(d)])) }) as StatsJson
 
 export function fromJson(j: StatsJson): Stats {
     return {
@@ -76,5 +118,11 @@ export function fromJson(j: StatsJson): Stats {
         bountyLamports: BigInt(j.bountyLamports),
         paidLamports: BigInt(j.paidLamports),
         volumeLamports: BigInt(j.volumeLamports),
+        perProblem: Object.fromEntries(
+            Object.entries(j.perProblem ?? {}).map(([k, d]) => [
+                k,
+                { ...d, paidLamports: BigInt(d.paidLamports), volumeLamports: BigInt(d.volumeLamports), prizeLamports: BigInt(d.prizeLamports) },
+            ]),
+        ),
     }
 }

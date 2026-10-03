@@ -1,15 +1,8 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
+import { useStats } from '@/hooks/useStats'
 import { count } from '@/lib/format'
-import { fromJson, type StatsJson } from '@/lib/stats'
 import { Skeleton, sol } from './ui'
-
-async function fetchStats() {
-    const response = await fetch('/api/stats')
-    if (!response.ok) throw new Error(`stats answered ${response.status}`)
-    return fromJson((await response.json()) as StatsJson)
-}
 
 function Tile({ label, value, sub }: { label: string; value: string; sub?: string }) {
     return (
@@ -22,8 +15,8 @@ function Tile({ label, value, sub }: { label: string; value: string; sub?: strin
 }
 
 export function StatsStrip() {
-    const { data, isLoading, isError } = useQuery({ queryKey: ['stats'], queryFn: fetchStats, refetchInterval: 60_000, retry: 1 })
-    if (isError) return null
+    const { data, isLoading, isError } = useStats()
+    if (isError && !data) return null
     if (isLoading || !data) return <Skeleton className="h-20" />
     return (
         <section aria-label="Launchpad totals" className="grid grid-cols-2 gap-x-6 gap-y-5 border-y border-border py-6 sm:grid-cols-5 sm:gap-x-0 sm:divide-x sm:divide-border">

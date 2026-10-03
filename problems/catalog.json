@@ -6,7 +6,7 @@
       "symbol": "D779",
       "kind": "demo",
       "demoNote": "Disclosed demo: funded and solved by the team with fmm's rank-314 scheme, which beats the published 315. It shows the whole mechanism end to end; it is not a public bounty.",
-      "coefficients": "integers, |c| <= 128",
+      "coefficients": "integers from −128 to 127",
       "naive": 441,
       "bestKnown": {
         "rank": 315,
@@ -28,7 +28,7 @@
       "kind": "demo",
       "demoNote": "A devnet check of launching, buying and the portfolio. Not a public bounty.",
       "hidden": true,
-      "coefficients": "integers, |c| <= 128",
+      "coefficients": "integers from −128 to 127",
       "naive": 27,
       "bestKnown": {
         "rank": 23,

@@ -32,7 +32,9 @@ test('non-trades', () => {
 })
 
 test('bounty funded', () => {
-    assert.equal(bountyFunded([{ kind: 'buy', fee: 8n } as never, { kind: 'sell', fee: 2n } as never, { kind: 'claim', lamports: 5n } as never]), 10n)
+    const activity = [{ kind: 'buy', fee: 8n } as never, { kind: 'sell', fee: 2n } as never, { kind: 'claim', lamports: 5n } as never]
+    assert.equal(bountyFunded(activity, 100), 10n)
+    assert.equal(bountyFunded(activity, 80), 8n)
 })
 
 test('claimed tokens ignored', () => {

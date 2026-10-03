@@ -1,4 +1,4 @@
-import { type Economics, feeSplit, launchWindowText, percentOfTrade } from '@meteortoll/core'
+import { creatorTradingFeePercentage, type Economics, feeSplit, launchWindowText, percentOfTrade } from '@meteortoll/core'
 import all from '../../../problems/economics.json'
 import { CLUSTER } from './config'
 import { PROTOCOL_FEE_PERCENT } from './dbc'
@@ -6,6 +6,8 @@ import { PROTOCOL_FEE_PERCENT } from './dbc'
 export const ECONOMICS: Economics = (all as Record<string, Economics>)[CLUSTER]
 
 export const SPLIT = feeSplit(ECONOMICS, PROTOCOL_FEE_PERCENT)
+export const CREATOR_PERCENT = creatorTradingFeePercentage(ECONOMICS)
+export const toPrize = (tradingFee: bigint, creatorPercent = CREATOR_PERCENT) => (tradingFee * BigInt(creatorPercent)) / 100n
 export const BOUNTY_SHARE = percentOfTrade(SPLIT.bounty)
 export const TREASURY_SHARE = percentOfTrade(SPLIT.treasury)
 export const PROTOCOL_SHARE = percentOfTrade(SPLIT.protocol)

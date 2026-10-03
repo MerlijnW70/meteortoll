@@ -75,3 +75,5 @@ export function explorer(kind: 'tx' | 'address', value: string): string {
     const suffix = CLUSTER === 'mainnet' ? '' : '?cluster=devnet'
     return `https://explorer.solana.com/${kind}/${value}${suffix}`
 }
+
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://meteortoll.vercel.app'

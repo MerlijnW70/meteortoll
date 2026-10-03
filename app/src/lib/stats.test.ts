@@ -6,12 +6,21 @@ import { PublicKey } from '@solana/web3.js'
 import { tollIdl } from '@meteortoll/core'
 import { type ProblemView, tollReader } from './chain'
 import { allSignatures, type HistoryEvent } from './history'
-import { type Activity, collectStats, fromJson, summarize, toJson } from './stats'
+import { type Activity, collectStats, DAY_SECONDS, fromJson, problemStats, summarize, toJson } from './stats'
 import type { Trade } from './trades'
 
 const problem = (address: string, phase: ProblemView['phase'], bounty: bigint, unswept: bigint, hidden = false, bonds = 0n) =>
-    ({ address, phase, vaultLamports: bounty, unsweptLamports: unswept, bondsLamports: bonds, info: { hidden } }) as unknown as ProblemView
-const trade = (trader: string, quoteLamports: bigint) => ({ trader, quoteLamports }) as Trade
+    ({
+        address,
+        phase,
+        vaultLamports: bounty,
+        unsweptLamports: unswept,
+        bondsLamports: bonds,
+        account: { n1: 7, n2: 7, n3: 9, targetRank: 314 },
+        info: { hidden, kind: 'open', listed: true, bestKnown: { rank: 315 } },
+    }) as unknown as ProblemView
+const trade = (trader: string, quoteLamports: bigint, time: number | null = null, feeLamports = 0n) => ({ trader, quoteLamports, time, feeLamports }) as Trade
+const quiet = { paidLamports: 0n, volumeLamports: 0n, prizeLamports: 0n, trades: 0, traders: 0, lastTrade: null }
 const claim = (lamports: bigint) => ({ kind: 'claim', lamports }) as HistoryEvent
 
 test('totals', () => {
@@ -30,7 +39,33 @@ test('totals', () => {
         volumeLamports: 100n,
         trades: 3,
         traders: 2,
+        perProblem: { a: quiet, b: { ...quiet, paidLamports: 500n } },
     })
+})
+
+test('problem window', () => {
+    const now = 10 * DAY_SECONDS
+    const trades = [trade('x', 100n, now - 60, 1_000n), trade('y', 50n, now - 3_600, 500n), trade('x', 70n, now - 3_600, 0n), trade('z', 999n, now - DAY_SECONDS, 9_000n), trade('w', 5n, null, 7n)]
+    assert.deepEqual(problemStats(trades, [claim(9n)], now, 80), { paidLamports: 9n, volumeLamports: 220n, prizeLamports: 1_200n, trades: 3, traders: 2, lastTrade: now - 60 })
+})
+
+test('problem idle', () => {
+    assert.deepEqual(problemStats([], [], 1_000, 100), quiet)
+    assert.equal(problemStats([trade('x', 1n, 5)], [], 5 + DAY_SECONDS * 2, 100).lastTrade, 5)
+})
+
+test('problem json', () => {
+    const now = 2 * DAY_SECONDS
+    const s = summarize([problem('a', 'open', 1n, 0n)], new Map([['a', { trades: [trade('x', 9_007_199_254_740_993n, now - 1, 10n)], history: [claim(3n)] }]]), now, 50)
+    assert.equal(s.perProblem.a.prizeLamports, 5n)
+    assert.equal(s.perProblem.a.paidLamports, 3n)
+    assert.deepEqual(fromJson(JSON.parse(JSON.stringify(toJson(s)))), s)
+})
+
+test('problem absent', () => {
+    const old = toJson(summarize([], new Map()))
+    delete old.perProblem
+    assert.deepEqual(fromJson(old).perProblem, {})
 })
 
 test('forfeited bonds', () => {
@@ -105,9 +140,9 @@ test('batched collection', async () => {
         baseVault: key(62),
         quoteVault: key(63),
         n1: 2,
-        n2: 2,
-        n3: 2,
-        targetRank: 7,
+        n2: 12,
+        n3: 15,
+        targetRank: 277,
         solver: null,
         solvedRank: 0,
         solverCommitSlot: new BN(0),
