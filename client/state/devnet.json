@@ -1,6 +1,6 @@
 {
   "problems": {
-    "7x7x9r314": {
+    "7x7x9r314-v1": {
       "problem": "A4HmjT3afPKHhfdKHfPExczeWQof6hrP8Q1up1AGRV6W",
       "pool": "Hm9aFejR8iGSsPNnTyg3KTzawm6LGJFLrwnPXYNQ88Rz",
       "baseMint": "821eZL9FEuPhPRjk516GF29e6FMGUSS3HuouitUUCFDH",
@@ -25,6 +25,19 @@
       ],
       "name": "launch check",
       "symbol": "LCHECK"
+    },
+    "7x7x9r314": {
+      "problem": "7KEP4DHQ7Wq625bKckRGLYodUMUMxhryVhTGXMfdcsUc",
+      "pool": "5W9kzABA3uCWt6U69XpgC4ZXief3PwsqtHS18weJ2yUz",
+      "baseMint": "8FyEr4a1xiqvtmMXBRn5RrwEfQZwqV4rBXPu7YcGqYwJ",
+      "statement": [
+        7,
+        7,
+        9,
+        314
+      ],
+      "name": "DEMO 7x7x9 rank<=314",
+      "symbol": "D779"
     }
   },
   "config": "Z4PT2dz65c2AW7jVYCoArmRvDSuLqZhQ7AnqFA2y1wT",
