@@ -8,6 +8,11 @@ pub const ATTEMPT_SEED: &[u8] = b"attempt";
 pub const COMMIT_DOMAIN: &[u8] = b"meteortoll/commit/v1";
 pub const SEED_DOMAIN: &[u8] = b"meteortoll/seed/v1";
 
+pub const CHECK_CAPACITY: usize = 128;
+
+#[constant]
+pub const KIND_MATRIX: u8 = 0;
+
 pub const MIN_GRACE_SLOTS: u64 = 150;
 pub const MAX_GRACE_SLOTS: u64 = 216_000;
 

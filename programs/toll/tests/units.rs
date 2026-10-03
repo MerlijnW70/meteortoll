@@ -136,6 +136,8 @@ fn problem(solver: Option<Pubkey>, commit: u64, solved_at: u64, grace: u64) -> P
         attempts: 1,
         pending: 0,
         bump: 255,
+        kind: 0,
+        reserved: [0; 64],
     }
 }
 

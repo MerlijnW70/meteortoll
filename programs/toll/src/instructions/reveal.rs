@@ -1,11 +1,11 @@
 use anchor_lang::prelude::*;
 use solana_sdk_ids::sysvar::slot_hashes;
 use solana_sha256_hasher::hashv;
-use meteortoll::check::{Check, Seed};
-use meteortoll::scheme::Header;
+use meteortoll::check::Seed;
 
 use crate::constants::{COMMIT_DOMAIN, SEED_DOMAIN};
 use crate::error::TollError;
+use crate::kinds;
 use crate::state::{Attempt, AttemptStatus, Problem};
 use crate::submission;
 
@@ -46,24 +46,17 @@ pub fn handle_reveal(ctx: Context<Reveal>, salt: [u8; 32]) -> Result<()> {
     ]);
     require!(digest.to_bytes() == ctx.accounts.attempt.commitment, TollError::CommitmentMismatch);
 
-    let header = Header::parse(scheme).map_err(|_| error!(TollError::SchemeDoesNotAnswer))?;
-    require!(
-        (header.n1, header.n2, header.n3) == (problem.n1, problem.n2, problem.n3)
-            && header.rank <= problem.target_rank,
-        TollError::SchemeDoesNotAnswer
-    );
-
     let (slot, hash) = newest_slot_hash(&ctx.accounts.slot_hashes.try_borrow_data()?)?;
     require!(slot > ctx.accounts.attempt.committed_slot, TollError::RevealTooEarly);
     let seed = hashv(&[SEED_DOMAIN, &hash, attempt_key.as_ref()]).to_bytes();
 
-    let check = Check::start(scheme, &Seed(seed)).map_err(|_| error!(TollError::SchemeDoesNotAnswer))?;
+    let state = kinds::start(problem, scheme, &Seed(seed))?;
     drop(data);
 
     let problem = &mut ctx.accounts.problem;
     problem.pending = problem.pending.saturating_add(1);
     let attempt = &mut ctx.accounts.attempt;
-    attempt.check = check.save();
+    attempt.check = state;
     attempt.seed_slot = slot;
     attempt.status = AttemptStatus::Revealed;
     Ok(())

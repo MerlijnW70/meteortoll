@@ -34,4 +34,6 @@ pub enum TollError {
     BadGrace,
     #[msg("The scheme can be written from the slot after the commitment")]
     WriteTooEarly,
+    #[msg("This kind of problem is not supported")]
+    UnknownKind,
 }

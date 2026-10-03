@@ -1,7 +1,8 @@
 use anchor_lang::prelude::*;
-use meteortoll::check::{Check, Verdict};
+use meteortoll::check::Verdict;
 
 use crate::error::TollError;
+use crate::kinds;
 use crate::state::{Attempt, AttemptStatus, Failed, Problem, Solved};
 use crate::submission;
 
@@ -27,23 +28,19 @@ pub fn handle_verify(ctx: Context<Verify>, budget: u32) -> Result<()> {
     require!(!ctx.accounts.problem.finalized(slot), TollError::AlreadySolved);
     let attempt_key = ctx.accounts.attempt.key();
 
-    let verdict = {
+    let kind = ctx.accounts.problem.kind;
+    let (verdict, rank) = {
         let data = ctx.accounts.submission.try_borrow_data()?;
         let scheme = submission::scheme(&data, &attempt_key)?;
-        let mut check = Check::restore(&ctx.accounts.attempt.check)
-            .map_err(|_| error!(TollError::WrongStatus))?;
-        let verdict = check.run(scheme, budget).unwrap_or(Verdict::Fails);
-        ctx.accounts.attempt.check = check.save();
-        verdict
+        let mut state = ctx.accounts.attempt.check;
+        let outcome = kinds::run(kind, &mut state, scheme, budget)?;
+        ctx.accounts.attempt.check = state;
+        outcome
     };
 
     match verdict {
         Verdict::Running => {}
         Verdict::Holds => {
-            let rank = Check::restore(&ctx.accounts.attempt.check)
-                .map_err(|_| error!(TollError::WrongStatus))?
-                .header()
-                .rank;
             let solver = ctx.accounts.attempt.solver;
             let committed_slot = ctx.accounts.attempt.committed_slot;
             ctx.accounts.attempt.status = AttemptStatus::Holds;

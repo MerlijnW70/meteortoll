@@ -3,13 +3,13 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 use meteortoll::check::MAX_PRODUCT_COST;
 
-use crate::constants::{PROBLEM_SEED, VAULT_SEED};
+use crate::constants::{KIND_MATRIX, PROBLEM_SEED, VAULT_SEED};
 use crate::dynamic_bonding_curve::accounts::{PoolConfig, VirtualPool};
 use crate::error::TollError;
 use crate::state::{Launchpad, Problem};
 
 #[derive(Accounts)]
-#[instruction(n1: u8, n2: u8, n3: u8, target_rank: u32)]
+#[instruction(kind: u8, n1: u8, n2: u8, n3: u8, target_rank: u32)]
 pub struct RegisterProblem<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -21,7 +21,7 @@ pub struct RegisterProblem<'info> {
         init,
         payer = payer,
         space = 8 + Problem::INIT_SPACE,
-        seeds = [PROBLEM_SEED, launchpad.key().as_ref(), pool.key().as_ref(), &[n1, n2, n3], &target_rank.to_le_bytes()],
+        seeds = [PROBLEM_SEED, launchpad.key().as_ref(), pool.key().as_ref(), &[kind], &[n1, n2, n3], &target_rank.to_le_bytes()],
         bump
     )]
     pub problem: Box<Account<'info, Problem>>,
@@ -54,7 +54,8 @@ pub struct RegisterProblem<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handle_register_problem(ctx: Context<RegisterProblem>, n1: u8, n2: u8, n3: u8, target_rank: u32) -> Result<()> {
+pub fn handle_register_problem(ctx: Context<RegisterProblem>, kind: u8, n1: u8, n2: u8, n3: u8, target_rank: u32) -> Result<()> {
+    require!(kind == KIND_MATRIX, TollError::UnknownKind);
     let (a, b, c) = (u32::from(n1), u32::from(n2), u32::from(n3));
     let floor = (a * b).max(b * c).max(c * a);
     require!(target_rank >= floor && target_rank < a * b * c, TollError::BadStatement);
@@ -89,5 +90,7 @@ pub fn handle_register_problem(ctx: Context<RegisterProblem>, n1: u8, n2: u8, n3
     problem.attempts = 0;
     problem.pending = 0;
     problem.bump = ctx.bumps.problem;
+    problem.kind = kind;
+    problem.reserved = [0; 64];
     Ok(())
 }

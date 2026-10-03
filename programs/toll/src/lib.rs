@@ -1,6 +1,7 @@
 pub mod constants;
 pub mod error;
 pub mod instructions;
+pub mod kinds;
 pub mod state;
 pub mod submission;
 
@@ -25,12 +26,13 @@ pub mod toll {
 
     pub fn register_problem(
         ctx: Context<RegisterProblem>,
+        kind: u8,
         n1: u8,
         n2: u8,
         n3: u8,
         target_rank: u32,
     ) -> Result<()> {
-        instructions::register_problem::handle_register_problem(ctx, n1, n2, n3, target_rank)
+        instructions::register_problem::handle_register_problem(ctx, kind, n1, n2, n3, target_rank)
     }
 
     pub fn sweep_trading_fees(ctx: Context<SweepTradingFees>) -> Result<()> {

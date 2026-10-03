@@ -41,7 +41,7 @@ pub fn handle_sweep_position_fees(ctx: Context<SweepPositionFees>) -> Result<()>
     let problem = &ctx.accounts.problem;
     let statement = [problem.n1, problem.n2, problem.n3];
     let target = problem.target_rank.to_le_bytes();
-    let seeds: &[&[u8]] = &[PROBLEM_SEED, problem.launchpad.as_ref(), problem.pool.as_ref(), &statement, &target, &[problem.bump]];
+    let seeds: &[&[u8]] = &[PROBLEM_SEED, problem.launchpad.as_ref(), problem.pool.as_ref(), &[problem.kind], &statement, &target, &[problem.bump]];
     let accounts = cp_amm::cpi::accounts::ClaimPositionFee {
         pool_authority: ctx.accounts.damm_pool_authority.to_account_info(),
         pool: ctx.accounts.damm_pool.to_account_info(),

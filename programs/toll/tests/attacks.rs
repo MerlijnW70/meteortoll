@@ -271,3 +271,51 @@ fn rank_floor_pairs() {
         register(&mut env, shape, 72).unwrap();
     }
 }
+
+#[test]
+fn unknown_kind() {
+    let mut env = bare(SHAPE, RANK);
+    env.problem = problem_address_of(1, &env.launchpad, &env.pool, SHAPE, RANK);
+    env.base_vault = pda(&[toll::VAULT_SEED, env.problem.as_ref(), env.base_mint.as_ref()]);
+    env.quote_vault = pda(&[toll::VAULT_SEED, env.problem.as_ref(), env.quote_mint.as_ref()]);
+    let creator = env.problem;
+    put_dbc_accounts(&mut env, creator);
+    assert!(error_in(&register_kind(&mut env, 1, SHAPE, RANK), "UnknownKind"));
+}
+
+#[test]
+fn kind_in_address() {
+    let mut env = bare(SHAPE, RANK);
+    env.problem = problem_address_of(1, &env.launchpad, &env.pool, SHAPE, RANK);
+    env.base_vault = pda(&[toll::VAULT_SEED, env.problem.as_ref(), env.base_mint.as_ref()]);
+    env.quote_vault = pda(&[toll::VAULT_SEED, env.problem.as_ref(), env.quote_mint.as_ref()]);
+    let creator = env.problem;
+    put_dbc_accounts(&mut env, creator);
+    assert!(error_in(&register(&mut env, SHAPE, RANK), "ConstraintSeeds"));
+}
+
+#[test]
+fn registered_kind() {
+    let env = setup(SHAPE, RANK);
+    let stored = problem(&env);
+    assert_eq!((stored.kind, stored.reserved), (toll::KIND_MATRIX, [0; 64]));
+}
+
+#[test]
+fn forged_kind_reveal() {
+    let mut env = setup(SHAPE, RANK);
+    let run = upload(&mut env, &fixture(RECORD), [51u8; 32]);
+    set_kind(&mut env, 7);
+    assert!(error_in(&reveal(&mut env, &run), "UnknownKind"));
+}
+
+#[test]
+fn forged_kind_verify() {
+    let mut env = setup(SHAPE, RANK);
+    let run = upload(&mut env, &fixture(RECORD), [52u8; 32]);
+    reveal(&mut env, &run).unwrap();
+    set_kind(&mut env, 7);
+    let cranker = new_solver(&mut env);
+    let verify = verify_ix(&env, &run, &cranker.pubkey(), 2_000);
+    assert!(error_in(&send(&mut env.svm, &[compute_limit(1_400_000), verify], &cranker, &[]), "UnknownKind"));
+}

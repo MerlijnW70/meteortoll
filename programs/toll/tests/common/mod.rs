@@ -66,7 +66,21 @@ pub fn pda(seeds: &[&[u8]]) -> Pubkey {
 }
 
 pub fn problem_address(launchpad: &Pubkey, pool: &Pubkey, n: (u8, u8, u8), target: u32) -> Pubkey {
-    pda(&[toll::PROBLEM_SEED, launchpad.as_ref(), pool.as_ref(), &[n.0, n.1, n.2], &target.to_le_bytes()])
+    problem_address_of(toll::KIND_MATRIX, launchpad, pool, n, target)
+}
+
+pub fn problem_address_of(kind: u8, launchpad: &Pubkey, pool: &Pubkey, n: (u8, u8, u8), target: u32) -> Pubkey {
+    pda(&[toll::PROBLEM_SEED, launchpad.as_ref(), pool.as_ref(), &[kind], &[n.0, n.1, n.2], &target.to_le_bytes()])
+}
+
+pub fn set_kind(env: &mut Env, kind: u8) {
+    let mut problem = problem(env);
+    problem.kind = kind;
+    let mut data = Vec::new();
+    anchor_lang::AccountSerialize::try_serialize(&problem, &mut data).unwrap();
+    let mut account = env.svm.get_account(&env.problem).unwrap();
+    account.data[..data.len()].copy_from_slice(&data);
+    env.svm.set_account(env.problem, account).unwrap();
 }
 
 pub fn mint_data(decimals: u8) -> Vec<u8> {
@@ -179,8 +193,12 @@ pub fn launchpad_with_grace(grace_slots: u64) -> Sent {
 }
 
 pub fn register(env: &mut Env, n: (u8, u8, u8), target: u32) -> Sent {
+    register_kind(env, toll::KIND_MATRIX, n, target)
+}
+
+pub fn register_kind(env: &mut Env, kind: u8, n: (u8, u8, u8), target: u32) -> Sent {
     let register = ix(
-        toll::instruction::RegisterProblem { n1: n.0, n2: n.1, n3: n.2, target_rank: target },
+        toll::instruction::RegisterProblem { kind, n1: n.0, n2: n.1, n3: n.2, target_rank: target },
         toll::accounts::RegisterProblem {
             payer: env.admin.pubkey(),
             launchpad: env.launchpad,

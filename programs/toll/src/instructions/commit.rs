@@ -44,7 +44,7 @@ pub fn handle_commit(ctx: Context<Commit>, commitment: [u8; 32]) -> Result<()> {
     attempt.submission = Pubkey::default();
     attempt.seed_slot = 0;
     attempt.status = AttemptStatus::Committed;
-    attempt.check = [0; meteortoll::check::STATE_LEN];
+    attempt.check = [0; crate::constants::CHECK_CAPACITY];
     attempt.bond = BOND_LAMPORTS;
     attempt.bump = ctx.bumps.attempt;
 

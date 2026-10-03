@@ -1,6 +1,10 @@
 use anchor_lang::prelude::*;
 use meteortoll::check::STATE_LEN;
 
+use crate::constants::CHECK_CAPACITY;
+
+const _: () = assert!(STATE_LEN <= CHECK_CAPACITY);
+
 #[account]
 #[derive(InitSpace)]
 pub struct Launchpad {
@@ -31,6 +35,8 @@ pub struct Problem {
     pub attempts: u32,
     pub pending: u32,
     pub bump: u8,
+    pub kind: u8,
+    pub reserved: [u8; 64],
 }
 
 impl Problem {
@@ -63,7 +69,7 @@ pub struct Attempt {
     pub submission: Pubkey,
     pub seed_slot: u64,
     pub status: AttemptStatus,
-    pub check: [u8; STATE_LEN],
+    pub check: [u8; CHECK_CAPACITY],
     pub bond: u64,
     pub bump: u8,
 }
