@@ -66,6 +66,7 @@ test('bad target', () => {
 test('rank floor', () => {
     assert.match(problem({ n: [3, 3, 3], target: 8 }) ?? '', /fewer than 9 multiplications/)
     assert.match(problem({ n: [2, 12, 15], target: 179 }) ?? '', /fewer than 180/)
+    assert.match(problem({ target: 1 }) ?? '', /fewer than 180/)
     assert.match(problem({ n: [1, 2, 2], target: 3 }) ?? '', /exactly 4/)
     assert.match(problem({ n: [2, 2, 2], target: 6 }) ?? '', /exactly 7 \(Winograd 1971\)/)
     assert.match(problem({ n: [2, 5, 2], target: 17 }) ?? '', /exactly 18 \(Hopcroft and Kerr 1971\)/)

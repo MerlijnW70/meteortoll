@@ -6,7 +6,7 @@ import { DynamicBondingCurveIdl } from '@meteora-ag/dynamic-bonding-curve-sdk'
 import { DAMM_V2, DBC, type ProblemAccount } from '@meteortoll/core'
 import { tollReader } from './chain'
 import { claimGroup, claimTxs } from './solve/build'
-import { BUDGET_ROOM, DAMM_POOL_DISCRIMINATOR, DAMM_TOKEN_A_MINT_OFFSET, findPositions, pack, PACKET, planDbcSweeps, positionNfts, previewGain, productive, sweepInstructions, sweepPlan, tokenAccountAmount } from './sweeps'
+import { BUDGET_ROOM, DAMM_POOL_DISCRIMINATOR, DAMM_TOKEN_A_MINT_OFFSET, dammPoolPairs, findPositions, pack, PACKET, planDbcSweeps, positionNfts, previewGain, productive, sweepInstructions, sweepPlan, tokenAccountAmount } from './sweeps'
 
 const key = () => Keypair.generate().publicKey
 const big = (n: bigint) => ({ toString: () => n.toString() })
@@ -311,4 +311,12 @@ test('claim survives', async () => {
         txs[0].instructions.map((ix) => ix.programId.toBase58()),
         claim.map((ix) => ix.programId.toBase58())
     )
+})
+
+test('pool pairs', () => {
+    const [baseMint, quoteMint] = [key(), key()]
+    const end = DAMM_TOKEN_A_MINT_OFFSET + 64
+    assert.equal(dammPoolPairs(account(DAMM_V2, poolData(baseMint, quoteMint).slice(0, end)), baseMint, quoteMint), true)
+    assert.equal(dammPoolPairs(account(DAMM_V2, poolData(baseMint, key())), baseMint, quoteMint), false)
+    assert.equal(dammPoolPairs(account(DAMM_V2, poolData(baseMint, PublicKey.default).slice(0, end - 1)), baseMint, PublicKey.default), false)
 })

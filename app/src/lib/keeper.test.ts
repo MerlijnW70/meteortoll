@@ -184,6 +184,37 @@ test('spend cap', async (t) => {
     assert.equal(run.checked[0].calls, 4)
 })
 
+test('floor messages', async (t) => {
+    t.mock.method(globalThis, 'setTimeout', instant)
+    const low = await chain({ statuses: () => REVEALED, balances: () => MIN_BALANCE - 1 })
+    const lines: string[] = []
+    await runKeeper(low.connection, low.program, Keypair.generate(), (line) => lines.push(line))
+    assert.deepEqual(lines, ['balance 0.019999999 SOL is below the 0.02 SOL floor, skipping'])
+    const exact = await chain({ statuses: () => 2, balances: () => MIN_BALANCE })
+    const run = await runKeeper(exact.connection, exact.program, Keypair.generate())
+    assert.equal(run.skipped, false)
+    assert.equal(run.checked.length, 1)
+})
+
+test('cap holds', async (t) => {
+    t.mock.method(globalThis, 'setTimeout', instant)
+    const start = 1e9
+    const { connection, program, sent } = await chain({ statuses: () => REVEALED, balances: (n) => start - n * (SPEND_CAP / 4) })
+    const base = connection.getProgramAccounts.bind(connection)
+    Object.assign(connection, {
+        getProgramAccounts: async (id: PublicKey, config: never) => {
+            const rows = (await base(id, config)) as unknown as { pubkey: PublicKey; account: unknown }[]
+            const filters = (config as { filters: { memcmp: { offset: number } }[] }).filters
+            return filters[0].memcmp.offset === 0 ? rows : [...rows, { pubkey: key(), account: rows[0].account }]
+        },
+    })
+    const lines: string[] = []
+    const run = await runKeeper(connection, program, Keypair.generate(), (line) => lines.push(line))
+    assert.equal(run.checked.length, 1)
+    assert.equal(sent().length, 4)
+    assert.ok(lines.includes('spent the 0.1 SOL cap, stopping'))
+})
+
 test('exit codes', () => {
     assert.equal(exitCode({ skipped: false, failures: [] }), 0)
     assert.equal(exitCode({ skipped: true, failures: [] }), 1)

@@ -49,6 +49,13 @@ test('problem window', () => {
     assert.deepEqual(problemStats(trades, [claim(9n)], now, 80), { paidLamports: 9n, volumeLamports: 220n, prizeLamports: 1_200n, trades: 3, traders: 2, lastTrade: now - 60 })
 })
 
+test('default clock', () => {
+    const recent = Math.floor(Date.now() / 1000) - 60
+    const s = summarize([problem('a', 'open', 0n, 0n)], new Map([['a', { trades: [trade('x', 5n, recent)], history: [] }]]))
+    assert.equal(s.perProblem.a.trades, 1)
+    assert.equal(s.perProblem.a.volumeLamports, 5n)
+})
+
 test('problem idle', () => {
     assert.deepEqual(problemStats([], [], 1_000, 100), quiet)
     assert.equal(problemStats([trade('x', 1n, 5)], [], 5 + DAY_SECONDS * 2, 100).lastTrade, 5)

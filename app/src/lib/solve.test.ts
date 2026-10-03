@@ -2,11 +2,33 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import BN from 'bn.js'
-import { ComputeBudgetInstruction, ComputeBudgetProgram, Keypair, PublicKey, type Transaction } from '@solana/web3.js'
-import { type AttemptAccount, attemptAddress, commitment, TOLL } from '@meteortoll/core'
+import { utils } from '@coral-xyz/anchor'
+import {
+    ComputeBudgetInstruction,
+    ComputeBudgetProgram,
+    type Connection,
+    Keypair,
+    PublicKey,
+    SystemInstruction,
+    SystemProgram,
+    SYSVAR_SLOT_HASHES_PUBKEY,
+    Transaction,
+} from '@solana/web3.js'
+import { type AttemptAccount, attemptAddress, commitment, SUBMISSION_HEADER, TOLL, VERIFY_BUDGET, verifyCalls } from '@meteortoll/core'
 import { MAX_PRICE } from './fees'
-import { ExpiredError } from './solve/send'
-import { commitThenSolve, committedSalt, revealAndVerifyTxs, saveSalt, type SolveContext, solveCommitted, tollWriter } from './solve'
+import { ExpiredError, sendAll, waitForSlot } from './solve/send'
+import {
+    CHUNK,
+    commitAndOpen,
+    commitThenSolve,
+    committedSalt,
+    revealAndVerifyTxs,
+    saveSalt,
+    type SolveContext,
+    solveCommitted,
+    tollWriter,
+    uploadTxs,
+} from './solve'
 
 const store = new Map<string, string>()
 Object.assign(globalThis, {
@@ -195,4 +217,221 @@ test('verify price cap', async () => {
     const prices = txs.map((tx) => budgetOf(tx).price!)
     assert.ok(prices.every((p) => p <= MAX_PRICE))
     assert.equal(new Set(prices).size, prices.length)
+})
+
+test('reveal budget', async () => {
+    const priced = fakeConnection([])
+    const [reveal, ...verifies] = await revealAndVerifyTxs(priced as never, program(priced), accounts, { salt: new Uint8Array(32), work: 1, length: 1 << 20, revealed: false })
+    assert.deepEqual(budgetOf(reveal), { units: 60_000 + (1 << 19), price: 9_000 })
+    assert.equal(verifies.length, verifyCalls(1, VERIFY_BUDGET) + 1)
+    const free = fakeConnection([], { fee: 0 })
+    const [plain] = await revealAndVerifyTxs(free as never, program(free), accounts, { salt: new Uint8Array(32), work: 1, length: 10, revealed: false })
+    assert.deepEqual(budgetOf(plain), { units: 60_005 })
+})
+
+test('submission size', async () => {
+    const sizes: number[] = []
+    const connection = { ...fakeConnection([]), getMinimumBalanceForRentExemption: async (bytes: number) => (sizes.push(bytes), 7) }
+    const { tx } = await commitAndOpen(connection as never, program(connection), problem, solver, scheme)
+    const made = SystemInstruction.decodeCreateAccount(tx.instructions[1])
+    assert.deepEqual(sizes, [SUBMISSION_HEADER + scheme.length])
+    assert.equal(made.space, SUBMISSION_HEADER + scheme.length)
+    assert.equal(made.lamports, 7)
+})
+
+const holding = (held: Uint8Array) => ({
+    ...fakeConnection([]),
+    getAccountInfo: async () => ({ owner: TOLL, lamports: 1, executable: false, data: Buffer.concat([Buffer.alloc(SUBMISSION_HEADER), held]) }),
+})
+
+test('upload skips held', async () => {
+    const chunks = Math.ceil(scheme.length / CHUNK)
+    const upload = (connection: object) => uploadTxs(connection as never, program(connection), solver, accounts.attempt, accounts.submission, scheme)
+    assert.equal((await upload(fakeConnection([]))).length, chunks)
+    assert.equal((await upload(holding(scheme))).length, 0)
+    assert.equal((await upload(holding(scheme.slice(0, CHUNK)))).length, chunks - 1)
+})
+
+const reveals = (txs: Transaction[]) => txs.filter((tx) => tx.instructions.some((ix) => ix.keys.some((k) => k.pubkey.equals(SYSVAR_SLOT_HASHES_PUBKEY)))).length
+
+function clocked(t: { mock: { method: (o: object, name: string, fn: (f: () => void) => void) => void } }, connection: object, ctx: SolveContext) {
+    let slot = 0
+    t.mock.method(globalThis, 'setTimeout', (fn: () => void) => {
+        slot++
+        setImmediate(fn)
+    })
+    Object.assign(connection, { getSlot: async () => slot })
+    const signs: number[] = []
+    const deliveries: [number, number, boolean | undefined][] = []
+    const sign = ctx.sign
+    ctx.sign = async (txs) => {
+        signs.push(slot)
+        return sign(txs)
+    }
+    ctx.deliver = async (_, txs, _progress, opts) => {
+        deliveries.push([txs.length, slot, opts?.stopWhen ? await opts.stopWhen() : undefined])
+        return txs.map((_, i) => `sig${i}`)
+    }
+    return { signs, deliveries }
+}
+
+test('slot order', async (t) => {
+    store.clear()
+    const log: string[] = []
+    const sent: Transaction[][] = []
+    const connection = fakeConnection(log)
+    const ctx = context(log, connection, sent, [])
+    const { signs, deliveries } = clocked(t, connection, ctx)
+    await commitThenSolve(ctx)
+    const uploads = Math.ceil(scheme.length / CHUNK)
+    const cranks = sent[0].length - uploads - 1
+    assert.ok(cranks > 0)
+    assert.equal(reveals(sent[0].slice(uploads, uploads + 1)), 1)
+    assert.deepEqual(signs, [11])
+    assert.deepEqual(deliveries, [
+        [uploads, 11, undefined],
+        [1, 12, undefined],
+        [cranks, 12, true],
+    ])
+})
+
+test('slot order held', async (t) => {
+    store.clear()
+    const log: string[] = []
+    const sent: Transaction[][] = []
+    const connection = { ...fakeConnection(log), getAccountInfo: holding(scheme).getAccountInfo }
+    const ctx = context(log, connection, sent, [])
+    const { signs, deliveries } = clocked(t, connection, ctx)
+    await commitThenSolve(ctx)
+    assert.deepEqual(signs, [12])
+    assert.deepEqual(deliveries, [
+        [1, 12, undefined],
+        [sent[0].length - 1, 12, true],
+    ])
+})
+
+test('expiry after reveal', async (t) => {
+    t.mock.method(globalThis, 'setTimeout', (fn: () => void) => setImmediate(fn))
+    store.clear()
+    const log: string[] = []
+    const sent: Transaction[][] = []
+    const ctx = context(log, fakeConnection(log), sent, [])
+    const fetch = ctx.fetch!
+    let revealed = false
+    ctx.fetch = async () => {
+        const state = await fetch()
+        return state && revealed ? ({ ...state, status: { revealed: {} } } as AttemptAccount) : state
+    }
+    let calls = 0
+    ctx.deliver = async (_, txs) => {
+        calls++
+        if (calls === 3) {
+            revealed = true
+            throw new ExpiredError('1 transactions expired before landing')
+        }
+        return txs.map((_, i) => `sig${i}`)
+    }
+    await commitThenSolve(ctx)
+    assert.equal(sent.length, 2)
+    assert.equal(reveals(sent[0]), 1)
+    assert.equal(reveals(sent[1]), 0)
+    assert.ok(sent[1].length > 0)
+})
+
+test('never landed', async (t) => {
+    t.mock.method(globalThis, 'setTimeout', (fn: () => void) => setImmediate(fn))
+    store.clear()
+    const log: string[] = []
+    const ctx = context(log, fakeConnection(log), [], [])
+    let polls = 0
+    ctx.fetch = async () => {
+        polls++
+        return null
+    }
+    await assert.rejects(commitThenSolve(ctx), /did not appear/)
+    assert.equal(polls, 10)
+})
+
+const payer = Keypair.generate()
+
+function signedTx() {
+    const tx = new Transaction().add(SystemProgram.transfer({ fromPubkey: payer.publicKey, toPubkey: Keypair.generate().publicKey, lamports: 1 }))
+    tx.recentBlockhash = Keypair.generate().publicKey.toBase58()
+    tx.feePayer = payer.publicKey
+    tx.sign(payer)
+    return tx
+}
+
+type Status = { err: object | null; confirmationStatus: string } | null
+
+function network(statuses: (round: number) => Status, { valid = true, final = statuses }: { valid?: boolean; final?: (round: number) => Status } = {}) {
+    const sent: object[] = []
+    const polls: (object | undefined)[] = []
+    let round = 0
+    const connection = {
+        sendRawTransaction: async (raw: Buffer, opts: object) => {
+            sent.push(opts)
+            return utils.bytes.bs58.encode(Transaction.from(raw).signature!)
+        },
+        getSignatureStatuses: async (list: string[], opts?: { searchTransactionHistory?: boolean }) => {
+            polls.push(opts)
+            if (polls.length > 20) throw new Error('runaway')
+            const status = opts?.searchTransactionHistory ? final(round) : statuses(round++)
+            return { value: list.map(() => status) }
+        },
+        isBlockhashValid: async () => ({ value: valid }),
+        getTransaction: async () => null,
+    } as unknown as Connection
+    return { connection, sent, polls }
+}
+
+test('send confirms', async (t) => {
+    t.mock.method(globalThis, 'setTimeout', (fn: () => void) => setImmediate(fn))
+    const { connection, sent, polls } = network((round) => ({ err: null, confirmationStatus: round === 0 ? 'processed' : 'confirmed' }))
+    const progress: number[] = []
+    const signatures = await sendAll(connection, [signedTx(), signedTx()], (done) => progress.push(done))
+    assert.equal(signatures.length, 2)
+    assert.deepEqual(progress, [0, 2])
+    assert.equal(polls.length, 2)
+    assert.deepEqual(sent, [
+        { skipPreflight: true, maxRetries: 5 },
+        { skipPreflight: true, maxRetries: 5 },
+        { skipPreflight: true, maxRetries: 0 },
+        { skipPreflight: true, maxRetries: 0 },
+        { skipPreflight: true, maxRetries: 0 },
+        { skipPreflight: true, maxRetries: 0 },
+    ])
+})
+
+test('send failure', async (t) => {
+    t.mock.method(globalThis, 'setTimeout', (fn: () => void) => setImmediate(fn))
+    const { connection } = network(() => ({ err: { InstructionError: [0, { Custom: 1 }] }, confirmationStatus: 'confirmed' }))
+    await assert.rejects(sendAll(connection, [signedTx()], () => {}), { name: 'ProgramFailure' })
+})
+
+test('send expired', async (t) => {
+    t.mock.method(globalThis, 'setTimeout', (fn: () => void) => setImmediate(fn))
+    const lost = network(() => null, { valid: false })
+    await assert.rejects(sendAll(lost.connection, [signedTx()], () => {}), ExpiredError)
+    assert.deepEqual(lost.polls, [undefined, { searchTransactionHistory: true }])
+    const failed = network(() => null, { valid: false, final: () => ({ err: { x: 1 }, confirmationStatus: 'confirmed' }) })
+    await assert.rejects(sendAll(failed.connection, [signedTx()], () => {}), ExpiredError)
+})
+
+test('send landed late', async (t) => {
+    t.mock.method(globalThis, 'setTimeout', (fn: () => void) => setImmediate(fn))
+    const { connection } = network(() => null, { valid: false, final: () => ({ err: null, confirmationStatus: 'finalized' }) })
+    const progress: number[] = []
+    assert.equal((await sendAll(connection, [signedTx()], (done) => progress.push(done))).length, 1)
+    assert.deepEqual(progress, [0, 1])
+})
+
+test('slot wait', async (t) => {
+    t.mock.method(globalThis, 'setTimeout', (fn: () => void) => setImmediate(fn))
+    let reads = 0
+    const connection = { getSlot: async () => 5 + reads++ } as unknown as Connection
+    await waitForSlot(connection, 5)
+    assert.equal(reads, 1)
+    await waitForSlot(connection, 8)
+    assert.equal(reads, 4)
 })

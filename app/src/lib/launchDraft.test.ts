@@ -52,6 +52,17 @@ test('impossible target', () => {
     assert.equal(launchKind(held, 315), 'answered')
 })
 
+test('note texts', () => {
+    assert.equal(targetNote(open, 1)!.text, 'No scheme can meet 1: this format needs at least 180 multiplications (flattening bound). Use 180 to 277.')
+    assert.equal(targetNote(open, 278)!.text, 'A rank-278 scheme is already published, so anyone holding it could claim this prize at once. Use 277 or lower for an open problem.')
+    assert.match(targetNote(held, 314)!.text, /Use 313 or lower for a public prize\.$/)
+    assert.equal(targetNote(open, 277)!.text, 'One below the record: the scheme that takes this prize is a new record.')
+})
+
+test('symbol at limit', () => {
+    assert.equal(tokenProblem({ name: 'ok', symbol: 'ABCDEFGHIJ' }), null)
+})
+
 test('invalid target', () => {
     for (const target of [0, -1, 1.5, Number.NaN, 360]) assert.equal(targetNote(open, target), null)
 })

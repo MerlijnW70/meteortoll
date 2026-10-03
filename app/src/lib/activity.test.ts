@@ -121,6 +121,22 @@ test('token history', async () => {
     assert.deepEqual(fetched.flat().sort(), ['a', 'b', 'c'])
 })
 
+test('whole pages', async () => {
+    const batches: number[] = []
+    const connection = {
+        getSignaturesForAddress: async () => [],
+        getTransactions: async () => [],
+        getMultipleAccountsInfo: async (keys: PublicKey[]) => {
+            batches.push(keys.length)
+            return keys.map(() => null)
+        },
+    }
+    const list = (n: number) => Array.from({ length: n }, () => ({ address: PublicKey.unique().toBase58(), account: { baseMint: PublicKey.unique() } })) as unknown as ProblemView[]
+    await fetchActivity(connection as never, PublicKey.unique(), list(100))
+    await fetchActivity(connection as never, PublicKey.unique(), list(0))
+    assert.deepEqual(batches, [100])
+})
+
 test('existing accounts only', async () => {
     const owner = PublicKey.unique()
     const batches: number[] = []

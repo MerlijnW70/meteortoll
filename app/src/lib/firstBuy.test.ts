@@ -22,6 +22,7 @@ test('matches chain', () => {
     assert.equal(quote.bounty.toString(), FIRST_BUY_FEE)
     assert.equal(quote.spent.toString(), ONE.toString())
     assert.equal(quote.supplyShare, 91734376628999 / 1e15)
+    assert.equal(quote.curveShare, 0.06407396998021854)
 })
 
 test('activation independent', () => {
