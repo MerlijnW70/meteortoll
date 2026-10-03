@@ -18,4 +18,4 @@ pub const BOND_LAMPORTS: u64 = 50_000_000;
 pub const MAX_SCHEME_LEN: u32 = 1 << 20;
 
 #[constant]
-pub const VERIFY_BUDGET: u32 = 5_000;
+pub const VERIFY_BUDGET: u32 = 2_000;

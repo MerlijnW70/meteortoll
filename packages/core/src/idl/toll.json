@@ -1956,7 +1956,7 @@
     {
       "name": "VERIFY_BUDGET",
       "type": "u32",
-      "value": "5000"
+      "value": "2000"
     }
   ]
 }

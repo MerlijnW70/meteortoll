@@ -37,6 +37,14 @@ fn register_wrong_creator() {
 }
 
 #[test]
+fn register_too_large() {
+    let mut env = bare((40, 40, 40), 1_600);
+    let creator = env.problem;
+    put_dbc_accounts(&mut env, creator);
+    assert!(error_in(&register(&mut env, (40, 40, 40), 1_600), "BadStatement"));
+}
+
+#[test]
 fn register_foreign_launchpad() {
     let mut env = bare(SHAPE, RANK);
     let creator = env.problem;

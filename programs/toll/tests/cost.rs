@@ -7,6 +7,35 @@ use toll::state::AttemptStatus;
 
 const CEILING: u64 = 1_200_000;
 
+fn sparse(n: u8, rank: u32, counts: (u16, u16, u16)) -> Vec<u8> {
+    let mut bytes = vec![n, n, n];
+    bytes.extend_from_slice(&rank.to_le_bytes());
+    for _ in 0..rank {
+        for count in [counts.0, counts.1, counts.2] {
+            bytes.extend_from_slice(&count.to_le_bytes());
+            for i in 0..count {
+                bytes.extend_from_slice(&i.to_le_bytes());
+                bytes.push(1);
+            }
+        }
+    }
+    bytes
+}
+
+#[test]
+fn verify_cost_sparse() {
+    for counts in [(0u16, 0u16, 0u16), (1, 0, 0), (1, 1, 1), (2, 1, 1), (3, 3, 3)] {
+        let scheme = sparse(16, 4000, counts);
+        let mut env = setup((16, 16, 16), 4000);
+        let run = upload(&mut env, &scheme, [3u8; 32]);
+        reveal(&mut env, &run).unwrap();
+        let costs = verify_all(&mut env, &run, toll::VERIFY_BUDGET);
+        let peak = *costs.iter().max().unwrap();
+        println!("verify_sparse_{counts:?}: calls {} peak_cu {peak}", costs.len());
+        assert!(peak < CEILING, "sparse {counts:?} peaks at {peak} compute units");
+    }
+}
+
 #[test]
 fn verify_cost_per_record() {
     for name in ["7x7x9_m314_ZT", "4x9x8_m208_Z", "2x12x15_m280_ZT", "9x10x10_m596_ZT"] {
@@ -31,35 +60,33 @@ fn verify_cost_per_record() {
     }
 }
 
-fn one_product(n: u8, heavy: usize) -> Vec<u8> {
-    let mut bytes = vec![n, n, 2];
+fn dense_product(n: (u8, u8, u8)) -> Vec<u8> {
+    let mut bytes = vec![n.0, n.1, n.2];
     bytes.extend_from_slice(&1u32.to_le_bytes());
-    bytes.extend_from_slice(&(heavy as u16).to_le_bytes());
-    for index in 0..heavy as u16 {
-        bytes.extend_from_slice(&index.to_le_bytes());
-        bytes.push(1);
-    }
-    for _ in 0..2 {
-        bytes.extend_from_slice(&1u16.to_le_bytes());
-        bytes.extend_from_slice(&0u16.to_le_bytes());
-        bytes.push(1);
+    let (a, b, c) = (u16::from(n.0), u16::from(n.1), u16::from(n.2));
+    for len in [a * b, b * c, c * a] {
+        bytes.extend_from_slice(&len.to_le_bytes());
+        for index in 0..len {
+            bytes.extend_from_slice(&index.to_le_bytes());
+            bytes.push(1);
+        }
     }
     bytes
 }
 
 #[test]
 fn heaviest_product_fits() {
-    let limit = meteortoll::check::MAX_PRODUCT_COST as usize;
-    for (heavy, label) in [(limit - 2, "at_the_limit"), (limit - 1, "one_past_the_limit")] {
-        let scheme = one_product(64, heavy);
-        let mut env = setup((64, 64, 2), 4096);
-        let run = upload(&mut env, &scheme, [16u8; 32]);
-        reveal(&mut env, &run).unwrap();
-        let costs = verify_all(&mut env, &run, toll::VERIFY_BUDGET);
-        let peak = *costs.iter().max().unwrap();
-        println!("verify_product_{label}: calls {} peak_cu {peak}", costs.len());
-        assert!(peak < CEILING, "{label} peaks at {peak} compute units");
-        let attempt = attempt_of(&env, &run.attempt);
-        assert_eq!((attempt.status, attempt.bond), (AttemptStatus::Fails, 0));
-    }
+    let shape = (48, 32, 32);
+    let (a, b, c) = (u32::from(shape.0), u32::from(shape.1), u32::from(shape.2));
+    assert_eq!(a * b + b * c + c * a, meteortoll::check::MAX_PRODUCT_COST);
+    let scheme = dense_product(shape);
+    let mut env = setup(shape, a * b);
+    let run = upload(&mut env, &scheme, [16u8; 32]);
+    reveal(&mut env, &run).unwrap();
+    let costs = verify_all(&mut env, &run, toll::VERIFY_BUDGET);
+    let peak = *costs.iter().max().unwrap();
+    println!("verify_dense_product: calls {} peak_cu {peak}", costs.len());
+    assert!(peak < CEILING, "the heaviest product peaks at {peak} compute units");
+    let attempt = attempt_of(&env, &run.attempt);
+    assert_eq!((attempt.status, attempt.bond), (AttemptStatus::Fails, 0));
 }
