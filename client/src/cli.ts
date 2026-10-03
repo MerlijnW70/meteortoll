@@ -55,7 +55,9 @@ import {
     DBC,
     fetchAttempt,
     fetchProblem,
+    findPositions,
     launchpadAddress,
+    positionSweeps,
     problemAddress,
     SLOT_HASHES,
     statusName,
@@ -266,6 +268,10 @@ async function sweep(args: string[]) {
             })
             .instruction()
         console.log(`sweep surplus: ${explorer(await send([surplus], wallet))}`)
+    }
+    const positions = await findPositions(connection, problem, account.baseMint, account.quoteMint)
+    for (const [i, ix] of (await positionSweeps(toll, problem, account, positions)).entries()) {
+        console.log(`sweep position fees ${positions[i].position.toBase58()}: ${explorer(await send([ix], wallet))}`)
     }
     const after = await tokenBalance(account.quoteVault)
     console.log(`bounty ${SOL(after)} SOL (+${SOL(after - before)})`)

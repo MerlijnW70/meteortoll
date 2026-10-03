@@ -1,7 +1,7 @@
 import { AnchorProvider, type Idl, Program, Wallet } from '@coral-xyz/anchor'
 import { type Keypair, type PublicKey, SYSVAR_SLOT_HASHES_PUBKEY, SystemProgram, type TransactionInstruction } from '@solana/web3.js'
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
-import { type AttemptAccount, type ProblemAccount, PROBLEM_SPACE, SUBMISSION_HEADER, TOLL, tollIdl } from '@meteortoll/core'
+import { type AttemptAccount, DAMM_V2, type DammPosition, dammEventAuthority, dammPoolAuthority, type ProblemAccount, PROBLEM_SPACE, SUBMISSION_HEADER, TOLL, tollIdl } from '@meteortoll/core'
 import { connection } from './env.js'
 
 export * from '@meteortoll/core'
@@ -21,6 +21,37 @@ export async function fetchProblem(toll: Toll, problem: PublicKey): Promise<Prob
 
 export async function fetchAttempt(toll: Toll, attempt: PublicKey): Promise<AttemptAccount | null> {
     return (await (toll.account as never as Fetcher).attempt.fetchNullable(attempt)) as AttemptAccount | null
+}
+
+type Builder = { accountsPartial(accounts: Record<string, PublicKey>): { instruction(): Promise<TransactionInstruction> } }
+
+export async function positionSweeps(toll: Pick<Toll, 'methods'>, problem: PublicKey, account: ProblemAccount, positions: DammPosition[]): Promise<TransactionInstruction[]> {
+    const sweep = (toll.methods as never as { sweepPositionFees(): Builder }).sweepPositionFees
+    const out: TransactionInstruction[] = []
+    for (const p of positions) {
+        out.push(
+            await sweep()
+                .accountsPartial({
+                    problem,
+                    dammPoolAuthority,
+                    dammPool: p.dammPool,
+                    position: p.position,
+                    positionNftAccount: p.positionNftAccount,
+                    baseVault: account.baseVault,
+                    quoteVault: account.quoteVault,
+                    dammBaseVault: p.dammBaseVault,
+                    dammQuoteVault: p.dammQuoteVault,
+                    baseMint: account.baseMint,
+                    quoteMint: account.quoteMint,
+                    baseTokenProgram: TOKEN_PROGRAM_ID,
+                    quoteTokenProgram: TOKEN_PROGRAM_ID,
+                    dammEventAuthority,
+                    dammProgram: DAMM_V2,
+                })
+                .instruction()
+        )
+    }
+    return out
 }
 
 export function submissionCreate(payer: PublicKey, submission: PublicKey, length: number, lamports: number): TransactionInstruction {

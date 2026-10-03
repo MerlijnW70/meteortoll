@@ -1,27 +1,18 @@
 import type { Program } from '@coral-xyz/anchor'
-import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-token'
+import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import { type Connection, PublicKey, Transaction, type TransactionInstruction, VersionedTransaction } from '@solana/web3.js'
-import { DAMM_V2, DBC, dammEventAuthority, dammPoolAuthority, dbcEventAuthority, dbcPoolAuthority, type ProblemAccount } from '@meteortoll/core'
+import { DAMM_V2, DBC, type DammPosition, dammEventAuthority, dammPoolAuthority, dbcEventAuthority, dbcPoolAuthority, findPositions, type ProblemAccount } from '@meteortoll/core'
+
+export { DAMM_POOL_DISCRIMINATOR, DAMM_TOKEN_A_MINT_OFFSET, dammPoolPairs, type DammPosition, findPositions, positionNfts } from '@meteortoll/core'
 import { failureFromStatus } from './errors'
 import { withRetry } from './rpc'
 import { methods } from './solve/program'
 import { decodePoolConfig, decodePoolState, type PoolState } from './chain'
 
-const dammPda = (...seeds: (Buffer | Uint8Array)[]) => PublicKey.findProgramAddressSync(seeds, DAMM_V2)[0]
-const seed = (text: string) => Buffer.from(text)
-
 export interface SweepPlan {
     trading: boolean
     surplus: boolean
     positions: DammPosition[]
-}
-
-export interface DammPosition {
-    position: PublicKey
-    positionNftAccount: PublicKey
-    dammPool: PublicKey
-    dammBaseVault: PublicKey
-    dammQuoteVault: PublicKey
 }
 
 export function planDbcSweeps(pool: Pick<PoolState, 'creator_base_fee' | 'creator_quote_fee' | 'quote_reserve' | 'is_creator_withdraw_surplus'>, migrationQuoteThreshold: bigint) {
@@ -30,61 +21,10 @@ export function planDbcSweeps(pool: Pick<PoolState, 'creator_base_fee' | 'creato
     return { trading, surplus }
 }
 
-export function positionNfts(accounts: { pubkey: PublicKey; data: Uint8Array }[]): { mint: PublicKey; account: PublicKey }[] {
-    const found: { mint: PublicKey; account: PublicKey }[] = []
-    for (const { pubkey, data } of accounts) {
-        if (data.length < 72) continue
-        const mint = new PublicKey(data.subarray(0, 32))
-        const amount = new DataView(data.buffer, data.byteOffset + 64, 8).getBigUint64(0, true)
-        if (amount === 1n && pubkey.equals(dammPda(seed('position_nft_account'), mint.toBuffer()))) found.push({ mint, account: pubkey })
-    }
-    return found
-}
-
-export const DAMM_POOL_DISCRIMINATOR = Buffer.from([241, 154, 109, 4, 17, 177, 109, 188])
-export const DAMM_TOKEN_A_MINT_OFFSET = 168
-
-export function dammPoolPairs(info: { owner: PublicKey; data: Uint8Array } | null | undefined, baseMint: PublicKey, quoteMint: PublicKey): boolean {
-    if (!info || !info.owner.equals(DAMM_V2) || info.data.length < DAMM_TOKEN_A_MINT_OFFSET + 64) return false
-    if (!Buffer.from(info.data.subarray(0, 8)).equals(DAMM_POOL_DISCRIMINATOR)) return false
-    const tokenA = new PublicKey(info.data.subarray(DAMM_TOKEN_A_MINT_OFFSET, DAMM_TOKEN_A_MINT_OFFSET + 32))
-    const tokenB = new PublicKey(info.data.subarray(DAMM_TOKEN_A_MINT_OFFSET + 32, DAMM_TOKEN_A_MINT_OFFSET + 64))
-    return tokenA.equals(baseMint) && tokenB.equals(quoteMint)
-}
-
-export async function findPositions(connection: Connection, problem: PublicKey, baseMint: PublicKey, quoteMint: PublicKey): Promise<DammPosition[]> {
-    const owned = await withRetry(() => connection.getTokenAccountsByOwner(problem, { programId: TOKEN_2022_PROGRAM_ID }, 'confirmed'))
-    const nfts = positionNfts(owned.value.map(({ pubkey, account }) => ({ pubkey, data: account.data })))
-    if (nfts.length === 0) return []
-    const positions = nfts.map(({ mint }) => dammPda(seed('position'), mint.toBuffer()))
-    const infos = await withRetry(() => connection.getMultipleAccountsInfo(positions, 'confirmed'))
-    const candidates: { position: PublicKey; positionNftAccount: PublicKey; dammPool: PublicKey }[] = []
-    nfts.forEach(({ mint, account }, i) => {
-        const info = infos[i]
-        if (!info || !info.owner.equals(DAMM_V2) || info.data.length < 72) return
-        if (!new PublicKey(info.data.subarray(40, 72)).equals(mint)) return
-        candidates.push({ position: positions[i], positionNftAccount: account, dammPool: new PublicKey(info.data.subarray(8, 40)) })
-    })
-    if (candidates.length === 0) return []
-    const pools = await withRetry(() => connection.getMultipleAccountsInfo(candidates.map((c) => c.dammPool), 'confirmed'))
-    const found: DammPosition[] = []
-    candidates.forEach(({ position, positionNftAccount, dammPool }, i) => {
-        if (!dammPoolPairs(pools[i], baseMint, quoteMint)) return
-        found.push({
-            position,
-            positionNftAccount,
-            dammPool,
-            dammBaseVault: dammPda(seed('token_vault'), baseMint.toBuffer(), dammPool.toBuffer()),
-            dammQuoteVault: dammPda(seed('token_vault'), quoteMint.toBuffer(), dammPool.toBuffer()),
-        })
-    })
-    return found
-}
-
 export async function sweepPlan(connection: Connection, problemAddress: PublicKey, problem: ProblemAccount): Promise<SweepPlan & { pool: PoolState | null }> {
     const [poolInfo, positions] = await Promise.all([
         withRetry(() => connection.getAccountInfo(problem.pool, 'confirmed')),
-        findPositions(connection, problemAddress, problem.baseMint, problem.quoteMint),
+        withRetry(() => findPositions(connection, problemAddress, problem.baseMint, problem.quoteMint)),
     ])
     const pool = decodePoolState(poolInfo)
     if (!pool) return { trading: false, surplus: false, positions, pool }
