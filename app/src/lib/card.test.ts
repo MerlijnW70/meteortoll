@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import type { ProblemView } from './chain'
-import { cardChip, cardHues, cardTitle } from './card'
+import { cardChip, cardHues, cardTitle, colLight, mixHue, randomLook, rowLight } from './card'
 
 const problem = (phase: ProblemView['phase'], n: [number, number, number], target: number, best?: number, listed = true) =>
     ({ phase, account: { n1: n[0], n2: n[1], n3: n[2], targetRank: target }, info: { bestKnown: best === undefined ? undefined : { rank: best }, listed } }) as unknown as ProblemView
@@ -34,4 +34,29 @@ test('hues', () => {
 test('title', () => {
     assert.equal(cardTitle({ n1: 7, n2: 7, n3: 9 }), '7×7 times 7×9')
     assert.equal(cardTitle({ n1: 2, n2: 12, n3: 15 }), '2×12 times 12×15')
+})
+
+test('random look', () => {
+    const values = [0.5, 0, 0.999]
+    const look = randomLook(() => values.shift()!)
+    assert.deepEqual(look, { a: 180, b: 270, seed: 999 })
+    for (let i = 0; i < 50; i++) {
+        const { a, b } = randomLook()
+        const apart = (b - a + 360) % 360
+        assert.ok(apart >= 90 && apart < 180)
+    }
+})
+
+test('mix hue', () => {
+    assert.equal(mixHue(350, 10, 0.5), 0)
+    assert.equal(mixHue(10, 350, 0.5), 0)
+    assert.equal(mixHue(100, 200, 0), 100)
+    assert.equal(mixHue(100, 200, 1), 200)
+    assert.equal(mixHue(0, 180, 0.5), 270)
+})
+
+test('light range', () => {
+    for (let i = 0; i < 40; i++) {
+        for (const l of [rowLight(i, 999), colLight(i, 999)]) assert.ok(l >= 46 && l < 68)
+    }
 })

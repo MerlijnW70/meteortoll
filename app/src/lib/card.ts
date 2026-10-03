@@ -18,3 +18,22 @@ export function cardHues({ n1, n2, n3, targetRank }: Pick<ProblemView['account']
 }
 
 export const cardTitle = ({ n1, n2, n3 }: Pick<ProblemView['account'], 'n1' | 'n2' | 'n3'>) => `${n1}×${n2} times ${n2}×${n3}`
+
+export interface Look {
+    a: number
+    b: number
+    seed: number
+}
+
+export function randomLook(random: () => number = Math.random): Look {
+    const a = Math.floor(random() * 360)
+    return { a, b: (a + 90 + Math.floor(random() * 90)) % 360, seed: Math.floor(random() * 1000) }
+}
+
+export const rowLight = (row: number, seed: number) => 46 + ((row * 37 + seed) % 22)
+export const colLight = (col: number, seed: number) => 46 + ((col * 53 + seed * 7) % 22)
+
+export function mixHue(a: number, b: number, t: number): number {
+    const d = ((((b - a) % 360) + 540) % 360) - 180
+    return (((a + d * t) % 360) + 360) % 360
+}

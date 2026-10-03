@@ -155,3 +155,22 @@ body {
 :root[data-theme="light"] .wallet-adapter-modal-overlay {
   background: rgb(20 22 27 / 0.4);
 }
+
+@keyframes art-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+
+.art-pop {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: art-pop 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .art-pop {
+    animation: none;
+  }
+}
