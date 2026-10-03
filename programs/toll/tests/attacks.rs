@@ -245,3 +245,29 @@ fn unverified_reveal_bond() {
     verify_all(&mut env, &griefer, 20_000);
     assert_eq!(attempt_of(&env, &griefer.attempt).bond, 0);
 }
+
+#[test]
+fn verify_size_limit() {
+    let mut env = bare((32, 32, 48), 1536);
+    let creator = env.problem;
+    put_dbc_accounts(&mut env, creator);
+    register(&mut env, (32, 32, 48), 1536).unwrap();
+    let mut env = bare((5, 13, 224), 2912);
+    let creator = env.problem;
+    put_dbc_accounts(&mut env, creator);
+    assert!(error_in(&register(&mut env, (5, 13, 224), 2912), "BadStatement"));
+}
+
+#[test]
+fn rank_floor_pairs() {
+    for shape in [(9, 8, 2), (2, 9, 8), (8, 2, 9)] {
+        let mut env = bare(shape, 71);
+        let creator = env.problem;
+        put_dbc_accounts(&mut env, creator);
+        assert!(error_in(&register(&mut env, shape, 71), "BadStatement"), "{shape:?}");
+        let mut env = bare(shape, 72);
+        let creator = env.problem;
+        put_dbc_accounts(&mut env, creator);
+        register(&mut env, shape, 72).unwrap();
+    }
+}
