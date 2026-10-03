@@ -31,7 +31,7 @@ jobs:
           [ "$rpc" = 200 ] && jq -e '.result == "ok"' /tmp/rpc > /dev/null || problems+=("/api/rpc getHealth answered $rpc: $(head -c 200 /tmp/rpc)")
           case "$CLUSTER" in
             mainnet) genesis=5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d ;;
-            *) genesis=EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG; METADATA_MINT=${METADATA_MINT:-821eZL9FEuPhPRjk516GF29e6FMGUSS3HuouitUUCFDH} ;;
+            *) genesis=EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG; METADATA_MINT=${METADATA_MINT:-HFhRi5AbUqFTthGoooHw3oaQdSA9nTDA9HXoP4wefsL5} ;;
           esac
           gen=$(curl -s -o /tmp/genesis -w '%{http_code}' --max-time 30 -H 'content-type: application/json' -H "origin: $SITE"             -d '{"jsonrpc":"2.0","id":1,"method":"getGenesisHash"}' "$SITE/api/rpc") || gen=000
           [ "$gen" = 200 ] && jq -e --arg g "$genesis" '.result == $g' /tmp/genesis > /dev/null || problems+=("/api/rpc getGenesisHash answered $gen, expected $CLUSTER: $(head -c 200 /tmp/genesis)")

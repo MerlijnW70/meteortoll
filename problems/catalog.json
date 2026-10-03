@@ -1,7 +1,7 @@
 {
   "devnet": {
-    "7KEP4DHQ7Wq625bKckRGLYodUMUMxhryVhTGXMfdcsUc": {
-      "mint": "8FyEr4a1xiqvtmMXBRn5RrwEfQZwqV4rBXPu7YcGqYwJ",
+    "3dfmHk3tf5dU4c55vjAs7mwYuYoezt8bT4ez3G19xQ2H": {
+      "mint": "HFhRi5AbUqFTthGoooHw3oaQdSA9nTDA9HXoP4wefsL5",
       "name": "DEMO 7x7x9 rank<=314",
       "symbol": "D779",
       "kind": "demo",
@@ -21,30 +21,8 @@
         "tool": "fmm"
       }
     },
-    "A4HmjT3afPKHhfdKHfPExczeWQof6hrP8Q1up1AGRV6W": {
-      "mint": "821eZL9FEuPhPRjk516GF29e6FMGUSS3HuouitUUCFDH",
-      "name": "DEMO 7x7x9 rank<=314",
-      "symbol": "D779",
-      "kind": "demo",
-      "demoNote": "Disclosed demo: funded and solved by the team with fmm's rank-314 scheme, which beats the published 315. It shows the whole mechanism end to end; it is not a public bounty.",
-      "coefficients": "integers from −128 to 127",
-      "naive": 441,
-      "bestKnown": {
-        "rank": 315,
-        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
-        "url": "https://fmm.univ-lille.fr/",
-        "asOf": "2026-09-30",
-        "ring": null
-      },
-      "ourRecord": {
-        "rank": 314,
-        "coefficients": "{-1, 0, 1}",
-        "tool": "fmm"
-      },
-      "hidden": true
-    },
-    "P4qpVD4WtvjLW4q6rNrpLQmzcmU3JHXFUNEiLPTtH68": {
-      "mint": "2sAZuUGTVbhjdHtc4urdPbTfmg3eDPKtH9YKAc6SAGu8",
+    "Gz4v4ZWqQ6bcxMBbd3nz8Y4CvafcUJ9APzeBkQZRNCmm": {
+      "mint": "ArFWz6k62oAwfJS6o5T9YZm4DKkiK8s4yptExLS3ZpZQ",
       "name": "launch check",
       "symbol": "LCHECK",
       "kind": "demo",
