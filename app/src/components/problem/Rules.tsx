@@ -28,7 +28,7 @@ export function Rules({ problem }: { problem: ProblemView }) {
                     from the first verified scheme.
                 </li>
             </ul>
-            <button onClick={() => setOpen(!open)} className="mt-3 text-xs text-accent hover:underline" aria-expanded={open}>
+            <button onClick={() => setOpen(!open)} className="mt-1 py-2 text-sm text-accent hover:underline" aria-expanded={open}>
                 {open ? 'Hide full rules' : 'Full rules'}
             </button>
             {open && (

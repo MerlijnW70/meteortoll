@@ -50,9 +50,9 @@ export function History({ problem }: { problem: ProblemView }) {
                                     </span>
                                     <span className="num text-xs text-faint">{when(event.time)}</span>
                                 </div>
-                                <div className="flex gap-3 text-xs text-muted">
+                                <div className="flex items-center gap-3 text-xs text-muted">
                                     <span className="font-mono">{short(event.actor)}</span>
-                                    <a className="text-accent hover:underline" href={explorer('tx', event.signature)} target="_blank" rel="noreferrer">
+                                    <a className="inline-block py-1 text-accent hover:underline" href={explorer('tx', event.signature)} target="_blank" rel="noreferrer">
                                         transaction
                                     </a>
                                 </div>

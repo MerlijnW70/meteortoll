@@ -137,8 +137,8 @@ export function VerifierReplay({ problem }: { problem: ProblemView }) {
                         <button onClick={replay} disabled={running} className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-bg disabled:opacity-50">
                             {running ? 'Checking…' : state ? 'Replay at a new random point' : 'Run the check'}
                         </button>
-                        <label className="flex items-center gap-2 text-sm text-muted">
-                            <input type="checkbox" checked={breakIt} disabled={running} onChange={(e) => setBreakIt(e.target.checked)} />
+                        <label className="flex items-center gap-2 py-2 text-sm text-muted">
+                            <input type="checkbox" className="h-4 w-4" checked={breakIt} disabled={running} onChange={(e) => setBreakIt(e.target.checked)} />
                             Break one coefficient
                         </label>
                         <button onClick={() => download(recovered.data!.scheme, `${problem.address.slice(0, 8)}-scheme.bin`)} className="text-sm text-accent hover:underline">

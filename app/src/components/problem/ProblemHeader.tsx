@@ -15,7 +15,7 @@ const SLOT_SECONDS = 0.4
 
 function Stat({ label, value, sub, big = false }: { label: string; value: ReactNode; sub?: ReactNode; big?: boolean }) {
     return (
-        <div className="min-w-0 px-5 first:pl-0 last:pr-0">
+        <div className="min-w-0 first:col-span-2 sm:px-5 sm:first:pl-0 sm:last:pr-0">
             <dt className="text-xs text-muted">{label}</dt>
             <dd className={`num mt-1 whitespace-nowrap font-semibold tracking-tight ${big ? 'text-3xl' : 'text-2xl'}`}>{value}</dd>
             {sub && <dd className="num mt-0.5 text-xs text-faint">{sub}</dd>}
@@ -95,13 +95,15 @@ export function ProblemHeader({ problem }: { problem: ProblemView }) {
                         {problem.info.demoNote.replace(/^Disclosed demo:\s*/i, '')}
                     </p>
                 )}
-                <dl className="mt-8 flex flex-wrap gap-y-4 divide-x divide-border">
+                <dl className="mt-8 grid grid-cols-2 gap-x-6 gap-y-5 sm:flex sm:gap-0 sm:divide-x sm:divide-border">
                     {problem.phase === 'solved' ? <PaidStat problem={problem} /> : <PrizeStat problem={problem} />}
                     <Stat label="Record to beat" value={best ? `${best} → ${target}` : `≤ ${target}`} sub={`usual way ${naive}`} />
                     <Stat label="Attempts" value={problem.account.attempts} sub={solver ? `solver ${short(solver)}` : 'no answer yet'} />
                 </dl>
             </div>
-            <MatrixArt problem={problem} className="aspect-[16/10] rounded-3xl px-6 pb-6 pt-6" />
+            <div className="hidden sm:block">
+                <MatrixArt problem={problem} className="aspect-[16/10] rounded-3xl p-6" />
+            </div>
         </header>
     )
 }
