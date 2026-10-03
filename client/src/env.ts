@@ -16,6 +16,7 @@ const here = dirname(fileURLToPath(import.meta.url))
 export const ROOT = resolve(here, '../..')
 
 export const CLUSTER = process.env.TOLL_CLUSTER ?? 'devnet'
+export const PROFILE = process.env.TOLL_PROFILE ?? CLUSTER
 const RPC = process.env.TOLL_RPC ?? (CLUSTER === 'mainnet' ? 'https://api.mainnet-beta.solana.com' : 'https://api.devnet.solana.com')
 const COMMITMENT: Commitment = 'confirmed'
 export const connection = new Connection(RPC, COMMITMENT)

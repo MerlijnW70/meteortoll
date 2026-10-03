@@ -9,10 +9,11 @@ import {
     getAssociatedTokenAddressSync,
     NATIVE_MINT,
 } from '@solana/spl-token'
-import { createDbcProgram, deriveDbcPoolAddress, DynamicBondingCurveClient, U64_MAX } from '@meteora-ag/dynamic-bonding-curve-sdk'
+import { createDbcProgram, deriveDbcPoolAddress, DynamicBondingCurveClient, PROTOCOL_POOL_CREATION_FEE_PERCENT, U64_MAX } from '@meteora-ag/dynamic-bonding-curve-sdk'
 import {
     CLUSTER,
     connection,
+    PROFILE,
     explorer,
     loadKeypair,
     loadState,
@@ -24,15 +25,18 @@ import {
     waitForSlot,
 } from './env.js'
 import { launchParams, type Profile } from './params.js'
+import { readScheme } from './schemeFile.js'
 import type { Economics } from '@meteortoll/core'
 import {
     assertCluster,
     BPF_LOADER_UPGRADEABLE,
     clusterOf,
+    clusterProblem,
     deployCost,
     launchLamports,
     MAX_GRACE_SLOTS,
     MIN_GRACE_SLOTS,
+    profileProblem,
     programDataMatches,
     SETUP_LAMPORTS,
     sha256,
@@ -43,7 +47,7 @@ import {
 import { metadataUri, SITE_URL } from './site.js'
 import { buyTransaction, MAX_FEE_PERCENT, parseLimits, SLIPPAGE_BPS } from './trade.js'
 import { knownFormat, targetProblem } from '../../app/src/lib/known.js'
-import { commitment, encodeScheme, type FmmScheme, schemeHeader, VERIFY_BUDGET } from '@meteortoll/core'
+import { commitment, schemeHeader, VERIFY_BUDGET } from '@meteortoll/core'
 import {
     attemptAddress,
     dbcEventAuthority,
@@ -95,15 +99,15 @@ async function setup(args: string[]) {
         console.log(`already set up: config ${state.config}, launchpad ${state.launchpad}`)
         return
     }
-    const grace = Number(flag(args, 'grace', CLUSTER === 'mainnet' ? '9000' : '150'))
+    const grace = Number(flag(args, 'grace', PROFILE === 'mainnet' ? '9000' : '150'))
     if (!Number.isInteger(grace) || grace < MIN_GRACE_SLOTS || grace > MAX_GRACE_SLOTS) throw new Error(`--grace must be from ${MIN_GRACE_SLOTS} to ${MAX_GRACE_SLOTS} slots`)
-    if (CLUSTER === 'mainnet' && !args.includes('--treasury')) throw new Error('on mainnet, pass --treasury <address> explicitly: the fee claimer is permanent')
+    if (PROFILE === 'mainnet' && !args.includes('--treasury')) throw new Error('on mainnet, pass --treasury <address> explicitly: the fee claimer is permanent')
     const treasury = new PublicKey(flag(args, 'treasury', wallet.publicKey.toBase58()))
     const config = Keypair.generate()
     const settings = clusterEconomics()
-    const params = launchParams((CLUSTER === 'mainnet' ? 'mainnet' : 'devnet') as Profile, settings)
+    const params = launchParams((PROFILE === 'mainnet' ? 'mainnet' : 'devnet') as Profile, settings)
     console.log(
-        `economics: treasury ${settings.treasurySharePercent}% of the fees the protocol leaves, launch fee ${settings.launchFeeSol} SOL, paid to ${treasury.toBase58()}`
+        `economics: treasury ${settings.treasurySharePercent}% of the fees the protocol leaves, launch fee ${settings.launchFeeSol} SOL (${(settings.launchFeeSol * (100 - PROTOCOL_POOL_CREATION_FEE_PERCENT)) / 100} SOL after Meteora's ${PROTOCOL_POOL_CREATION_FEE_PERCENT}%), paid to ${treasury.toBase58()}`
     )
     const create = await dbc.partner.createConfig({
         ...params,
@@ -143,7 +147,7 @@ async function launch(args: string[]) {
     const base = resumePool ? null : Keypair.generate()
     const baseMint = base ? base.publicKey : new PublicKey(flag(args, 'base'))
     const uri = flag(args, 'uri', metadataUri(SITE_URL, baseMint.toBase58()))
-    const badUri = siteProblem(uri, CLUSTER === 'mainnet')
+    const badUri = siteProblem(uri, PROFILE === 'mainnet')
     if (badUri) throw new Error(`launch refused: ${badUri}`)
     const pool = deriveDbcPoolAddress(NATIVE_MINT, baseMint, config)
     if (resumePool && !pool.equals(new PublicKey(resumePool))) throw new Error('--pool does not match --base and the config')
@@ -274,7 +278,7 @@ function saltPath(attempt: PublicKey) {
 async function solve(args: string[]) {
     const found = record(args[0])
     const problem = new PublicKey(found.problem)
-    const scheme = encodeScheme(JSON.parse(readFileSync(args[1], 'utf8')) as FmmScheme)
+    const scheme = readScheme(args[1])
     const budget = Number(flag(args, 'budget', String(VERIFY_BUDGET)))
     const header = schemeHeader(scheme)
     const [n1, n2, n3, target] = found.statement
@@ -436,7 +440,9 @@ async function preflight(args: string[]) {
     }
     const cluster = await clusterOf(connection)
     console.log(`RPC cluster: ${cluster}`)
-    if (cluster !== CLUSTER) fail(`TOLL_CLUSTER is ${CLUSTER} but the RPC serves ${cluster}`)
+    const mismatch = clusterProblem(cluster, CLUSTER) ?? profileProblem(cluster, CLUSTER, PROFILE)
+    if (mismatch) fail(mismatch)
+    else if (PROFILE !== CLUSTER) console.log(`  ✓ rehearsing the ${PROFILE} profile on ${cluster}`)
 
     if (CLUSTER === 'mainnet') {
         const devnetKey = resolve(ROOT, '.keys/devnet.json')
@@ -475,7 +481,7 @@ async function preflight(args: string[]) {
         if (share === settings.treasurySharePercent && fee === settings.launchFeeSol) console.log(`  ✓ the launchpad config matches problems/economics.json (treasury ${share}%, launch fee ${fee} SOL)`)
         else fail(`the launchpad config (treasury ${share}%, launch fee ${fee} SOL) differs from problems/economics.json (${settings.treasurySharePercent}%, ${settings.launchFeeSol} SOL)`)
         if (config) {
-            const expected = launchParams((CLUSTER === 'mainnet' ? 'mainnet' : 'devnet') as Profile, settings) as unknown as {
+            const expected = launchParams((PROFILE === 'mainnet' ? 'mainnet' : 'devnet') as Profile, settings) as unknown as {
                 poolFees: { baseFee: Record<string, { toString(): string }> }
                 enableFirstSwapWithMinFee: boolean
             }
@@ -505,8 +511,8 @@ const PARTNER_CREATION_FEE_CLAIMED = 0b10
 
 function clusterEconomics(): Economics {
     const all = JSON.parse(readFileSync(resolve(ROOT, 'problems/economics.json'), 'utf8')) as Record<string, Economics>
-    const settings = all[CLUSTER]
-    if (!settings) throw new Error(`problems/economics.json has no entry for ${CLUSTER}`)
+    const settings = all[PROFILE]
+    if (!settings) throw new Error(`problems/economics.json has no entry for ${PROFILE}`)
     return settings
 }
 
@@ -546,5 +552,5 @@ if (!commands[command]) {
     console.error(`commands: ${Object.keys(commands).join(', ')}`)
     process.exit(2)
 }
-if (command !== 'preflight') await assertCluster(connection, CLUSTER)
+if (command !== 'preflight') await assertCluster(connection, CLUSTER, PROFILE)
 await commands[command](rest)

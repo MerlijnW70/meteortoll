@@ -74,7 +74,14 @@ export function clusterProblem(served: string, expected: string): string | null 
     return `TOLL_CLUSTER is ${expected} but the RPC serves ${served}; set TOLL_CLUSTER and TOLL_RPC to the same cluster`
 }
 
-export async function assertCluster(connection: Connection, expected: string) {
-    const problem = clusterProblem(await clusterOf(connection), expected)
+export function profileProblem(served: string, cluster: string, profile: string): string | null {
+    if (profile === cluster) return null
+    if (cluster === 'mainnet' || cluster === 'devnet' || !served.startsWith('unknown')) return `TOLL_PROFILE ${profile} is only honoured on a local cluster; TOLL_CLUSTER is ${cluster} and the RPC serves ${served}`
+    return null
+}
+
+export async function assertCluster(connection: Connection, expected: string, profile = expected) {
+    const served = await clusterOf(connection)
+    const problem = clusterProblem(served, expected) ?? profileProblem(served, expected, profile)
     if (problem) throw new Error(problem)
 }

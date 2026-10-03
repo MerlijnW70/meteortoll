@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { Keypair, type Connection } from '@solana/web3.js'
-import { assertCluster, clusterOf, deployCost, GENESIS, LAUNCH_LAMPORTS, launchLamports, PROGRAM_DATA_HEADER, programDataMatches, siteProblem, statementProblem, upgradeAuthority } from './preflight.js'
+import { assertCluster, clusterOf, deployCost, GENESIS, LAUNCH_LAMPORTS, launchLamports, PROGRAM_DATA_HEADER, profileProblem, programDataMatches, siteProblem, statementProblem, upgradeAuthority } from './preflight.js'
 
 function programData(body: number[], authority: Uint8Array | null, padding = 0): Uint8Array {
     const data = new Uint8Array(PROGRAM_DATA_HEADER + body.length + padding)
@@ -64,6 +64,19 @@ test('cluster guard', async () => {
     await assert.rejects(assertCluster(at('abc'), 'devnet'), /unknown \(abc\)/)
 })
 
+test('profile guard', async () => {
+    const at = (genesis: string) => ({ getGenesisHash: async () => genesis }) as unknown as Connection
+    await assertCluster(at('abc'), 'localnet', 'mainnet')
+    await assertCluster(at(GENESIS.mainnet), 'mainnet', 'mainnet')
+    await assert.rejects(assertCluster(at(GENESIS.devnet), 'devnet', 'mainnet'), /TOLL_PROFILE mainnet is only honoured on a local cluster/)
+    await assert.rejects(assertCluster(at(GENESIS.mainnet), 'mainnet', 'devnet'), /TOLL_PROFILE devnet/)
+    await assert.rejects(assertCluster(at(GENESIS.mainnet), 'localnet', 'mainnet'), /serves mainnet/)
+    assert.equal(profileProblem('abc', 'localnet', 'mainnet'), 'TOLL_PROFILE mainnet is only honoured on a local cluster; TOLL_CLUSTER is localnet and the RPC serves abc')
+    assert.equal(profileProblem('unknown (abc)', 'localnet', 'mainnet'), null)
+    assert.equal(profileProblem('devnet', 'devnet', 'devnet'), null)
+    assert.match(profileProblem('unknown (abc)', 'devnet', 'mainnet')!, /TOLL_CLUSTER is devnet/)
+})
+
 test('launch fee counted', () => {
     assert.equal(launchLamports(0), LAUNCH_LAMPORTS)
     assert.equal(launchLamports(0.05), LAUNCH_LAMPORTS + 50_000_000)
@@ -75,6 +88,22 @@ test('statement limits', () => {
     assert.match(statementProblem([40, 40, 40], 1_600)!, /too large/)
     assert.match(statementProblem([2, 2, 2], 3)!, /target/)
     assert.match(statementProblem([2, 2, 2], 8)!, /target/)
+})
+
+test('statement edges', () => {
+    assert.equal(statementProblem([32, 32, 48], 1_536), null)
+    assert.match(statementProblem([255, 1, 1], 255)!, /target must be from 255 to 254/)
+    assert.match(statementProblem([1, 4, 4], 16)!, /target must be from 16 to 15/)
+    for (const [n, low, high] of [
+        [[2, 3, 5], 15, 29],
+        [[5, 2, 3], 15, 29],
+        [[3, 5, 2], 15, 29],
+    ] as [number[], number, number][]) {
+        assert.equal(statementProblem(n, low), null)
+        assert.equal(statementProblem(n, high), null)
+        assert.equal(statementProblem(n, low - 1), `the target must be from ${low} to ${high}`)
+        assert.equal(statementProblem(n, high + 1), `the target must be from ${low} to ${high}`)
+    }
 })
 
 test('mainnet uri', () => {

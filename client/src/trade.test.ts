@@ -62,6 +62,27 @@ test('bad limits', () => {
     assert.throws(() => parseLimits('1', '-1'), /--max-fee/)
 })
 
+test('buy direction', async () => {
+    const { dbc, swaps, quotes } = market(1)
+    await buyTransaction(dbc, connection, owner, pool, new BN(100), parseLimits('1', '5'))
+    assert.equal(quotes[0].swapBaseForQuote, false)
+    assert.equal(quotes[0].hasReferral, false)
+    assert.equal(quotes[0].eligibleForFirstSwapWithMinFee, false)
+    assert.equal(swaps[0].swapBaseForQuote, false)
+})
+
+test('fee at cap', async () => {
+    const { dbc, swaps } = market(5)
+    await buyTransaction(dbc, connection, owner, pool, new BN(100), parseLimits('1', '5'))
+    assert.equal(swaps.length, 1)
+})
+
+test('limit edges', () => {
+    assert.deepEqual(parseLimits('0', '0'), { slippageBps: 0, maxFeePercent: 0 })
+    assert.deepEqual(parseLimits('1', '100'), { slippageBps: 100, maxFeePercent: 100 })
+    assert.throws(() => parseLimits('1', '100.5'), /--max-fee/)
+})
+
 test('window left', () => {
     assert.equal(windowSlotsLeft(baseFee, 1_000n, 1_100n), 260)
     assert.equal(windowSlotsLeft(baseFee, 1_000n, 2_000n), 0)

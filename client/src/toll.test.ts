@@ -1,9 +1,17 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { Keypair } from '@solana/web3.js'
-import { treasuryPools } from './toll.js'
+import { Keypair, SystemInstruction } from '@solana/web3.js'
+import { submissionCreate, SUBMISSION_HEADER, TOLL, treasuryPools } from './toll.js'
 
 const key = () => Keypair.generate().publicKey
+
+test('submission space', () => {
+    const ix = submissionCreate(key(), key(), 1_000, 5)
+    const made = SystemInstruction.decodeCreateAccount(ix)
+    assert.equal(made.space, SUBMISSION_HEADER + 1_000)
+    assert.equal(made.lamports, 5)
+    assert.ok(made.programId.equals(TOLL))
+})
 
 test('treasury pools', async () => {
     const launchpad = key()
