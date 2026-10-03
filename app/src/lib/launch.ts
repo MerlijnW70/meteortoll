@@ -132,7 +132,7 @@ export async function prepareLaunch(
 
     const baseMint = Keypair.generate()
     const pool = deriveDbcPoolAddress(quoteMint, baseMint.publicKey, config)
-    const problem = problemAddress(pool, request.n, request.target)
+    const problem = problemAddress(launchpad, pool, request.n, request.target)
 
     const createPoolParam = {
         name: request.name.trim(),
@@ -176,7 +176,7 @@ async function registerTransaction(
     { n, target }: Pick<LaunchRequest, 'n' | 'target'>,
     handOver: boolean
 ): Promise<Transaction> {
-    const problem = problemAddress(pool, n, target)
+    const problem = problemAddress(launchpad, pool, n, target)
     const tx = new Transaction()
     if (handOver) tx.add(await handOverInstruction(connection, { pool, config, owner, problem }))
     const register = await methods(program)
@@ -215,7 +215,7 @@ export async function finishRegistration(
 ): Promise<{ register: Transaction; problem: PublicKey } | null> {
     const pool = new PublicKey(pending.pool)
     const baseMint = new PublicKey(pending.baseMint)
-    const problem = problemAddress(pool, pending.n, pending.target)
+    const problem = problemAddress(launchpad, pool, pending.n, pending.target)
     if (await withRetry(() => connection.getAccountInfo(problem, 'confirmed'))) return null
     const state = await withRetry(() => new DynamicBondingCurveClient(connection, 'confirmed').state.getPool(pool))
     if (!state) return null

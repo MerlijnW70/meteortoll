@@ -27,10 +27,10 @@ export const dammEventAuthority = pda([seed('__event_authority')], DAMM_V2)
 
 export const launchpadAddress = (admin: PublicKey) => pda([seed('launchpad'), admin.toBuffer()])
 
-export function problemAddress(pool: PublicKey, n: [number, number, number], target: number): PublicKey {
+export function problemAddress(launchpad: PublicKey, pool: PublicKey, n: [number, number, number], target: number): PublicKey {
     const targetBytes = Buffer.alloc(4)
     targetBytes.writeUInt32LE(target, 0)
-    return pda([seed('problem'), pool.toBuffer(), Buffer.from(n), targetBytes])
+    return pda([seed('problem'), launchpad.toBuffer(), pool.toBuffer(), Buffer.from(n), targetBytes])
 }
 
 export const vaultAddress = (problem: PublicKey, mint: PublicKey) => pda([seed('vault'), problem.toBuffer(), mint.toBuffer()])

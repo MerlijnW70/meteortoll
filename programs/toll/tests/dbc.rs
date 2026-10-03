@@ -131,7 +131,7 @@ fn market_with_first_buy(first_buy: u64) -> Market {
             program: DBC,
         },
     );
-    let problem = problem_address(&pool, SHAPE, RANK);
+    let problem = problem_address(&launchpad, &pool, SHAPE, RANK);
     let hand_over = dbc_ix(
         dbc_args::TransferPoolCreator {},
         dbc_accounts::TransferPoolCreator {

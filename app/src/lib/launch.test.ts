@@ -186,12 +186,13 @@ function resumeSetup(t: TestContext, creator: 'owner' | 'problem' | 'other', reg
     const baseMint = key()
     const pinned: Pinned = { config: key(), economics: WINDOWED }
     const pending = { n: [2, 2, 2] as [number, number, number], target: 7, pool: pool.toBase58(), baseMint: baseMint.toBase58() }
-    const problem = problemAddress(pool, pending.n, pending.target)
+    const launchpad = key()
+    const problem = problemAddress(launchpad, pool, pending.n, pending.target)
     const state = Object.getPrototypeOf(dbcClient().state)
     t.mock.method(state, 'getPoolConfig', async () => testConfig())
     t.mock.method(state, 'getPool', async () => ({ poolState: { creator: creator === 'owner' ? owner : creator === 'problem' ? problem : key(), baseMint, config: pinned.config } }))
     const connection = { getAccountInfo: async () => (registered ? {} : null) } as never as Connection
-    return finishRegistration(connection, fakeProgram(pinned.config!), key(), owner, pending, pinned).then((found) => ({ found, problem }))
+    return finishRegistration(connection, fakeProgram(pinned.config!), launchpad, owner, pending, pinned).then((found) => ({ found, problem }))
 }
 
 test('finish registration', async (t) => {

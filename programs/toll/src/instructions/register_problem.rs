@@ -19,7 +19,7 @@ pub struct RegisterProblem<'info> {
         init,
         payer = payer,
         space = 8 + Problem::INIT_SPACE,
-        seeds = [PROBLEM_SEED, pool.key().as_ref(), &[n1, n2, n3], &target_rank.to_le_bytes()],
+        seeds = [PROBLEM_SEED, launchpad.key().as_ref(), pool.key().as_ref(), &[n1, n2, n3], &target_rank.to_le_bytes()],
         bump
     )]
     pub problem: Box<Account<'info, Problem>>,

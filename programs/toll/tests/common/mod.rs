@@ -65,8 +65,8 @@ pub fn pda(seeds: &[&[u8]]) -> Pubkey {
     Pubkey::find_program_address(seeds, &toll::ID).0
 }
 
-pub fn problem_address(pool: &Pubkey, n: (u8, u8, u8), target: u32) -> Pubkey {
-    pda(&[toll::PROBLEM_SEED, pool.as_ref(), &[n.0, n.1, n.2], &target.to_le_bytes()])
+pub fn problem_address(launchpad: &Pubkey, pool: &Pubkey, n: (u8, u8, u8), target: u32) -> Pubkey {
+    pda(&[toll::PROBLEM_SEED, launchpad.as_ref(), pool.as_ref(), &[n.0, n.1, n.2], &target.to_le_bytes()])
 }
 
 pub fn mint_data(decimals: u8) -> Vec<u8> {
@@ -149,7 +149,7 @@ pub fn bare(n: (u8, u8, u8), target: u32) -> Env {
     let pool = Pubkey::new_unique();
     let base_mint = Pubkey::new_unique();
     let quote_mint = Pubkey::new_unique();
-    let problem = problem_address(&pool, n, target);
+    let problem = problem_address(&launchpad, &pool, n, target);
     let base_vault = pda(&[toll::VAULT_SEED, problem.as_ref(), base_mint.as_ref()]);
     let quote_vault = pda(&[toll::VAULT_SEED, problem.as_ref(), quote_mint.as_ref()]);
     put(&mut svm, base_mint, TOKEN, mint_data(6));

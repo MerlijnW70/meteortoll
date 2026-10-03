@@ -37,7 +37,7 @@ pub fn handle_sweep_trading_fees(ctx: Context<SweepTradingFees>) -> Result<()> {
     let problem = &ctx.accounts.problem;
     let statement = [problem.n1, problem.n2, problem.n3];
     let target = problem.target_rank.to_le_bytes();
-    let seeds: &[&[u8]] = &[PROBLEM_SEED, problem.pool.as_ref(), &statement, &target, &[problem.bump]];
+    let seeds: &[&[u8]] = &[PROBLEM_SEED, problem.launchpad.as_ref(), problem.pool.as_ref(), &statement, &target, &[problem.bump]];
     let accounts = dynamic_bonding_curve::cpi::accounts::ClaimCreatorTradingFee {
         pool_authority: ctx.accounts.pool_authority.to_account_info(),
         pool: ctx.accounts.pool.to_account_info(),

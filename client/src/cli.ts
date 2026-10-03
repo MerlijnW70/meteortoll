@@ -125,7 +125,7 @@ async function launch(args: string[]) {
     const uri = flag(args, 'uri', metadataUri(SITE_URL, baseMint.toBase58()))
     const pool = deriveDbcPoolAddress(NATIVE_MINT, baseMint, config)
     if (resumePool && !pool.equals(new PublicKey(resumePool))) throw new Error('--pool does not match --base and the config')
-    const problem = problemAddress(pool, [n1, n2, n3], target)
+    const problem = problemAddress(new PublicKey(state.launchpad), pool, [n1, n2, n3], target)
 
     const handOver = () =>
         createDbcProgram(connection).program.methods.transferPoolCreator().accountsPartial({ virtualPool: pool, config, creator: wallet.publicKey, newCreator: problem }).instruction()

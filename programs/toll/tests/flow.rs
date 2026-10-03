@@ -37,11 +37,31 @@ fn register_wrong_creator() {
 }
 
 #[test]
+fn register_foreign_launchpad() {
+    let mut env = bare(SHAPE, RANK);
+    let creator = env.problem;
+    put_dbc_accounts(&mut env, creator);
+    let rival = solana_keypair::Keypair::new();
+    env.svm.airdrop(&rival.pubkey(), 10_000_000_000).unwrap();
+    let launchpad = pda(&[toll::LAUNCHPAD_SEED, rival.pubkey().as_ref()]);
+    let init = ix(
+        toll::instruction::InitLaunchpad { dbc_config: env.config, grace_slots: GRACE },
+        toll::accounts::InitLaunchpad { admin: rival.pubkey(), launchpad, system_program: SYSTEM },
+    );
+    send(&mut env.svm, &[init], &rival, &[]).unwrap();
+    env.launchpad = launchpad;
+    env.problem = problem_address(&launchpad, &env.pool, SHAPE, RANK);
+    env.base_vault = pda(&[toll::VAULT_SEED, env.problem.as_ref(), env.base_mint.as_ref()]);
+    env.quote_vault = pda(&[toll::VAULT_SEED, env.problem.as_ref(), env.quote_mint.as_ref()]);
+    assert!(error_in(&register(&mut env, SHAPE, RANK), "CreatorIsNotProblem"));
+}
+
+#[test]
 fn register_wrong_statement() {
     let mut env = bare(SHAPE, RANK);
     let creator = env.problem;
     put_dbc_accounts(&mut env, creator);
-    env.problem = problem_address(&env.pool, SHAPE, RANK + 1);
+    env.problem = problem_address(&env.launchpad, &env.pool, SHAPE, RANK + 1);
     env.base_vault = pda(&[toll::VAULT_SEED, env.problem.as_ref(), env.base_mint.as_ref()]);
     env.quote_vault = pda(&[toll::VAULT_SEED, env.problem.as_ref(), env.quote_mint.as_ref()]);
     assert!(error_in(&register(&mut env, SHAPE, RANK + 1), "CreatorIsNotProblem"));

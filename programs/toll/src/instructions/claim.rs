@@ -37,7 +37,7 @@ pub fn handle_claim(ctx: Context<Claim>) -> Result<()> {
     require!(problem.finalized(Clock::get()?.slot), TollError::GracePending);
     let statement = [problem.n1, problem.n2, problem.n3];
     let target = problem.target_rank.to_le_bytes();
-    let seeds: &[&[u8]] = &[PROBLEM_SEED, problem.pool.as_ref(), &statement, &target, &[problem.bump]];
+    let seeds: &[&[u8]] = &[PROBLEM_SEED, problem.launchpad.as_ref(), problem.pool.as_ref(), &statement, &target, &[problem.bump]];
     let signer = &[seeds];
 
     let a = &ctx.accounts;
