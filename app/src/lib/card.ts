@@ -3,13 +3,19 @@ import { problemStanding } from './classify'
 
 export type ChipTone = 'good' | 'accent' | 'warn' | 'muted'
 
-export function cardChip(problem: Pick<ProblemView, 'phase' | 'account' | 'info'>, mainnet: boolean): { label: string; tone: ChipTone } | null {
-    if (problem.phase === 'solved') return { label: 'Solved', tone: 'muted' }
-    if (problem.phase === 'grace') return { label: 'Checking an answer', tone: 'accent' }
+export interface Chip {
+    label: string
+    tone: ChipTone
+    live: boolean
+}
+
+export function cardChip(problem: Pick<ProblemView, 'phase' | 'account' | 'info'>, mainnet: boolean): Chip {
+    if (problem.phase === 'solved') return { label: 'Solved', tone: 'good', live: true }
+    if (problem.phase === 'grace') return { label: 'Checking an answer', tone: 'accent', live: true }
     const standing = problemStanding(problem, mainnet)
-    if (standing === 'answered' || standing === 'impossible') return { label: 'Not winnable', tone: 'warn' }
-    if (standing === 'unreviewed') return { label: 'Not reviewed', tone: 'warn' }
-    return null
+    if (standing === 'answered' || standing === 'impossible') return { label: 'Not winnable', tone: 'warn', live: false }
+    if (standing === 'unreviewed') return { label: 'Not reviewed', tone: 'warn', live: false }
+    return { label: 'Live', tone: 'good', live: true }
 }
 
 export function cardHues({ n1, n2, n3, targetRank }: Pick<ProblemView['account'], 'n1' | 'n2' | 'n3' | 'targetRank'>): [number, number] {

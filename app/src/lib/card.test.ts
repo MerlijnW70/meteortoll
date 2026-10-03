@@ -6,23 +6,23 @@ import { cardChip, cardHues, cardTitle, colLight, mixHue, randomLook, rowLight }
 const problem = (phase: ProblemView['phase'], n: [number, number, number], target: number, best?: number, listed = true) =>
     ({ phase, account: { n1: n[0], n2: n[1], n3: n[2], targetRank: target }, info: { bestKnown: best === undefined ? undefined : { rank: best }, listed } }) as unknown as ProblemView
 
-test('open has no chip', () => {
-    assert.equal(cardChip(problem('open', [7, 7, 9], 314, 315), true), null)
+test('open is live', () => {
+    assert.deepEqual(cardChip(problem('open', [7, 7, 9], 314, 315), true), { label: 'Live', tone: 'good', live: true })
 })
 
 test('phase chips', () => {
-    assert.deepEqual(cardChip(problem('solved', [7, 7, 9], 314, 315), false), { label: 'Solved', tone: 'muted' })
-    assert.deepEqual(cardChip(problem('grace', [7, 7, 9], 314, 315), false), { label: 'Checking an answer', tone: 'accent' })
+    assert.deepEqual(cardChip(problem('solved', [7, 7, 9], 314, 315), false), { label: 'Solved', tone: 'good', live: true })
+    assert.deepEqual(cardChip(problem('grace', [7, 7, 9], 314, 315), false), { label: 'Checking an answer', tone: 'accent', live: true })
 })
 
 test('not winnable', () => {
-    assert.equal(cardChip(problem('open', [7, 7, 9], 315, 315), false)?.label, 'Not winnable')
-    assert.equal(cardChip(problem('open', [2, 2, 2], 6), false)?.label, 'Not winnable')
+    assert.deepEqual(cardChip(problem('open', [7, 7, 9], 315, 315), false), { label: 'Not winnable', tone: 'warn', live: false })
+    assert.equal(cardChip(problem('open', [2, 2, 2], 6), false).label, 'Not winnable')
 })
 
 test('unreviewed', () => {
-    assert.deepEqual(cardChip(problem('open', [7, 7, 9], 314, 315, false), true), { label: 'Not reviewed', tone: 'warn' })
-    assert.equal(cardChip(problem('open', [7, 7, 9], 314, 315, false), false), null)
+    assert.deepEqual(cardChip(problem('open', [7, 7, 9], 314, 315, false), true), { label: 'Not reviewed', tone: 'warn', live: false })
+    assert.equal(cardChip(problem('open', [7, 7, 9], 314, 315, false), false).label, 'Live')
 })
 
 test('hues', () => {

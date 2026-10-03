@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { ErrorPanel } from '@/components/ErrorPanel'
 import { RolePaths } from '@/components/explain/RolePaths'
 import { ProductArt } from '@/components/MatrixArt'
-import { ProblemCard } from '@/components/ProblemCard'
+import { CHIP_TONE, ProblemCard } from '@/components/ProblemCard'
 import { StatsStrip } from '@/components/StatsStrip'
 import { Skeleton, sol } from '@/components/ui'
 import { useProblems } from '@/hooks/useProblems'
@@ -74,7 +74,10 @@ function Featured({ problem }: { problem: ProblemView }) {
     return (
         <Link href={`/p/${problem.address}`} className="group block outline-none">
             <ProductArt problem={problem} className="aspect-[16/10] rounded-3xl px-4 pb-4 pt-12 transition group-hover:brightness-105 group-focus-visible:ring-2 group-focus-visible:ring-accent">
-                <span className="absolute left-4 top-4 rounded-full bg-bg/80 px-3 py-1 text-xs text-text">{chip ? chip.label : 'Featured'}</span>
+                <span className="absolute left-4 top-4 flex items-center gap-1.5 rounded-full bg-bg/80 px-3 py-1 text-xs text-text">
+                    <span className={`h-2 w-2 rounded-full ${CHIP_TONE[chip.tone]} ${chip.live ? 'live-dot' : ''}`} />
+                    {chip.label}
+                </span>
                 {problem.info.kind === 'demo' && <span className="absolute right-4 top-4 rounded-full bg-bg/60 px-3 py-1 text-xs text-muted">Demo</span>}
             </ProductArt>
             <span className="mt-4 flex items-baseline justify-between gap-4 px-1">

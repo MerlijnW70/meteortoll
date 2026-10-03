@@ -6,7 +6,7 @@ import { MatrixArt } from './MatrixArt'
 import { QuickBuy } from './QuickBuy'
 import { sol } from './ui'
 
-const CHIP_TONE: Record<ChipTone, string> = { good: 'bg-good', accent: 'bg-accent-2', warn: 'bg-warn', muted: 'bg-muted' }
+export const CHIP_TONE: Record<ChipTone, string> = { good: 'bg-good', accent: 'bg-accent-2', warn: 'bg-warn', muted: 'bg-muted' }
 
 export function ProblemCard({ problem }: { problem: ProblemView }) {
     const chip = cardChip(problem, CLUSTER === 'mainnet')
@@ -18,12 +18,10 @@ export function ProblemCard({ problem }: { problem: ProblemView }) {
                 className="flex flex-col p-2.5 outline-none after:absolute after:inset-0 after:rounded-2xl after:content-['']"
             >
                 <MatrixArt problem={problem} className="aspect-[16/10] rounded-xl px-3 pb-2 pt-9">
-                    {chip && (
-                        <span className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-bg/80 px-2.5 py-1 text-xs text-text">
-                            <span className={`h-2 w-2 rounded-full ${CHIP_TONE[chip.tone]}`} />
-                            {chip.label}
-                        </span>
-                    )}
+                    <span className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-bg/80 px-2.5 py-1 text-xs text-text">
+                        <span className={`h-2 w-2 rounded-full ${CHIP_TONE[chip.tone]} ${chip.live ? 'live-dot' : ''}`} />
+                        {chip.label}
+                    </span>
                     {problem.info.kind === 'demo' && <span className="absolute right-3 top-3 rounded-full bg-bg/60 px-2.5 py-1 text-xs text-muted">Demo</span>}
                 </MatrixArt>
                 <span className="px-3.5 pt-4 text-2xl font-semibold tracking-tight">
