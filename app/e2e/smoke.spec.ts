@@ -21,7 +21,7 @@ test('home page', async ({ page }) => {
     test.setTimeout(TOTALS_MS + 30_000)
     const errors = watch(page)
     await page.goto('/')
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('multiplications')
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Math problems you can trade.')
     await expect(page.getByLabel('Launchpad totals')).toContainText('Paid to solvers', { timeout: TOTALS_MS })
     await expect(page.locator('a[href^="/p/"]').first()).toBeVisible()
     await expect(page.getByRole('link', { name: 'terms and risks', exact: true })).toHaveAttribute('href', '/terms')

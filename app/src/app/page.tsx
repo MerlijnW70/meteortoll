@@ -4,11 +4,13 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { ErrorPanel } from '@/components/ErrorPanel'
 import { RolePaths } from '@/components/explain/RolePaths'
+import { MatrixArt } from '@/components/MatrixArt'
 import { ProblemCard } from '@/components/ProblemCard'
 import { StatsStrip } from '@/components/StatsStrip'
-import { Panel, shape, Skeleton, sol } from '@/components/ui'
+import { Skeleton, sol } from '@/components/ui'
 import { useProblems } from '@/hooks/useProblems'
 import { type ProblemView, totalBounty } from '@/lib/chain'
+import { cardChip, cardTitle } from '@/lib/card'
 import { problemStanding } from '@/lib/classify'
 import { CLUSTER } from '@/lib/config'
 
@@ -66,45 +68,50 @@ function Problems({ listed, isLoading }: { listed: ProblemView[] | undefined; is
 
 const bounty = totalBounty
 
-function Hero({ problem }: { problem: ProblemView | undefined }) {
-    if (!problem) return <Skeleton className="h-56" />
-    const { n1, n2, n3 } = problem.account
-    const { target, naive } = shape(problem)
-    const best = problem.info.bestKnown
+function Featured({ problem }: { problem: ProblemView }) {
     const prize = bounty(problem)
-    const solved = problem.phase !== 'open'
+    const chip = cardChip(problem, CLUSTER === 'mainnet')
     return (
-        <Panel className="relative overflow-hidden p-6 sm:p-8">
-            <div className="relative max-w-2xl">
-                <p className="mb-3 text-sm text-accent-2">
-                    {problem.info.kind === 'demo' ? 'Disclosed demo · not a public bounty' : 'Open problems you can trade'}
+        <Link href={`/p/${problem.address}`} className="group block outline-none">
+            <MatrixArt problem={problem} className="aspect-[16/10] rounded-3xl px-6 pb-4 pt-12 transition group-hover:brightness-105 group-focus-visible:ring-2 group-focus-visible:ring-accent">
+                <span className="absolute left-4 top-4 rounded-full bg-bg/80 px-3 py-1 text-xs text-text">{chip ? chip.label : 'Featured'}</span>
+                {problem.info.kind === 'demo' && <span className="absolute right-4 top-4 rounded-full bg-bg/60 px-3 py-1 text-xs text-muted">Demo</span>}
+            </MatrixArt>
+            <span className="mt-4 flex items-baseline justify-between gap-4 px-1">
+                <span className="text-lg font-semibold tracking-tight group-hover:text-accent">{cardTitle(problem.account)}</span>
+                <span className="num text-sm text-muted">
+                    {prize === 0n ? (
+                        problem.phase === 'solved' ? 'prize paid out' : 'prize starts with the first trade'
+                    ) : (
+                        <>
+                            <span className="text-base font-semibold text-text">{sol(prize, 3)} SOL</span> {problem.phase === 'solved' ? 'prize left' : 'prize'}
+                        </>
+                    )}
+                </span>
+            </span>
+        </Link>
+    )
+}
+
+function Hero({ problem, loading }: { problem: ProblemView | undefined; loading: boolean }) {
+    return (
+        <section className="grid items-center gap-10 py-4 lg:grid-cols-[1.1fr_1fr] lg:py-10">
+            <div className="max-w-xl">
+                <h1 className="text-5xl font-semibold leading-[1.05] tracking-tight sm:text-6xl">Math problems you can trade.</h1>
+                <p className="mt-5 text-lg text-muted sm:text-xl">
+                    Each token is an unsolved puzzle about multiplying matrices. Trading grows its prize. The first correct answer wins it, checked by code, not by people.
                 </p>
-                <h1 className="mb-4 text-4xl font-semibold sm:text-5xl">
-                    Multiply a {n1}×{n2} by a {n2}×{n3} matrix with <span className="text-accent">{target}</span> multiplications.
-                </h1>
-                <p className="mb-6 text-muted">
-                    Schoolbook takes {naive}.{best ? ` The record is ${best.rank}.` : ''}{' '}
-                    {solved ? `Solved with ${problem.account.solvedRank}, verified on-chain.` : 'Trading funds the bounty; a Solana program pays the first valid answer.'}
-                </p>
-                <div className="flex flex-wrap items-center gap-3">
-                    <Link
-                        href={`/p/${problem.address}`}
-                        className={`rounded-lg px-6 py-2.5 text-base font-semibold text-bg shadow-sm transition hover:brightness-110 ${solved ? 'bg-accent' : 'bg-good'}`}
-                    >
-                        {solved ? 'See how it was solved' : 'Trade'}
+                <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+                    <a href="#problems" className="rounded-full bg-accent px-6 py-3 font-semibold text-bg transition hover:opacity-90">
+                        See the problems
+                    </a>
+                    <Link href="/trust#why" className="text-accent hover:underline">
+                        How it works ›
                     </Link>
-                    <Link href="/solve" className="rounded-lg border border-border px-5 py-2.5 text-base hover:border-accent/60">
-                        Solve a problem
-                    </Link>
-                    <span className="num text-sm text-muted">
-                        {prize === 0n ? 'The bounty starts with the first trade' : <>Bounty <span className="text-text">{sol(prize)} SOL</span></>}
-                    </span>
                 </div>
             </div>
-            <div aria-hidden className="pointer-events-none absolute -bottom-6 right-4 hidden select-none font-mono text-[7rem] leading-none text-accent/[0.07] lg:block">
-                {best ? `${best.rank}→${target}` : target}
-            </div>
-        </Panel>
+            {loading ? <Skeleton className="aspect-[16/10] rounded-3xl" /> : problem && <Featured problem={problem} />}
+        </section>
     )
 }
 
@@ -118,12 +125,9 @@ export default function Home() {
         ranked[0]
     return (
         <div className="space-y-10">
-            <Hero problem={isLoading ? undefined : flagship} />
+            <Hero problem={flagship} loading={isLoading} />
             <RolePaths />
             <StatsStrip />
-            <Link href="/trust#why" className="inline-block text-sm text-accent hover:underline">
-                New here? See why one multiplication matters →
-            </Link>
             {error && <ErrorPanel error={error} what="Could not load the problems" onRetry={() => refetch()} />}
             <Problems listed={listed} isLoading={isLoading} />
         </div>
