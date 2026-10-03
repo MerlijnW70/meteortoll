@@ -116,7 +116,7 @@ export function TradePanel({ problem, anchor = true }: { problem: ProblemView; a
                             setSide(s)
                             setAmount(s === 'buy' ? '0.1' : '')
                         }}
-                        className={`rounded-md py-2 capitalize ${side === s ? (s === 'buy' ? 'bg-good/20 text-good' : 'bg-bad/20 text-bad') : 'text-muted'}`}
+                        className={`rounded-md py-2 capitalize ${side === s ? (s === 'buy' ? 'bg-good text-bg' : 'bg-bad text-bg') : 'text-muted'}`}
                     >
                         {s}
                     </button>

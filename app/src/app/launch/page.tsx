@@ -37,7 +37,7 @@ function Step({
     const mark =
         state === 'done' ? 'bg-good/15 text-good' : state === 'current' ? 'bg-accent text-bg' : 'border border-border text-faint'
     return (
-        <section className={`border-t border-border pt-6 first:border-t-0 first:pt-0 ${state === 'locked' ? 'opacity-60' : ''}`} aria-label={`Step ${n} of ${STEPS}: ${title}`}>
+        <section className="border-t border-border pt-6 first:border-t-0 first:pt-0" aria-label={`Step ${n} of ${STEPS}: ${title}`}>
             <div className="flex items-center gap-3">
                 <span aria-hidden className={`num grid size-8 shrink-0 place-items-center rounded-full text-sm font-semibold ${mark}`}>
                     {state === 'done' ? '✓' : n}
@@ -47,7 +47,7 @@ function Step({
                         Step {n} of {STEPS}
                         {optional && ' · optional'}
                     </p>
-                    <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
+                    <h2 className={`text-xl font-semibold tracking-tight ${state === 'locked' ? 'text-muted' : ''}`}>{title}</h2>
                 </div>
                 {state === 'done' && onChange && (
                     <button type="button" onClick={onChange} className={`${BUTTON_QUIET} px-4 py-1.5`}>

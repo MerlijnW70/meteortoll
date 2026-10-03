@@ -32,7 +32,7 @@ const STEPS = 2
 
 function Step({ n, title, active, children }: { n: number; title: string; active: boolean; children: ReactNode }) {
     return (
-        <section className={`space-y-5 ${active ? '' : 'opacity-60'}`} aria-label={`Step ${n} of ${STEPS}: ${title}`}>
+        <section className="space-y-5" aria-label={`Step ${n} of ${STEPS}: ${title}`}>
             <div className="flex items-center gap-3">
                 <span
                     aria-hidden
@@ -44,7 +44,7 @@ function Step({ n, title, active, children }: { n: number; title: string; active
                     <p className="text-xs text-muted">
                         Step {n} of {STEPS}
                     </p>
-                    <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
+                    <h2 className={`text-xl font-semibold tracking-tight ${active ? '' : 'text-muted'}`}>{title}</h2>
                 </div>
             </div>
             {children}

@@ -120,6 +120,7 @@ body {
 
 .wallet-adapter-button-trigger {
   background: var(--accent) !important;
+  color: var(--bg) !important;
   height: 36px !important;
   border-radius: 8px !important;
   font-size: 14px !important;
