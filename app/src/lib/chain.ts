@@ -1,7 +1,7 @@
 import { AnchorProvider, BorshAccountsCoder, type Idl, Program } from '@coral-xyz/anchor'
 import { type AccountInfo, type Connection, PublicKey, type Transaction, type VersionedTransaction } from '@solana/web3.js'
 import { dbcIdl } from './dbc'
-import { DBC, type ProblemAccount, PROBLEM_SPACE, problemPhase, type ProblemPhase, TOLL, tollIdl } from '@meteortoll/core'
+import { DBC, KIND_MATRIX, type ProblemAccount, PROBLEM_SPACE, problemPhase, type ProblemPhase, TOLL, tollIdl } from '@meteortoll/core'
 import { classify } from './classify'
 import { CATALOG, LAUNCHPAD } from './config'
 import { type KnownFormat, knownFormat } from './known'
@@ -169,8 +169,10 @@ export async function fetchProblems(connection: Connection): Promise<ProblemView
         accounts.problem.all([{ dataSize: PROBLEM_SPACE }, { memcmp: { offset: 8, bytes: LAUNCHPAD.toBase58() } }]),
         connection.getSlot('confirmed'),
     ])
-    return views(connection, rows.map((row) => ({ publicKey: row.publicKey, account: row.account as ProblemAccount })), slot)
+    return views(connection, knownKinds(rows.map((row) => ({ publicKey: row.publicKey, account: row.account as ProblemAccount }))), slot)
 }
+
+export const knownKinds = <T extends { account: Pick<ProblemAccount, 'kind'> }>(rows: T[]) => rows.filter((row) => row.account.kind === KIND_MATRIX)
 
 export class ForeignProblemError extends Error {
     constructor(
@@ -203,11 +205,14 @@ export function problemKey(address: string): PublicKey {
 
 export function decodeProblem(address: string, info: Pick<AccountInfo<Buffer>, 'owner' | 'data'> | null, connection: Connection): ProblemAccount {
     if (!info || !info.owner.equals(TOLL) || info.data.length !== PROBLEM_SPACE) throw new ProblemNotFoundError(address)
+    let account: ProblemAccount
     try {
-        return tollReader(connection).coder.accounts.decode('problem', info.data) as ProblemAccount
+        account = tollReader(connection).coder.accounts.decode('problem', info.data) as ProblemAccount
     } catch {
         throw new ProblemNotFoundError(address)
     }
+    if (account.kind !== KIND_MATRIX) throw new ProblemNotFoundError(address)
+    return account
 }
 
 export async function fetchProblem(connection: Connection, address: string): Promise<ProblemView> {

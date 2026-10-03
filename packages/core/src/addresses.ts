@@ -16,6 +16,7 @@ function constant(name: string): number {
 export const BOND_LAMPORTS = constant('BOND_LAMPORTS')
 export const MAX_SCHEME_LEN = constant('MAX_SCHEME_LEN')
 export const VERIFY_BUDGET = constant('VERIFY_BUDGET')
+export const KIND_MATRIX = constant('KIND_MATRIX')
 
 const seed = (text: string) => Buffer.from(text)
 const pda = (seeds: Uint8Array[], program = TOLL) => PublicKey.findProgramAddressSync(seeds, program)[0]
@@ -27,10 +28,10 @@ export const dammEventAuthority = pda([seed('__event_authority')], DAMM_V2)
 
 export const launchpadAddress = (admin: PublicKey) => pda([seed('launchpad'), admin.toBuffer()])
 
-export function problemAddress(launchpad: PublicKey, pool: PublicKey, n: [number, number, number], target: number): PublicKey {
+export function problemAddress(launchpad: PublicKey, pool: PublicKey, kind: number, n: [number, number, number], target: number): PublicKey {
     const targetBytes = Buffer.alloc(4)
     targetBytes.writeUInt32LE(target, 0)
-    return pda([seed('problem'), launchpad.toBuffer(), pool.toBuffer(), Buffer.from(n), targetBytes])
+    return pda([seed('problem'), launchpad.toBuffer(), pool.toBuffer(), Buffer.from([kind]), Buffer.from(n), targetBytes])
 }
 
 export const vaultAddress = (problem: PublicKey, mint: PublicKey) => pda([seed('vault'), problem.toBuffer(), mint.toBuffer()])

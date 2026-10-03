@@ -47,7 +47,7 @@ import {
 import { metadataUri, SITE_URL } from './site.js'
 import { buyTransaction, MAX_FEE_PERCENT, parseLimits, SLIPPAGE_BPS } from './trade.js'
 import { knownFormat, targetProblem } from '../../app/src/lib/known.js'
-import { commitment, schemeHeader, VERIFY_BUDGET } from '@meteortoll/core'
+import { commitment, KIND_MATRIX, schemeHeader, VERIFY_BUDGET } from '@meteortoll/core'
 import {
     attemptAddress,
     dbcEventAuthority,
@@ -151,7 +151,7 @@ async function launch(args: string[]) {
     if (badUri) throw new Error(`launch refused: ${badUri}`)
     const pool = deriveDbcPoolAddress(NATIVE_MINT, baseMint, config)
     if (resumePool && !pool.equals(new PublicKey(resumePool))) throw new Error('--pool does not match --base and the config')
-    const problem = problemAddress(new PublicKey(state.launchpad), pool, [n1, n2, n3], target)
+    const problem = problemAddress(new PublicKey(state.launchpad), pool, KIND_MATRIX, [n1, n2, n3], target)
 
     const handOver = () =>
         createDbcProgram(connection).program.methods.transferPoolCreator().accountsPartial({ virtualPool: pool, config, creator: wallet.publicKey, newCreator: problem }).instruction()
@@ -178,7 +178,7 @@ async function launch(args: string[]) {
     const tx = new Transaction()
     if (!creator.equals(problem)) tx.add(await handOver())
     const register = await methods
-        .registerProblem(n1, n2, n3, target)
+        .registerProblem(KIND_MATRIX, n1, n2, n3, target)
         .accountsPartial({
             payer: wallet.publicKey,
             launchpad: new PublicKey(state.launchpad),

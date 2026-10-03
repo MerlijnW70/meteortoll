@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { Keypair, SystemInstruction } from '@solana/web3.js'
-import { submissionCreate, SUBMISSION_HEADER, TOLL, treasuryPools } from './toll.js'
+import { PROBLEM_SPACE, submissionCreate, SUBMISSION_HEADER, TOLL, treasuryPools } from './toll.js'
 
 const key = () => Keypair.generate().publicKey
 
@@ -33,7 +33,7 @@ test('treasury pools', async () => {
         },
     }
     const pools = await treasuryPools(toll as never, launchpad, { '2x2x2r7': { problem: known.toBase58() } })
-    assert.deepEqual(filters, [[{ dataSize: 277 }, { memcmp: { offset: 8, bytes: launchpad.toBase58() } }]])
+    assert.deepEqual(filters, [[{ dataSize: PROBLEM_SPACE }, { memcmp: { offset: 8, bytes: launchpad.toBase58() } }]])
     assert.deepEqual(
         pools.map(({ label, pool }) => [label, pool.toBase58()]),
         [

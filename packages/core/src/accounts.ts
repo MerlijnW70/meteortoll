@@ -23,9 +23,10 @@ export interface ProblemAccount {
     graceSlots: U64
     attempts: number
     pending: number
+    kind: number
 }
 
-export const PROBLEM_SPACE = 277
+export const PROBLEM_SPACE = 342
 
 export interface AttemptAccount {
     problem: PublicKey

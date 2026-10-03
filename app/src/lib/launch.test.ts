@@ -6,7 +6,7 @@ import type { Program } from '@coral-xyz/anchor'
 import { ACCOUNT_SIZE, NATIVE_MINT, TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import { Connection, Keypair, type PublicKey, SystemProgram, Transaction, TransactionInstruction } from '@solana/web3.js'
 import { createDbcProgram, DynamicBondingCurveClient, type FirstBuyParams, type PoolConfig } from '@meteora-ag/dynamic-bonding-curve-sdk'
-import { problemAddress } from '@meteortoll/core'
+import { KIND_MATRIX, problemAddress } from '@meteortoll/core'
 import { applyBudget } from './fees'
 import { quoteFirstBuy } from './firstBuy'
 import {
@@ -188,7 +188,7 @@ function resumeSetup(t: TestContext, creator: 'owner' | 'problem' | 'other', reg
     const pinned: Pinned = { config: key(), economics: WINDOWED }
     const pending = { n: [2, 2, 2] as [number, number, number], target: 7, pool: pool.toBase58(), baseMint: baseMint.toBase58() }
     const launchpad = key()
-    const problem = problemAddress(launchpad, pool, pending.n, pending.target)
+    const problem = problemAddress(launchpad, pool, KIND_MATRIX, pending.n, pending.target)
     const state = Object.getPrototypeOf(dbcClient().state)
     t.mock.method(state, 'getPoolConfig', async () => testConfig())
     t.mock.method(state, 'getPool', async () => ({ poolState: { creator: creator === 'owner' ? owner : creator === 'problem' ? problem : key(), baseMint, config: pinned.config } }))

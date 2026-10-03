@@ -14,7 +14,7 @@ import {
     MigrationOption,
     type PoolConfig,
 } from '@meteora-ag/dynamic-bonding-curve-sdk'
-import { creatorTradingFeePercentage, type Economics, problemAddress, vaultAddress } from '@meteortoll/core'
+import { creatorTradingFeePercentage, type Economics, KIND_MATRIX, problemAddress, vaultAddress } from '@meteortoll/core'
 import { CLUSTER, DBC_CONFIG } from './config'
 import { ECONOMICS } from './economics'
 import { firstBuyProblem, quoteFirstBuy } from './firstBuy'
@@ -132,7 +132,7 @@ export async function prepareLaunch(
 
     const baseMint = Keypair.generate()
     const pool = deriveDbcPoolAddress(quoteMint, baseMint.publicKey, config)
-    const problem = problemAddress(launchpad, pool, request.n, request.target)
+    const problem = problemAddress(launchpad, pool, KIND_MATRIX, request.n, request.target)
 
     const createPoolParam = {
         name: request.name.trim(),
@@ -176,11 +176,11 @@ async function registerTransaction(
     { n, target }: Pick<LaunchRequest, 'n' | 'target'>,
     handOver: boolean
 ): Promise<Transaction> {
-    const problem = problemAddress(launchpad, pool, n, target)
+    const problem = problemAddress(launchpad, pool, KIND_MATRIX, n, target)
     const tx = new Transaction()
     if (handOver) tx.add(await handOverInstruction(connection, { pool, config, owner, problem }))
     const register = await methods(program)
-        .registerProblem(n[0], n[1], n[2], target)
+        .registerProblem(KIND_MATRIX, n[0], n[1], n[2], target)
         .accountsPartial({
             payer: owner,
             launchpad,
@@ -215,7 +215,7 @@ export async function finishRegistration(
 ): Promise<{ register: Transaction; problem: PublicKey } | null> {
     const pool = new PublicKey(pending.pool)
     const baseMint = new PublicKey(pending.baseMint)
-    const problem = problemAddress(launchpad, pool, pending.n, pending.target)
+    const problem = problemAddress(launchpad, pool, KIND_MATRIX, pending.n, pending.target)
     if (await withRetry(() => connection.getAccountInfo(problem, 'confirmed'))) return null
     const state = await withRetry(() => new DynamicBondingCurveClient(connection, 'confirmed').state.getPool(pool))
     if (!state) return null
