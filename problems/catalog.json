@@ -37,6 +37,23 @@
         "asOf": "2026-10-02",
         "ring": null
       }
+    },
+    "FY8WRWw5CsqHcokMFRDifzdTfYSxP9jURkUA8NPpFBdG": {
+      "mint": "4GDG5RZMTfjKw9DRixPeTvm1rKj3atbRoXnSoiMxPZSZ",
+      "name": "DAMM check",
+      "symbol": "DAMMT",
+      "kind": "demo",
+      "demoNote": "A devnet check of migration and position-fee sweeps. Not a public bounty.",
+      "hidden": true,
+      "coefficients": "integers from −128 to 127",
+      "naive": 360,
+      "bestKnown": {
+        "rank": 278,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      }
     }
   },
   "mainnet": {}
