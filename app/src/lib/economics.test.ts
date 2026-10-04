@@ -1,5 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { execFileSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 import { creatorTradingFeePercentage, economicsProblem, feeSplit, percentOfTrade } from '@meteortoll/core'
 import economics from '../../../problems/economics.json'
 
@@ -76,4 +78,15 @@ test('window bounds', async () => {
     assert.match(launchWindowProblem({ ...window, numberOfPeriod: 24, totalDurationSlots: 0 })!, /whole multiple/)
     assert.match(launchWindowProblem({ ...window, totalDurationSlots: 1.5 })!, /whole multiple/)
     assert.equal(launchWindowText({ ...window, totalDurationSlots: 225 }), '99% falling to 1% over about 2 minutes')
+})
+
+test('mainnet treasury', () => {
+    const file = fileURLToPath(new URL('./economics.ts', import.meta.url))
+    const out = execFileSync(process.execPath, ['--import', 'tsx', '-p', `require(${JSON.stringify(file)}).HAS_TREASURY`], {
+        env: { ...process.env, NEXT_PUBLIC_CLUSTER: 'mainnet', NEXT_PUBLIC_MAINNET_LAUNCHPAD: '11111111111111111111111111111111' },
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+    })
+    assert.equal(out.trim(), String(economics.mainnet.treasurySharePercent > 0))
+    assert.ok(economics.mainnet.treasurySharePercent > 0)
 })
