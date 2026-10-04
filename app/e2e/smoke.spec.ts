@@ -256,13 +256,23 @@ test('problem filters', async ({ page }) => {
     expect(errors).toEqual([])
 })
 
-test('wallet modal', async ({ page }) => {
+test('no wallet', async ({ page }, info) => {
     const errors = watch(page)
     await page.goto('/terms')
     await page.getByRole('button', { name: 'Select Wallet' }).click()
-    await expect(page.locator('.wallet-adapter-modal-title')).toBeVisible({ timeout: 15_000 })
+    const dialog = page.getByRole('dialog', { name: 'You need a Solana wallet' })
+    const list = page.locator('.wallet-adapter-modal-title')
+    await expect(dialog.or(list)).toBeVisible({ timeout: 15_000 })
+    if (await list.isVisible()) {
+        await page.keyboard.press('Escape')
+        await expect(list).toBeHidden()
+        return
+    }
+    if (info.project.name === 'phone') await expect(dialog.getByRole('link', { name: 'Open in Phantom' })).toHaveAttribute('href', /^https:\/\/phantom\.app\/ul\/browse\//)
+    else await expect(dialog.getByRole('link', { name: 'Install MetaMask' })).toHaveAttribute('href', 'https://metamask.io/download')
+    await fitsTheScreen(page)
     await page.keyboard.press('Escape')
-    await expect(page.locator('.wallet-adapter-modal-title')).toBeHidden()
+    await expect(dialog).toBeHidden()
     expect(errors).toEqual([])
 })
 
