@@ -9,8 +9,12 @@ test('declined', () => {
 })
 
 test('no account', () => {
-    assert.match(walletErrorMessage(error('WalletConnectionError', 'Unexpected error'), 'MetaMask')!, /Solana account/)
     assert.match(walletErrorMessage(error('WalletAccountError'), 'MetaMask')!, /Solana account/)
+})
+
+test('real cause', () => {
+    assert.equal(walletErrorMessage(error('WalletConnectionError', 'Unexpected error'), 'MetaMask'), 'Could not connect MetaMask: Unexpected error')
+    assert.match(walletErrorMessage(error('WalletConnectionError', 'Session timed out'), 'Mobile Wallet Adapter')!, /did not answer in time/)
 })
 
 test('locked or closed', () => {

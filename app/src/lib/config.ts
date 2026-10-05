@@ -47,7 +47,11 @@ export const PUBLIC_RPC = CLUSTER === 'mainnet' ? 'https://api.mainnet-beta.sola
 
 export function rpcEndpoint(): string {
     if (process.env.NEXT_PUBLIC_RPC) return process.env.NEXT_PUBLIC_RPC
-    return typeof window === 'undefined' ? PUBLIC_RPC : `${window.location.origin}/api/rpc`
+    return typeof window === 'undefined' ? PUBLIC_RPC : relayEndpoint(window.location.origin, CLUSTER)
+}
+
+export function relayEndpoint(origin: string, cluster: Cluster): string {
+    return `${origin}/api/rpc?cluster=${cluster}`
 }
 
 export const WS_ENDPOINT = PUBLIC_RPC.replace('https://', 'wss://')

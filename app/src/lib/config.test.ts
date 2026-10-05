@@ -1,6 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { DBC_CONFIGS, dbcConfigFor, LAUNCHPADS, launchpadFor, parseCluster } from './config'
+import { getChainForEndpoint } from '@solana/wallet-standard-util'
+import { DBC_CONFIGS, dbcConfigFor, LAUNCHPADS, launchpadFor, parseCluster, relayEndpoint } from './config'
 import devnet from '../../../client/state/devnet.json'
 
 test('default cluster', () => {
@@ -35,4 +36,11 @@ test('pinned config', () => {
     assert.equal(dbcConfigFor('mainnet', undefined)?.toBase58() ?? null, DBC_CONFIGS.mainnet ?? null)
     const other = '11111111111111111111111111111111'
     assert.equal(dbcConfigFor('devnet', other)?.toBase58(), other)
+})
+
+test('wallet chain', () => {
+    assert.equal(getChainForEndpoint(relayEndpoint('https://meteortoll.vercel.app', 'devnet')), 'solana:devnet')
+    assert.equal(getChainForEndpoint(relayEndpoint('https://meteortoll.vercel.app', 'mainnet')), 'solana:mainnet')
+    assert.match(relayEndpoint('https://meteortoll.vercel.app', 'devnet'), /devnet/)
+    assert.doesNotMatch(relayEndpoint('https://meteortoll.vercel.app', 'mainnet'), /devnet|testnet/)
 })
