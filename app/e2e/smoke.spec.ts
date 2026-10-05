@@ -256,6 +256,14 @@ test('problem filters', async ({ page }) => {
     expect(errors).toEqual([])
 })
 
+test('phone wallet link', async ({ request }) => {
+    const policy = (await request.get('/terms')).headers()['content-security-policy']
+    expect(policy).toBeTruthy()
+    const connect = policy!.split('; ').find((d) => d.startsWith('connect-src '))!.split(' ')
+    expect(connect).toEqual(expect.arrayContaining(['http://localhost', 'ws://localhost:*']))
+    expect(policy!).not.toContain('upgrade-insecure-requests')
+})
+
 test('no wallet', async ({ page }, info) => {
     const errors = watch(page)
     await page.goto('/terms')

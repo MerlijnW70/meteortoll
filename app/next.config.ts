@@ -6,12 +6,11 @@ const contentSecurityPolicy = [
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self' data:",
-    "connect-src 'self' wss://api.devnet.solana.com wss://api.mainnet-beta.solana.com",
+    "connect-src 'self' wss://api.devnet.solana.com wss://api.mainnet-beta.solana.com http://localhost ws://localhost:*",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
     "object-src 'none'",
-    'upgrade-insecure-requests',
 ].join('; ')
 
 const securityHeaders = [
