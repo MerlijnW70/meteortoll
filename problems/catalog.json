@@ -54,6 +54,49 @@
         "asOf": "2026-09-30",
         "ring": null
       }
+    },
+    "HLHmqukEVUYqtWY6V6k5tiP6YRhPxY78z6gf64Y6kpvc": {
+      "mint": "36iE38YonwJxrmvAbPZCi3nPbRquXdwLoA9jgc5FbBtb",
+      "name": "DEMO 7x7x9 rank<=314 (live)",
+      "symbol": "D779L",
+      "kind": "demo",
+      "demoNote": "Disclosed demo: the team holds fmm's rank-314 scheme, which beats the published 315, and launched this problem to show the mechanism live. It is not a public bounty.",
+      "coefficients": "integers from −128 to 127",
+      "naive": 441,
+      "bestKnown": {
+        "rank": 315,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "ourRecord": {
+        "rank": 314,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
+    },
+    "9cRwq2Nj14XLw4ww3XJJUg675rUsAspguLCLxJZhhR64": {
+      "mint": "2fWcB3yjz7dH6SLR8u9EdcTmUriMxvocac1Qa9YXErtD",
+      "name": "dry run 7x7x9",
+      "symbol": "D779T",
+      "kind": "demo",
+      "demoNote": "A devnet dry run of the full solve path. Not a public bounty.",
+      "hidden": true,
+      "coefficients": "integers from −128 to 127",
+      "naive": 441,
+      "bestKnown": {
+        "rank": 315,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "ourRecord": {
+        "rank": 314,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
     }
   },
   "mainnet": {}

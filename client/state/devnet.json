@@ -38,6 +38,32 @@
       ],
       "name": "DAMM check",
       "symbol": "DAMMT"
+    },
+    "7x7x9r314-D779L": {
+      "problem": "HLHmqukEVUYqtWY6V6k5tiP6YRhPxY78z6gf64Y6kpvc",
+      "pool": "C3wTX4kou2Hnga9z4gDhz1uYxCg1dRU48hmSesT6pPCz",
+      "baseMint": "36iE38YonwJxrmvAbPZCi3nPbRquXdwLoA9jgc5FbBtb",
+      "statement": [
+        7,
+        7,
+        9,
+        314
+      ],
+      "name": "DEMO 7x7x9 rank<=314 (live)",
+      "symbol": "D779L"
+    },
+    "7x7x9r314-D779T": {
+      "problem": "9cRwq2Nj14XLw4ww3XJJUg675rUsAspguLCLxJZhhR64",
+      "pool": "Gmpumm1iEP4nxLd2ot4xnNr4idBah4QpcfSD8AUZuJ2R",
+      "baseMint": "2fWcB3yjz7dH6SLR8u9EdcTmUriMxvocac1Qa9YXErtD",
+      "statement": [
+        7,
+        7,
+        9,
+        314
+      ],
+      "name": "dry run 7x7x9",
+      "symbol": "D779T"
     }
   },
   "config": "Z4PT2dz65c2AW7jVYCoArmRvDSuLqZhQ7AnqFA2y1wT",
