@@ -1,6 +1,9 @@
 import type { WalletError } from '@solana/wallet-adapter-base'
 
+const SIGNING = new Set(['WalletSignTransactionError', 'WalletSendTransactionError', 'WalletSignMessageError'])
+
 export function walletErrorMessage(error: Pick<WalletError, 'name' | 'message'>, wallet?: string): string | null {
+    if (SIGNING.has(error.name)) return null
     const name = wallet ?? 'your wallet'
     const text = `${error.name} ${error.message}`.toLowerCase()
     if (/reject|denied|declined|cancel/.test(text)) return `The connection was declined in ${name}.`

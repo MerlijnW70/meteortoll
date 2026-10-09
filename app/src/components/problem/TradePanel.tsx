@@ -78,7 +78,7 @@ export function TradePanel({ problem, anchor = true }: { problem: ProblemView; a
         try {
             const signature = await executeSwap(connection, publicKey, sendTransaction, problem.account.pool, side, amountIn, quote.data)
             notifySuccess(side === 'buy' ? 'Bought' : 'Sold', signature, pending)
-            await Promise.all(['problem', 'problems', 'market', 'balances', 'trades', 'portfolio'].map((key) => queries.invalidateQueries({ queryKey: [key] })))
+            await Promise.all(['problem', 'problems', 'market', 'quote', 'balances', 'trades', 'portfolio'].map((key) => queries.invalidateQueries({ queryKey: [key] })))
         } catch (error) {
             if (error instanceof PriceMovedError) {
                 toast.info('Price moved', { id: pending, description: error.message })

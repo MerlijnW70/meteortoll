@@ -25,5 +25,11 @@ test('locked or closed', () => {
 
 test('disconnect', () => {
     assert.equal(walletErrorMessage(error('WalletDisconnectedError')), null)
-    assert.equal(walletErrorMessage(error('WalletSignTransactionError', 'boom'), 'X'), 'Could not connect X: boom')
+})
+
+test('signing errors are left to the action that asked', () => {
+    assert.equal(walletErrorMessage(error('WalletSignTransactionError', 'User rejected the request.'), 'Phantom'), null)
+    assert.equal(walletErrorMessage(error('WalletSendTransactionError', 'boom'), 'Phantom'), null)
+    assert.equal(walletErrorMessage(error('WalletSignMessageError', 'boom'), 'Phantom'), null)
+    assert.equal(walletErrorMessage(error('WalletSignInError', 'boom'), 'X'), 'Could not connect X: boom')
 })

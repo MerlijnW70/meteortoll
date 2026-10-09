@@ -130,7 +130,7 @@ function Solve() {
         checked && problems
             ? problems.filter((p) => {
                   const h = checked.header
-                  return p.account.n1 === h.n1 && p.account.n2 === h.n2 && p.account.n3 === h.n3 && h.rank <= p.account.targetRank && p.phase === 'open' && !p.info.hidden
+                  return p.account.n1 === h.n1 && p.account.n2 === h.n2 && p.account.n3 === h.n3 && h.rank <= p.account.targetRank && (p.phase === 'open' || (p.phase === 'grace' && p.address === resume)) && !p.info.hidden
               })
             : []
     const chosen = target ?? (resume && answers.some((p) => p.address === resume) ? resume : null)
