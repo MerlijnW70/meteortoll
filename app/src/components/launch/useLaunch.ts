@@ -8,6 +8,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { notifyError } from '@/lib/notify'
 import { simulateOrThrow } from '@/lib/tx'
+import { signAllOnChain } from '@/lib/walletSign'
 import { LAUNCHPAD, SITE_URL } from '@/lib/config'
 import { finishRegistration, type LaunchRequest, type PendingLaunch, prepareLaunch } from '@/lib/launch'
 import { tollReader } from '@/lib/chain'
@@ -42,7 +43,7 @@ function writePending(owner: PublicKey, pending: PendingLaunch | null) {
 export function useLaunch() {
     const { connection } = useConnection()
     const wallet = useAnchorWallet()
-    const { publicKey, signAllTransactions } = useWallet()
+    const { publicKey, wallet: selected, signAllTransactions } = useWallet()
     const { setVisible } = useWalletModal()
     const queries = useQueryClient()
     const [busy, setBusy] = useState(false)
@@ -87,7 +88,7 @@ export function useLaunch() {
             await prepare(connection, [prepared.create, prepared.register], publicKey)
             await simulateOrThrow(connection, prepared.create)
             setNote('Approve the launch in your wallet: two transactions, one approval.')
-            const [create, register] = await signAllTransactions([prepared.create, prepared.register])
+            const [create, register] = await signAllOnChain(selected?.adapter, publicKey, signAllTransactions)([prepared.create, prepared.register])
             create.partialSign(prepared.baseMint)
             const pending: PendingLaunch = { n: request.n, target: request.target, pool: prepared.pool.toBase58(), baseMint: prepared.baseMint.publicKey.toBase58() }
             writePending(publicKey, pending)
@@ -125,7 +126,7 @@ export function useLaunch() {
             await prepare(connection, [found.register], publicKey)
             await simulateOrThrow(connection, found.register)
             setNote('Approve the registration in your wallet.')
-            const [register] = await signAllTransactions([found.register])
+            const [register] = await signAllOnChain(selected?.adapter, publicKey, signAllTransactions)([found.register])
             setNote('Registering the problem…')
             const [signature] = await sendAll(connection, [register], () => {})
             await done(publicKey, found.problem.toBase58(), signature, unfinished)

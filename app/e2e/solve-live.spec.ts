@@ -21,6 +21,7 @@ test('live solve', async ({ page }) => {
     await expect(page.getByText('✓ Holds', { exact: true })).toBeVisible()
     await page.getByRole('button', { name: /Commit and stake/ }).click()
     await expect(page.getByText(/Prompt 1 of 2/)).toBeVisible({ timeout: 60_000 })
+    await page.getByRole('button', { name: /Upload, reveal and verify/ }).click({ timeout: 60_000 })
 
     const connection = new Connection(process.env.LIVE_RPC ?? 'https://api.devnet.solana.com', 'confirmed')
     const attempt = attemptAddress(new PublicKey(PROBLEM), solver)

@@ -11,14 +11,17 @@ import { CLUSTER } from '@/lib/config'
 import { notifyError } from '@/lib/notify'
 import { downloadReceipt, makeReceipt, parseReceipt, saltFrom } from '@/lib/receipt'
 import { sendWithWallet } from '@/lib/tx'
+import { signAllOnChain } from '@/lib/walletSign'
 import type { ProblemView } from '@/lib/chain'
-import { claimTxs, closeTx, commitThenSolve, committedSalt, fetchAttempt, finishVerification, saveSalt, type SolveContext, solveCommitted, tollWriter } from '@/lib/solve'
+import { claimTxs, closeTx, commit, committedSalt, fetchAttempt, finishVerification, saveSalt, type SolveContext, solveCommitted, tollWriter } from '@/lib/solve'
 import type { Step } from './steps'
+
+const SLOW_WALLET_MS = 6_000
 
 export function useSolveActions(problem: ProblemView, scheme: Uint8Array) {
     const { connection } = useConnection()
     const wallet = useAnchorWallet()
-    const { publicKey, sendTransaction, signAllTransactions } = useWallet()
+    const { publicKey, wallet: selected, sendTransaction, signAllTransactions } = useWallet()
     const { setVisible } = useWalletModal()
     const queries = useQueryClient()
     const [busy, setBusy] = useState(false)
@@ -69,8 +72,20 @@ export function useSolveActions(problem: ProblemView, scheme: Uint8Array) {
         try {
             const state = attempt
             const status = state ? statusName(state.status) : null
-            const ctx = context(publicKey, program, signAllTransactions)
-            if (!state) await commitThenSolve(ctx)
+            const name = selected?.adapter.name ?? 'your wallet'
+            const sign: SolveContext['sign'] = async (txs) => {
+                const timer = setTimeout(() => setNote(`Waiting for ${name} to approve ${txs.length} transactions. No window? Open ${name} from the browser toolbar.`), SLOW_WALLET_MS)
+                try {
+                    return await signAllOnChain(selected?.adapter, publicKey, signAllTransactions)(txs)
+                } finally {
+                    clearTimeout(timer)
+                }
+            }
+            const ctx = context(publicKey, program, sign)
+            if (!state) {
+                await commit(ctx)
+                toast.success('Committed', { description: 'Now click Upload, reveal and verify: prompt 2 of 2.' })
+            }
             else if (status === 'committed') await solveCommitted(ctx, state)
             else if (status === 'revealed') await finishVerification(ctx, state)
             else if (status === 'holds' && won && final) {

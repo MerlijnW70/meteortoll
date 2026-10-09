@@ -44,7 +44,7 @@ async function landed(ctx: SolveContext) {
     throw new Error('the attempt did not appear after committing')
 }
 
-export async function commitThenSolve(ctx: SolveContext) {
+export async function commit(ctx: SolveContext) {
     const { connection, program, problem, solver, scheme } = ctx
     const { tx, buffer, salt, attempt } = await commitAndOpen(connection, program, problem, solver, scheme)
     tx.feePayer = solver
@@ -54,7 +54,12 @@ export async function commitThenSolve(ctx: SolveContext) {
     ctx.saved(attempt, salt)
     ctx.note(NOTES.commit)
     ctx.link('commit', await ctx.send(tx, [buffer]))
-    await solveWith(ctx, await landed(ctx), salt, NOTES.solve)
+    return { state: await landed(ctx), salt }
+}
+
+export async function commitThenSolve(ctx: SolveContext) {
+    const { state, salt } = await commit(ctx)
+    await solveWith(ctx, state, salt, NOTES.solve)
 }
 
 export async function solveCommitted(ctx: SolveContext, state: AttemptAccount) {

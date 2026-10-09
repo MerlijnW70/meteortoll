@@ -14,12 +14,13 @@ import {
     SYSVAR_SLOT_HASHES_PUBKEY,
     Transaction,
 } from '@solana/web3.js'
-import { type AttemptAccount, attemptAddress, commitment, SUBMISSION_HEADER, TOLL, VERIFY_BUDGET, verifyCalls } from '@meteortoll/core'
+import { type AttemptAccount, attemptAddress, commitment, statusName, SUBMISSION_HEADER, TOLL, VERIFY_BUDGET, verifyCalls } from '@meteortoll/core'
 import { MAX_PRICE } from './fees'
 import { ExpiredError, sendAll, waitForSlot } from './solve/send'
 import {
     CHUNK,
     commitAndOpen,
+    commit,
     commitThenSolve,
     committedSalt,
     revealAndVerifyTxs,
@@ -116,6 +117,18 @@ test('two prompts', async () => {
     assert.equal(txs[0].instructions.at(-1)!.programId.toBase58(), TOLL.toBase58())
     assert.ok(txs.every((tx) => tx.recentBlockhash === txs[0].recentBlockhash))
     assert.ok(txs.length >= 5)
+})
+
+test('commit alone asks once and leaves the attempt committed', async () => {
+    store.clear()
+    const log: string[] = []
+    const sent: Transaction[][] = []
+    const salts: Uint8Array[] = []
+    const { state, salt } = await commit(context(log, fakeConnection(log), sent, salts))
+    assert.deepEqual(log.filter((l) => l.startsWith('prompt')), ['prompt commit'])
+    assert.equal(sent.length, 0)
+    assert.equal(statusName(state.status), 'committed')
+    assert.deepEqual(salt, salts[0])
 })
 
 test('expiry recovery', async () => {
