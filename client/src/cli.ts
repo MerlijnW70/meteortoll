@@ -456,7 +456,7 @@ async function preflight(args: string[]) {
         else console.log(`  ✓ the mainnet wallet ${wallet.publicKey.toBase58()} is not the devnet key`)
     }
 
-    const so = flag(args, 'so', '//wsl.localhost/meteortoll/home/dev/target-meteortoll/deploy/toll.so')
+    const so = flag(args, 'so')
     const local = readFileSync(so)
     console.log(`local program: ${local.length} bytes, sha256 ${sha256(local)}`)
 
