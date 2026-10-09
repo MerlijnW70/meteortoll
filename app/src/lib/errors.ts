@@ -80,7 +80,7 @@ export function describeError(error: unknown): Friendly {
     const logs = logsOf(error)
     const signature = error instanceof ProgramFailure ? error.signature : undefined
 
-    if (/User rejected|rejected the request|declined|cancell?ed by user|4001/i.test(text)) {
+    if (/User rejected|rejected the request|declined|cancell?ed by user|transaction cancell?ed|4001/i.test(text)) {
         return { kind: 'cancelled', title: 'Cancelled in your wallet', detail: 'Nothing was sent.' }
     }
     if (/WalletNotConnected|wallet not connected/i.test(text)) return { kind: 'cancelled', title: 'Connect a wallet first' }

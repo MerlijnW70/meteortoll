@@ -8,6 +8,8 @@ const SYSTEM = { toBase58: () => '11111111111111111111111111111111' } as never
 test('wallet rejection', () => {
     const rejected = Object.assign(new Error('User rejected the request.'), { name: 'WalletSignTransactionError' })
     assert.equal(describeError(rejected).kind, 'cancelled')
+    const closed = Object.assign(new Error('Transaction cancelled'), { name: 'JsonRpcError' })
+    assert.equal(describeError(closed).kind, 'cancelled')
 })
 
 test('codes per program', () => {
