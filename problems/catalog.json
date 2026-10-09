@@ -97,6 +97,28 @@
         "coefficients": "{-1, 0, 1}",
         "tool": "fmm"
       }
+    },
+    "4apwMcG4HgQw1S6BJc1ioTAz5B9Bm9QpMtY8CxZ9ReSQ": {
+      "mint": "4PzA1XNDJNMsrT5D5Exuux2S6cQ5pmkkLHMxT4VGMv1b",
+      "name": "dry run 7x7x9 b",
+      "symbol": "D779U",
+      "kind": "demo",
+      "demoNote": "A devnet dry run of the full solve path. Not a public bounty.",
+      "hidden": true,
+      "coefficients": "integers from −128 to 127",
+      "naive": 441,
+      "bestKnown": {
+        "rank": 315,
+        "source": "Sedoglavic, Yet another catalogue of fast matrix multiplication algorithms",
+        "url": "https://fmm.univ-lille.fr/",
+        "asOf": "2026-09-30",
+        "ring": null
+      },
+      "ourRecord": {
+        "rank": 314,
+        "coefficients": "{-1, 0, 1}",
+        "tool": "fmm"
+      }
     }
   },
   "mainnet": {}

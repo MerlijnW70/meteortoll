@@ -64,6 +64,19 @@
       ],
       "name": "dry run 7x7x9",
       "symbol": "D779T"
+    },
+    "7x7x9r314-D779U": {
+      "problem": "4apwMcG4HgQw1S6BJc1ioTAz5B9Bm9QpMtY8CxZ9ReSQ",
+      "pool": "Gpw5Ls3EsDQ7XsZ3oQfhhuLHXB56yVR1SKNckkMDbh57",
+      "baseMint": "4PzA1XNDJNMsrT5D5Exuux2S6cQ5pmkkLHMxT4VGMv1b",
+      "statement": [
+        7,
+        7,
+        9,
+        314
+      ],
+      "name": "dry run 7x7x9 b",
+      "symbol": "D779U"
     }
   },
   "config": "Z4PT2dz65c2AW7jVYCoArmRvDSuLqZhQ7AnqFA2y1wT",
