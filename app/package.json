@@ -33,7 +33,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",
-    "@playwright/test": "^1.63.0",
+    "@playwright/test": "^1.64.0",
     "@solana/buffer-layout-utils": "^0.3.0",
     "@tailwindcss/postcss": "^4",
     "@types/bn.js": "^5.2.0",
